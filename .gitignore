@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.local
+.turbo/
+coverage/
+*.log
+.write-test
+apps/**/*.js
+packages/**/*.js
+tests/**/*.js
+vitest.config.js
