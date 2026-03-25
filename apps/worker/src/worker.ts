@@ -1,19 +1,16 @@
 import { loadConfig } from "../../../packages/config/src/index.js";
 import { FollowupScheduler } from "../../../packages/scheduler/src/index.js";
 import { Database, PostgresLeadRepository } from "../../../packages/storage/src/index.js";
-import { WhatsAppClient } from "../../../packages/whatsapp/src/index.js";
+import { TelegramClient } from "../../../packages/telegram/src/index.js";
 
 async function bootstrapWorker() {
   const config = loadConfig();
   const db = new Database(config.databaseUrl);
   const repository = new PostgresLeadRepository(db);
-  const whatsappClient = new WhatsAppClient({
-    accessToken: config.whatsappAccessToken,
-    apiVersion: config.whatsappApiVersion
-  });
+  const telegramClient = new TelegramClient();
   const scheduler = new FollowupScheduler({
     repository,
-    whatsappClient,
+    telegramClient,
     maxRetries: config.followupMaxRetries
   });
 

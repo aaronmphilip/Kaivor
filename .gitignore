@@ -10,3 +10,5 @@ apps/**/*.js
 packages/**/*.js
 tests/**/*.js
 vitest.config.js
+.wrangler/
+.dev.vars

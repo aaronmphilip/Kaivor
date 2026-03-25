@@ -143,18 +143,19 @@ export class PostgresLeadRepository implements LeadRepository {
     const ownerId = randomUUID();
     const trialDays = input.trialDays ?? 7;
     const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
+    const channelIdentifier = `telegram:${input.slug}`;
 
     const tenant = await this.db.transaction(async (client) => {
       await client.query(
         `INSERT INTO tenants (id, name, slug, whatsapp_phone_number_id, tenant_api_key_hash, trial_ends_at)
          VALUES ($1, $2, $3, $4, $5, $6)`,
-        [tenantId, input.name, input.slug, input.whatsappPhoneNumberId, tenantApiKeyHash, trialEndsAt]
+        [tenantId, input.name, input.slug, channelIdentifier, tenantApiKeyHash, trialEndsAt]
       );
 
       await client.query(
         `INSERT INTO owner_contacts (id, tenant_id, name, phone, email, is_primary)
          VALUES ($1, $2, $3, $4, $5, true)`,
-        [ownerId, tenantId, input.ownerName, normalizePhone(input.ownerPhone), input.ownerEmail ?? null]
+        [ownerId, tenantId, input.ownerName, input.ownerChatId, input.ownerEmail ?? null]
       );
 
       await client.query(
@@ -175,6 +176,10 @@ export class PostgresLeadRepository implements LeadRepository {
           DEFAULT_TAKEOVER_COOLDOWN_MINUTES
         ]
       );
+      await client.query("UPDATE tenant_configs SET metadata = $2::jsonb WHERE tenant_id = $1", [
+        tenantId,
+        JSON.stringify({ telegramBotToken: input.telegramBotToken })
+      ]);
 
       await client.query(
         `INSERT INTO subscriptions (
@@ -219,6 +224,13 @@ export class PostgresLeadRepository implements LeadRepository {
 
   public async upsertTenantConfig(input: UpsertTenantConfigInput): Promise<TenantConfig> {
     const existing = await this.getTenantConfig(input.tenantId);
+    const mergedMetadata = {
+      ...(existing.metadata ?? {}),
+      ...(input.metadata ?? {})
+    };
+    if (input.telegramBotToken) {
+      mergedMetadata.telegramBotToken = input.telegramBotToken;
+    }
 
     const merged = {
       autoReplyEnabled: input.autoReplyEnabled ?? existing.autoReplyEnabled,
@@ -226,7 +238,7 @@ export class PostgresLeadRepository implements LeadRepository {
       followup30mTemplate: input.followup30mTemplate ?? existing.followup30mTemplate,
       followup24hTemplateName: input.followup24hTemplateName ?? existing.followup24hTemplateName,
       takeoverCooldownMinutes: input.takeoverCooldownMinutes ?? existing.takeoverCooldownMinutes,
-      metadata: input.metadata ?? existing.metadata
+      metadata: mergedMetadata
     };
 
     const configResult = await this.db.query(
@@ -260,11 +272,11 @@ export class PostgresLeadRepository implements LeadRepository {
       ]
     );
 
-    if (input.ownerPhone || input.ownerName || input.ownerEmail) {
+    if (input.ownerChatId || input.ownerName || input.ownerEmail) {
       await this.upsertPrimaryOwner({
         tenantId: input.tenantId,
         name: input.ownerName ?? "Owner",
-        phone: input.ownerPhone ?? "",
+        phone: input.ownerChatId ?? "",
         email: input.ownerEmail
       });
     }
@@ -289,7 +301,7 @@ export class PostgresLeadRepository implements LeadRepository {
          name = EXCLUDED.name,
          email = EXCLUDED.email,
          is_primary = true`,
-      [randomUUID(), input.tenantId, input.name, normalizePhone(input.phone), input.email ?? null]
+      [randomUUID(), input.tenantId, input.name, input.phone.trim(), input.email ?? null]
     );
   }
 

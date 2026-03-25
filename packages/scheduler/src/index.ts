@@ -1,10 +1,10 @@
 import { buildFollowup30m } from "../../reply-engine/src/index.js";
 import type { LeadRepository } from "../../storage/src/index.js";
-import type { WhatsAppClient } from "../../whatsapp/src/index.js";
+import type { TelegramClient } from "../../telegram/src/index.js";
 
 interface SchedulerDeps {
   repository: LeadRepository;
-  whatsappClient: WhatsAppClient;
+  telegramClient: TelegramClient;
   maxRetries: number;
 }
 
@@ -47,26 +47,31 @@ export class FollowupScheduler {
     }
 
     const config = await this.deps.repository.getTenantConfig(job.tenantId);
+    const botToken = String(config.metadata.telegramBotToken ?? "");
+    if (!botToken) {
+      throw new Error("Missing telegramBotToken in tenant config metadata");
+    }
+
     let body = "";
     let messageType: "TEXT" | "TEMPLATE" = "TEXT";
     let externalMessageId = "";
 
     if (job.jobType === "FOLLOWUP_30M") {
       body = buildFollowup30m(config);
-      externalMessageId = await this.deps.whatsappClient.sendText({
-        phoneNumberId: tenant.whatsappPhoneNumberId,
-        to: lead.customerPhone,
-        body
+      externalMessageId = await this.deps.telegramClient.sendMessage({
+        botToken,
+        chatId: lead.customerPhone,
+        text: body
       });
       messageType = "TEXT";
     } else {
-      body = `template:${config.followup24hTemplateName}`;
-      externalMessageId = await this.deps.whatsappClient.sendTemplate({
-        phoneNumberId: tenant.whatsappPhoneNumberId,
-        to: lead.customerPhone,
-        templateName: config.followup24hTemplateName
+      body = "24h follow-up: Agar aapko abhi bhi help chahiye, reply karo. Hum ready hain.";
+      externalMessageId = await this.deps.telegramClient.sendMessage({
+        botToken,
+        chatId: lead.customerPhone,
+        text: body
       });
-      messageType = "TEMPLATE";
+      messageType = "TEXT";
     }
 
     await this.deps.repository.addOutboundMessage({

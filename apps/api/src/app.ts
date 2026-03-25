@@ -6,7 +6,7 @@ import { NotificationService } from "../../../packages/notifications/src/index.j
 import { buildAutoReply } from "../../../packages/reply-engine/src/index.js";
 import { computeTransition } from "../../../packages/state-machine/src/index.js";
 import type { LeadRepository } from "../../../packages/storage/src/index.js";
-import { parseWhatsAppWebhook, verifyWhatsAppSignature, WhatsAppClient } from "../../../packages/whatsapp/src/index.js";
+import { parseTelegramWebhook, TelegramClient, verifyTelegramSecret } from "../../../packages/telegram/src/index.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -17,7 +17,7 @@ declare module "fastify" {
 export interface ApiServices {
   config: AppConfig;
   repository: LeadRepository;
-  whatsappClient: WhatsAppClient;
+  telegramClient: TelegramClient;
   notificationService: NotificationService;
   billingService: PolarBillingService;
 }
@@ -25,10 +25,10 @@ export interface ApiServices {
 const createTenantSchema = z.object({
   name: z.string().min(2),
   slug: z.string().min(2),
-  whatsappPhoneNumberId: z.string().min(5),
   ownerName: z.string().min(2),
-  ownerPhone: z.string().min(8),
+  ownerChatId: z.string().min(5),
   ownerEmail: z.string().email().optional(),
+  telegramBotToken: z.string().min(10),
   trialDays: z.number().int().min(1).max(30).optional()
 });
 
@@ -40,8 +40,9 @@ const updateConfigSchema = z.object({
   takeoverCooldownMinutes: z.number().int().min(5).max(1440).optional(),
   metadata: z.record(z.unknown()).optional(),
   ownerName: z.string().min(2).optional(),
-  ownerPhone: z.string().min(8).optional(),
-  ownerEmail: z.string().email().optional()
+  ownerChatId: z.string().min(5).optional(),
+  ownerEmail: z.string().email().optional(),
+  telegramBotToken: z.string().min(10).optional()
 });
 
 const takeoverSchema = z.object({
@@ -50,11 +51,11 @@ const takeoverSchema = z.object({
 });
 
 function parseTakeoverCommand(command: string): string | null {
-  const match = /^#takeover\s+([+\d][\d\s-]{6,20})$/i.exec(command.trim());
+  const match = /^#takeover\s+(\d{5,20})$/i.exec(command.trim());
   if (!match) {
     return null;
   }
-  return match[1].replace(/\D/g, "");
+  return match[1];
 }
 
 function hasMasterAccess(inputKey: string | undefined, config: AppConfig): boolean {
@@ -63,7 +64,7 @@ function hasMasterAccess(inputKey: string | undefined, config: AppConfig): boole
 
 export function createApiApp(services: ApiServices) {
   const app = Fastify({ logger: true });
-  const { config, repository, whatsappClient, notificationService, billingService } = services;
+  const { config, repository, telegramClient, notificationService, billingService } = services;
 
   app.addContentTypeParser(
     "application/json",
@@ -78,42 +79,26 @@ export function createApiApp(services: ApiServices) {
     }
   );
 
-  app.get("/health", async () => ({ ok: true, service: "bharatclaw-api" }));
+  app.get("/health", async () => ({ ok: true, service: "bharatclaw-api-telegram" }));
 
-  app.get("/webhooks/whatsapp", async (request, reply) => {
-    const query = request.query as Record<string, string | undefined>;
-    const mode = query["hub.mode"];
-    const verifyToken = query["hub.verify_token"];
-    const challenge = query["hub.challenge"];
-
-    if (mode === "subscribe" && verifyToken === config.whatsappWebhookVerifyToken) {
-      return reply.code(200).send(challenge);
-    }
-    return reply.code(403).send({ error: "Invalid verify token" });
-  });
-
-  app.post("/webhooks/whatsapp", async (request, reply) => {
-    const signature = request.headers["x-hub-signature-256"] as string | undefined;
-    const rawBody = request.rawBody ?? JSON.stringify(request.body ?? {});
-
-    const signatureValid = verifyWhatsAppSignature({
-      appSecret: config.whatsappAppSecret,
-      signatureHeader: signature,
-      rawBody
-    });
-    if (!signatureValid) {
-      return reply.code(401).send({ error: "Invalid WhatsApp signature" });
+  app.post("/webhooks/telegram/:tenantId", async (request, reply) => {
+    const { tenantId } = request.params as { tenantId: string };
+    const secretHeader = request.headers["x-telegram-bot-api-secret-token"] as string | undefined;
+    const validSecret = verifyTelegramSecret(secretHeader, config.telegramWebhookSecret);
+    if (!validSecret) {
+      return reply.code(401).send({ error: "Invalid Telegram webhook secret" });
     }
 
-    const inboundMessages = parseWhatsAppWebhook(request.body);
+    const tenant = await repository.getTenantById(tenantId);
+    if (!tenant) {
+      return reply.code(404).send({ error: "Tenant not found" });
+    }
+
+    const inboundMessages = parseTelegramWebhook(request.body);
+
     for (const inbound of inboundMessages) {
-      const alreadyProcessed = await repository.hasProcessedEvent(inbound.eventId, "WHATSAPP");
+      const alreadyProcessed = await repository.hasProcessedEvent(inbound.eventId, "TELEGRAM");
       if (alreadyProcessed) {
-        continue;
-      }
-
-      const tenant = await repository.getTenantByWhatsappPhoneNumberId(inbound.phoneNumberId);
-      if (!tenant) {
         continue;
       }
 
@@ -125,11 +110,11 @@ export function createApiApp(services: ApiServices) {
           action: "AUTOMATION_BLOCKED_BILLING",
           metadata: { eventId: inbound.eventId }
         });
-        await repository.markProcessedEvent(inbound.eventId, "WHATSAPP");
+        await repository.markProcessedEvent(inbound.eventId, "TELEGRAM");
         continue;
       }
 
-      const lead = await repository.findOrCreateLead(tenant.id, inbound.fromPhone);
+      const lead = await repository.findOrCreateLead(tenant.id, inbound.chatId);
       const conversation = await repository.getConversationForLead(tenant.id, lead.id);
 
       await repository.addInboundMessage({
@@ -141,7 +126,7 @@ export function createApiApp(services: ApiServices) {
       });
 
       if (lead.botPausedUntil && lead.botPausedUntil > new Date()) {
-        await repository.markProcessedEvent(inbound.eventId, "WHATSAPP");
+        await repository.markProcessedEvent(inbound.eventId, "TELEGRAM");
         continue;
       }
 
@@ -155,16 +140,24 @@ export function createApiApp(services: ApiServices) {
       await repository.updateConversationState(conversation.id, transition.nextState);
 
       if (transition.shouldReply) {
+        const tenantConfig = await repository.getTenantConfig(tenant.id);
+        const botToken = String(tenantConfig.metadata.telegramBotToken ?? "");
+        if (!botToken) {
+          throw new Error("Missing telegramBotToken in tenant config metadata");
+        }
+
         const replyBody = buildAutoReply({
           previousState: conversation.state,
           customerName: transition.customerName,
-          config: await repository.getTenantConfig(tenant.id)
+          config: tenantConfig
         });
-        const externalMessageId = await whatsappClient.sendText({
-          phoneNumberId: tenant.whatsappPhoneNumberId,
-          to: lead.customerPhone,
-          body: replyBody
+
+        const externalMessageId = await telegramClient.sendMessage({
+          botToken,
+          chatId: lead.customerPhone,
+          text: replyBody
         });
+
         await repository.addOutboundMessage({
           tenantId: tenant.id,
           leadId: lead.id,
@@ -183,7 +176,7 @@ export function createApiApp(services: ApiServices) {
         await notificationService.notifyOwnerLeadCaptured(tenant, updatedLead);
       }
 
-      await repository.markProcessedEvent(inbound.eventId, "WHATSAPP");
+      await repository.markProcessedEvent(inbound.eventId, "TELEGRAM");
     }
 
     return reply.code(200).send({ ok: true });
@@ -256,14 +249,14 @@ export function createApiApp(services: ApiServices) {
       return reply.code(401).send({ error: "Unauthorized" });
     }
 
-    const customerPhone = parseTakeoverCommand(body.command);
-    if (!customerPhone) {
-      return reply.code(400).send({ error: "Command must be '#takeover <phone>'" });
+    const customerChatId = parseTakeoverCommand(body.command);
+    if (!customerChatId) {
+      return reply.code(400).send({ error: "Command must be '#takeover <chat_id>'" });
     }
 
-    const lead = await repository.findLeadByPhone(body.tenantId, customerPhone);
+    const lead = await repository.findLeadByPhone(body.tenantId, customerChatId);
     if (!lead) {
-      return reply.code(404).send({ error: "Lead not found for provided phone number" });
+      return reply.code(404).send({ error: "Lead not found for provided chat id" });
     }
 
     const tenantConfig = await repository.getTenantConfig(body.tenantId);

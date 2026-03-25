@@ -1,0 +1,15 @@
+name = "bharatclaw-telegram"
+main = "apps/cloudflare-worker/src/index.ts"
+compatibility_date = "2026-03-25"
+workers_dev = true
+
+[triggers]
+crons = ["*/1 * * * *"]
+
+[vars]
+FOLLOWUP_MAX_RETRIES = "3"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bharatclaw"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"

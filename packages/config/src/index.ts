@@ -16,10 +16,7 @@ export interface AppConfig {
   databaseUrl: string;
   masterApiKey: string;
   appBaseUrl: string;
-  whatsappApiVersion: string;
-  whatsappAccessToken: string;
-  whatsappWebhookVerifyToken: string;
-  whatsappAppSecret: string;
+  telegramWebhookSecret: string;
   polarAccessToken?: string;
   polarWebhookSecret?: string;
   polarProductId?: string;
@@ -76,10 +73,7 @@ export function loadConfig(): AppConfig {
     databaseUrl: required("DATABASE_URL"),
     masterApiKey: required("MASTER_API_KEY"),
     appBaseUrl: process.env.APP_BASE_URL ?? "http://localhost:3000",
-    whatsappApiVersion: process.env.WHATSAPP_API_VERSION ?? "v20.0",
-    whatsappAccessToken: required("WHATSAPP_ACCESS_TOKEN"),
-    whatsappWebhookVerifyToken: required("WHATSAPP_WEBHOOK_VERIFY_TOKEN"),
-    whatsappAppSecret: required("WHATSAPP_APP_SECRET"),
+    telegramWebhookSecret: required("TELEGRAM_WEBHOOK_SECRET"),
     polarAccessToken: process.env.POLAR_ACCESS_TOKEN,
     polarWebhookSecret: process.env.POLAR_WEBHOOK_SECRET,
     polarProductId: process.env.POLAR_PRODUCT_ID,

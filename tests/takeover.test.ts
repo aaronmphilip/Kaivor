@@ -1,13 +1,6 @@
-import crypto from "crypto";
 import { describe, expect, it } from "vitest";
 import { createApiApp } from "../apps/api/src/app.js";
 import { createFakeServices } from "./helpers.js";
-
-function sign(body: unknown, secret: string): string {
-  const raw = JSON.stringify(body);
-  const hash = crypto.createHmac("sha256", secret).update(raw).digest("hex");
-  return `sha256=${hash}`;
-}
 
 describe("manual takeover", () => {
   it("pauses bot for lead after #takeover command", async () => {
@@ -35,38 +28,23 @@ describe("manual takeover", () => {
     expect(pausedLead?.status).toBe("OWNER_TAKEOVER");
     expect(pausedLead?.botPausedUntil).toBeDefined();
 
-    const inboundPayload = {
-      entry: [
-        {
-          changes: [
-            {
-              value: {
-                metadata: { phone_number_id: tenant.whatsappPhoneNumberId },
-                messages: [
-                  {
-                    id: "wamid.takeover",
-                    from: "919123456789",
-                    timestamp: String(Math.floor(Date.now() / 1000)),
-                    type: "text",
-                    text: { body: "Are you there?" }
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      ]
-    };
-
     const webhookResponse = await app.inject({
       method: "POST",
-      url: "/webhooks/whatsapp",
-      headers: { "x-hub-signature-256": sign(inboundPayload, services.config.whatsappAppSecret) },
-      payload: inboundPayload
+      url: `/webhooks/telegram/${tenant.id}`,
+      headers: { "x-telegram-bot-api-secret-token": services.config.telegramWebhookSecret },
+      payload: {
+        update_id: 9001,
+        message: {
+          date: Math.floor(Date.now() / 1000),
+          chat: { id: "919123456789" },
+          from: { id: "919123456789" },
+          text: "Are you there?"
+        }
+      }
     });
 
     expect(webhookResponse.statusCode).toBe(200);
-    expect(services.sentText.length).toBe(0);
+    expect(services.sentMessages.length).toBe(0);
     await app.close();
   });
 });

@@ -1,11 +1,11 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import type { SmtpConfig } from "../../config/src/index.js";
 import type { Lead, LeadRepository, Tenant } from "../../storage/src/index.js";
-import type { WhatsAppClient } from "../../whatsapp/src/index.js";
+import type { TelegramClient } from "../../telegram/src/index.js";
 
 interface NotificationServiceDeps {
   repository: LeadRepository;
-  whatsappClient: WhatsAppClient;
+  telegramClient: TelegramClient;
   smtp?: SmtpConfig;
 }
 
@@ -28,46 +28,51 @@ export class NotificationService {
 
   public async notifyOwnerLeadCaptured(tenant: Tenant, lead: Lead): Promise<void> {
     const owners = await this.deps.repository.listPrimaryOwners(tenant.id);
+    const tenantConfig = await this.deps.repository.getTenantConfig(tenant.id);
+    const botToken = String(tenantConfig.metadata.telegramBotToken ?? "");
     const summary = [
       "New BharatClaw lead captured.",
       `Name: ${lead.customerName ?? "Not provided"}`,
-      `Phone: ${lead.customerPhone}`,
+      `Chat: ${lead.customerPhone}`,
       `Requirement: ${lead.requirement ?? "Not provided"}`
     ].join("\n");
 
     for (const owner of owners) {
-      let whatsappDelivered = false;
+      let telegramDelivered = false;
       try {
-        const messageId = await this.deps.whatsappClient.sendText({
-          phoneNumberId: tenant.whatsappPhoneNumberId,
-          to: owner.phone,
-          body: summary
+        if (!botToken) {
+          throw new Error("Missing telegramBotToken in tenant config metadata");
+        }
+        const messageId = await this.deps.telegramClient.sendMessage({
+          botToken,
+          chatId: owner.phone,
+          text: summary
         });
-        whatsappDelivered = true;
+        telegramDelivered = true;
         await this.deps.repository.recordNotification({
           tenantId: tenant.id,
           leadId: lead.id,
-          channel: "WHATSAPP_OWNER_ALERT",
+          channel: "TELEGRAM_OWNER_ALERT",
           status: "SENT",
           payload: {
-            ownerPhone: owner.phone,
-            whatsappMessageId: messageId
+            ownerChatId: owner.phone,
+            telegramMessageId: messageId
           }
         });
       } catch (error) {
         await this.deps.repository.recordNotification({
           tenantId: tenant.id,
           leadId: lead.id,
-          channel: "WHATSAPP_OWNER_ALERT",
+          channel: "TELEGRAM_OWNER_ALERT",
           status: "FAILED",
           payload: {
-            ownerPhone: owner.phone
+            ownerChatId: owner.phone
           },
-          error: error instanceof Error ? error.message : "Unknown WhatsApp notification error"
+          error: error instanceof Error ? error.message : "Unknown Telegram notification error"
         });
       }
 
-      if (whatsappDelivered || !owner.email || !this.mailer) {
+      if (telegramDelivered || !owner.email || !this.mailer) {
         continue;
       }
 
@@ -75,7 +80,7 @@ export class NotificationService {
         await this.mailer.sendMail({
           from: this.deps.smtp?.from,
           to: owner.email,
-          subject: "BharatClaw: New WhatsApp lead",
+          subject: "BharatClaw: New Telegram lead",
           text: summary
         });
         await this.deps.repository.recordNotification({

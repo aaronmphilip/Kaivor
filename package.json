@@ -6,7 +6,11 @@
   "scripts": {
     "dev:api": "tsx apps/api/src/server.ts",
     "dev:worker": "tsx apps/worker/src/worker.ts",
+    "dev:cf": "npx wrangler dev",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:worker\"",
+    "deploy:cf": "npx wrangler deploy",
+    "cf:migrate:local": "npx wrangler d1 execute bharatclaw --local --file=sql/d1_init.sql",
+    "cf:migrate:remote": "npx wrangler d1 execute bharatclaw --remote --file=sql/d1_init.sql",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:migrate": "psql \"$DATABASE_URL\" -f sql/001_init.sql",

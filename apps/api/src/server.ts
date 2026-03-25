@@ -2,20 +2,17 @@ import { PolarBillingService } from "../../../packages/billing/src/index.js";
 import { loadConfig } from "../../../packages/config/src/index.js";
 import { NotificationService } from "../../../packages/notifications/src/index.js";
 import { Database, PostgresLeadRepository } from "../../../packages/storage/src/index.js";
-import { WhatsAppClient } from "../../../packages/whatsapp/src/index.js";
+import { TelegramClient } from "../../../packages/telegram/src/index.js";
 import { createApiApp } from "./app.js";
 
 async function bootstrap() {
   const config = loadConfig();
   const db = new Database(config.databaseUrl);
   const repository = new PostgresLeadRepository(db);
-  const whatsappClient = new WhatsAppClient({
-    accessToken: config.whatsappAccessToken,
-    apiVersion: config.whatsappApiVersion
-  });
+  const telegramClient = new TelegramClient();
   const notificationService = new NotificationService({
     repository,
-    whatsappClient,
+    telegramClient,
     smtp: config.smtp
   });
   const billingService = new PolarBillingService({
@@ -28,7 +25,7 @@ async function bootstrap() {
   const app = createApiApp({
     config,
     repository,
-    whatsappClient,
+    telegramClient,
     notificationService,
     billingService
   });

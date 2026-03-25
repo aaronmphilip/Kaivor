@@ -1,26 +1,26 @@
-import crypto from "crypto";
 import { describe, expect, it } from "vitest";
-import { verifyWhatsAppSignature } from "../packages/whatsapp/src/signature.js";
+import { parseTelegramWebhook, verifyTelegramSecret } from "../packages/telegram/src/index.js";
 
-describe("verifyWhatsAppSignature", () => {
-  it("accepts valid signature", () => {
-    const body = JSON.stringify({ hello: "world" });
-    const secret = "app-secret";
-    const hash = crypto.createHmac("sha256", secret).update(body).digest("hex");
-    const valid = verifyWhatsAppSignature({
-      appSecret: secret,
-      signatureHeader: `sha256=${hash}`,
-      rawBody: body
-    });
-    expect(valid).toBe(true);
+describe("telegram webhook helpers", () => {
+  it("verifies secret token", () => {
+    expect(verifyTelegramSecret("abc", "abc")).toBe(true);
+    expect(verifyTelegramSecret("wrong", "abc")).toBe(false);
   });
 
-  it("rejects wrong signature", () => {
-    const valid = verifyWhatsAppSignature({
-      appSecret: "app-secret",
-      signatureHeader: "sha256=deadbeef",
-      rawBody: JSON.stringify({ hello: "world" })
+  it("parses inbound text update", () => {
+    const parsed = parseTelegramWebhook({
+      update_id: 42,
+      message: {
+        date: 123,
+        chat: { id: 91999 },
+        from: { id: 91999 },
+        text: "hello"
+      }
     });
-    expect(valid).toBe(false);
+
+    expect(parsed.length).toBe(1);
+    expect(parsed[0].eventId).toBe("telegram:42");
+    expect(parsed[0].chatId).toBe("91999");
+    expect(parsed[0].text).toBe("hello");
   });
 });

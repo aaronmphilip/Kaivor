@@ -121,10 +121,10 @@ export interface Subscription {
 export interface CreateTenantInput {
   name: string;
   slug: string;
-  whatsappPhoneNumberId: string;
   ownerName: string;
-  ownerPhone: string;
+  ownerChatId: string;
   ownerEmail?: string;
+  telegramBotToken: string;
   trialDays?: number;
 }
 
@@ -137,8 +137,9 @@ export interface UpsertTenantConfigInput {
   takeoverCooldownMinutes?: number;
   metadata?: Record<string, unknown>;
   ownerName?: string;
-  ownerPhone?: string;
+  ownerChatId?: string;
   ownerEmail?: string;
+  telegramBotToken?: string;
 }
 
 export interface InboundMessageInput {

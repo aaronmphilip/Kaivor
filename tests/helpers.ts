@@ -15,7 +15,7 @@ import type {
   Tenant,
   TenantConfig
 } from "../packages/storage/src/index.js";
-import type { WhatsAppClient } from "../packages/whatsapp/src/index.js";
+import type { TelegramClient } from "../packages/telegram/src/index.js";
 
 const defaultConfig: AppConfig = {
   nodeEnv: "test",
@@ -23,10 +23,7 @@ const defaultConfig: AppConfig = {
   databaseUrl: "postgres://test",
   masterApiKey: "master-test-key",
   appBaseUrl: "http://localhost:3000",
-  whatsappApiVersion: "v20.0",
-  whatsappAccessToken: "token",
-  whatsappWebhookVerifyToken: "verify-test-token",
-  whatsappAppSecret: "test-secret",
+  telegramWebhookSecret: "telegram-secret-test",
   polarAccessToken: "polar-token",
   polarWebhookSecret: "polar-secret",
   polarProductId: "prod_123",
@@ -63,7 +60,7 @@ export class InMemoryLeadRepository implements LeadRepository {
       id: tenantId,
       name: "Test Tenant",
       slug: "test-tenant",
-      whatsappPhoneNumberId: "12345",
+      whatsappPhoneNumberId: "telegram:test-tenant",
       tenantApiKeyHash: "salt:hash",
       trialEndsAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
       createdAt: new Date()
@@ -72,6 +69,9 @@ export class InMemoryLeadRepository implements LeadRepository {
     this.tenantConfigs.set(tenantId, {
       tenantId,
       ...defaultTenantConfig,
+      metadata: {
+        telegramBotToken: "test-bot-token"
+      },
       updatedAt: new Date()
     });
     this.owners.set(tenantId, [
@@ -95,10 +95,10 @@ export class InMemoryLeadRepository implements LeadRepository {
   public async createTenant(input: {
     name: string;
     slug: string;
-    whatsappPhoneNumberId: string;
     ownerName: string;
-    ownerPhone: string;
+    ownerChatId: string;
     ownerEmail?: string;
+    telegramBotToken: string;
     trialDays?: number;
   }): Promise<{ tenant: Tenant; tenantApiKey: string }> {
     const tenantId = randomUUID();
@@ -107,7 +107,7 @@ export class InMemoryLeadRepository implements LeadRepository {
       id: tenantId,
       name: input.name,
       slug: input.slug,
-      whatsappPhoneNumberId: input.whatsappPhoneNumberId,
+      whatsappPhoneNumberId: `telegram:${input.slug}`,
       tenantApiKeyHash: "fake",
       trialEndsAt,
       createdAt: new Date()
@@ -123,12 +123,18 @@ export class InMemoryLeadRepository implements LeadRepository {
         id: randomUUID(),
         tenantId,
         name: input.ownerName,
-        phone: input.ownerPhone.replace(/\D/g, ""),
+        phone: input.ownerChatId,
         email: input.ownerEmail,
         isPrimary: true,
         createdAt: new Date()
       }
     ]);
+    const config = this.tenantConfigs.get(tenantId)!;
+    config.metadata = {
+      ...(config.metadata ?? {}),
+      telegramBotToken: input.telegramBotToken
+    };
+    this.tenantConfigs.set(tenantId, config);
     this.subscription.set(tenantId, { status: "TRIALING", trialEndsAt });
     return { tenant, tenantApiKey: "tenant-key-plain" };
   }
@@ -159,8 +165,9 @@ export class InMemoryLeadRepository implements LeadRepository {
     takeoverCooldownMinutes?: number;
     metadata?: Record<string, unknown>;
     ownerName?: string;
-    ownerPhone?: string;
+    ownerChatId?: string;
     ownerEmail?: string;
+    telegramBotToken?: string;
   }): Promise<TenantConfig> {
     const existing = this.tenantConfigs.get(input.tenantId);
     if (!existing) {
@@ -173,7 +180,11 @@ export class InMemoryLeadRepository implements LeadRepository {
       followup30mTemplate: input.followup30mTemplate ?? existing.followup30mTemplate,
       followup24hTemplateName: input.followup24hTemplateName ?? existing.followup24hTemplateName,
       takeoverCooldownMinutes: input.takeoverCooldownMinutes ?? existing.takeoverCooldownMinutes,
-      metadata: input.metadata ?? existing.metadata,
+      metadata: {
+        ...(existing.metadata ?? {}),
+        ...(input.metadata ?? {}),
+        ...(input.telegramBotToken ? { telegramBotToken: input.telegramBotToken } : {})
+      },
       updatedAt: new Date()
     };
     this.tenantConfigs.set(input.tenantId, merged);
@@ -443,27 +454,14 @@ export class InMemoryLeadRepository implements LeadRepository {
 
 export function createFakeServices(overrides?: Partial<AppConfig>) {
   const repository = new InMemoryLeadRepository();
-  const sentText: Array<{ to: string; body: string }> = [];
-  const sentTemplate: Array<{ to: string; templateName: string }> = [];
+  const sentMessages: Array<{ chatId: string; text: string }> = [];
 
-  const whatsappClient = {
-    sendText: async ({ to, body }: { phoneNumberId: string; to: string; body: string }) => {
-      sentText.push({ to, body });
-      return `msg_${randomUUID()}`;
-    },
-    sendTemplate: async ({
-      to,
-      templateName
-    }: {
-      phoneNumberId: string;
-      to: string;
-      templateName: string;
-      languageCode?: string;
-    }) => {
-      sentTemplate.push({ to, templateName });
+  const telegramClient = {
+    sendMessage: async ({ chatId, text }: { botToken: string; chatId: string; text: string }) => {
+      sentMessages.push({ chatId, text });
       return `tpl_${randomUUID()}`;
     }
-  } as unknown as WhatsAppClient;
+  } as unknown as TelegramClient;
 
   const notificationService = {
     notifyOwnerLeadCaptured: async () => {}
@@ -483,10 +481,9 @@ export function createFakeServices(overrides?: Partial<AppConfig>) {
   return {
     config,
     repository,
-    whatsappClient,
+    telegramClient,
     notificationService,
     billingService,
-    sentText,
-    sentTemplate
+    sentMessages
   };
 }
