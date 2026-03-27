@@ -12,3 +12,7 @@ tests/**/*.js
 vitest.config.js
 .wrangler/
 .dev.vars
+!apps/web/get-started.js
+
+.vercel
+.env*.local

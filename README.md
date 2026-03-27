@@ -26,6 +26,7 @@ Core promise: **Never miss a lead again.**
 
 - `GET /` (premium landing page)
 - `POST /public/free-trial` (public free onboarding, no master key)
+- `GET /public/free-trial/:tenantId/status` (owner-connect status check)
 - `GET /health`
 - `POST /webhooks/telegram/:tenantId`
 - `POST /admin/tenants`
@@ -90,7 +91,45 @@ npx wrangler secret put POLAR_PRODUCT_ID
 npm run deploy:cf
 ```
 
-6. Create tenant
+6. Publish landing/onboarding page on Vercel
+- Your CTA should point to `https://bharatclawapp.vercel.app/get-started`.
+
+7. Customer onboarding (no-code path)
+- Open `/get-started`.
+- Fill: business name, owner name, Telegram bot token, optional owner email.
+- Click **Create Free Workspace**.
+- Backend will automatically:
+  - create tenant + API key
+  - configure Telegram webhook
+  - generate secure webhook secret
+  - return owner connect link
+
+8. Owner connect (one tap)
+- Open the returned Telegram owner link (`https://t.me/<botUsername>?start=owner_<tenantId>`).
+- Press **Start**.
+- Owner alerts are now active.
+
+9. Smoke test
+- Send to bot: `Hi` -> `English` (or `Hindi`) -> `Aman` -> `Need AC repair`
+- Verify:
+  - bot replies each step
+  - lead saved
+  - owner alert sent
+  - follow-up jobs created
+
+10. Test takeover
+```bash
+curl -X POST "https://<WORKER_DOMAIN>/internal/takeover" \
+  -H "Content-Type: application/json" \
+  -H "x-master-api-key: <MASTER_API_KEY>" \
+  -d '{
+    "tenantId":"<TENANT_ID>",
+    "command":"#takeover <CUSTOMER_CHAT_ID>"
+  }'
+```
+
+## Manual admin onboarding (optional fallback)
+
 ```bash
 curl -X POST "https://<WORKER_DOMAIN>/admin/tenants" \
   -H "Content-Type: application/json" \
@@ -102,36 +141,6 @@ curl -X POST "https://<WORKER_DOMAIN>/admin/tenants" \
     "ownerChatId":"<YOUR_TELEGRAM_CHAT_ID>",
     "telegramBotToken":"<BOT_TOKEN>",
     "trialDays":7
-  }'
-```
-Save `tenantId` and `tenantApiKey` from response.
-
-7. Set Telegram webhook
-```bash
-curl -X POST "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url":"https://<WORKER_DOMAIN>/webhooks/telegram/<TENANT_ID>",
-    "secret_token":"<TELEGRAM_WEBHOOK_SECRET>"
-  }'
-```
-
-8. Smoke test
-- Send to bot: `Hi` -> `English` (or `Hindi`) -> `Aman` -> `Need AC repair`
-- Verify:
-  - bot replies each step
-  - lead saved
-  - owner alert sent
-  - follow-up jobs created
-
-9. Test takeover
-```bash
-curl -X POST "https://<WORKER_DOMAIN>/internal/takeover" \
-  -H "Content-Type: application/json" \
-  -H "x-master-api-key: <MASTER_API_KEY>" \
-  -d '{
-    "tenantId":"<TENANT_ID>",
-    "command":"#takeover <CUSTOMER_CHAT_ID>"
   }'
 ```
 

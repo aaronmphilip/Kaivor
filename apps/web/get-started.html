@@ -24,7 +24,10 @@
       <article class="panel">
         <h1>Start Your Free Trial</h1>
         <p class="lead">
-          No payment required. Fill this once, then set your Telegram webhook and your bot is live.
+          No payment required. Fill this once. BharatClaw auto-connects your bot backend without terminal commands.
+        </p>
+        <p class="hint" style="margin-top:10px;">
+          Need bot token? Open <a href="https://t.me/BotFather" target="_blank" rel="noreferrer">@BotFather</a>, run <code>/newbot</code>, copy token, paste here.
         </p>
         <form id="trial-form" class="form-wrap">
           <label>
@@ -36,10 +39,6 @@
             <input required name="ownerName" placeholder="Aman" />
           </label>
           <label>
-            Owner Telegram Chat ID
-            <input required name="ownerChatId" placeholder="123456789" />
-          </label>
-          <label>
             Telegram Bot Token
             <input required name="telegramBotToken" placeholder="123456:ABC..." />
           </label>
@@ -49,8 +48,7 @@
           </label>
           <button class="btn btn-primary" type="submit">Create Free Workspace</button>
           <p class="hint">
-            Need chat ID? Send any message to your bot and open:
-            <code>https://api.telegram.org/bot&lt;BOT_TOKEN&gt;/getUpdates</code>
+            We use this token only to connect your bot and configure webhook automatically. No chat ID or terminal setup needed.
           </p>
           <p id="error" class="error"></p>
         </form>
@@ -61,15 +59,15 @@
         <div class="cards">
           <article class="card">
             <h3>1. Workspace Created</h3>
-            <p>You get a tenant ID, API key, and unique webhook secret.</p>
+            <p>We create your workspace and configure webhook automatically.</p>
           </article>
           <article class="card">
-            <h3>2. Set Telegram Webhook</h3>
-            <p>Run one command to point your bot to BharatClaw.</p>
+            <h3>2. Connect Owner</h3>
+            <p>Tap one Telegram link and press Start to enable owner alerts.</p>
           </article>
           <article class="card">
             <h3>3. Start Receiving Leads</h3>
-            <p>Send “Hi” to your bot and verify capture flow end to end.</p>
+            <p>Send "Hi" to your bot and verify capture flow end to end.</p>
           </article>
         </div>
         <div id="result" class="result"></div>

@@ -21,6 +21,13 @@ interface Env {
 
 type Ctx = { waitUntil(p: Promise<unknown>): void };
 
+const jsonHeaders = { "content-type": "application/json" };
+const publicCorsHeaders = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET,POST,OPTIONS",
+  "access-control-allow-headers": "content-type"
+};
+
 const j = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: jsonHeaders });
 const jPublic = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...jsonHeaders, ...publicCorsHeaders } });
@@ -33,12 +40,6 @@ const DEFAULT_FOLLOWUP_30M_EN = "Hey, just checking in. Are you still looking fo
 const DEFAULT_FOLLOWUP_30M_HI = "Hey, quick check. Kya aapko abhi bhi help chahiye? Reply kar dijiye.";
 const FOLLOWUP_24H_EN = "Hey, quick follow-up. Are you still looking for this? Reply and we will help.";
 const FOLLOWUP_24H_HI = "Namaste, ek quick follow-up. Kya aapko abhi bhi help chahiye? Reply kar dijiye.";
-const jsonHeaders = { "content-type": "application/json" };
-const publicCorsHeaders = {
-  "access-control-allow-origin": "*",
-  "access-control-allow-methods": "POST,OPTIONS",
-  "access-control-allow-headers": "content-type"
-};
 
 const sha256 = async (raw: string) => {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
@@ -61,6 +62,78 @@ function slugify(input: string): string {
     .slice(0, 42);
   const suffix = Math.floor(1000 + Math.random() * 9000);
   return `${base || "business"}-${suffix}`;
+}
+
+function isSlugConflict(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return message.includes("UNIQUE constraint failed: tenants.slug");
+}
+
+async function telegramApi<T>(
+  botToken: string,
+  method: string,
+  payload?: Record<string, unknown>
+): Promise<T> {
+  const response = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
+    method: payload ? "POST" : "GET",
+    headers: payload ? { "content-type": "application/json" } : undefined,
+    body: payload ? JSON.stringify(payload) : undefined
+  });
+  const body = (await response.json().catch(() => null)) as
+    | { ok: true; result: T }
+    | { ok: false; description?: string; error_code?: number }
+    | null;
+  if (!response.ok || !body || !("ok" in body) || !body.ok) {
+    const description =
+      body && "description" in body && typeof body.description === "string"
+        ? body.description
+        : "Telegram API error";
+    throw new Error(description);
+  }
+  return body.result;
+}
+
+async function getBotProfile(botToken: string) {
+  return telegramApi<{ id: number; username?: string; first_name?: string }>(botToken, "getMe");
+}
+
+async function setTelegramWebhook(botToken: string, webhookUrl: string, webhookSecret: string): Promise<void> {
+  await telegramApi<{ ok: boolean }>(botToken, "setWebhook", {
+    url: webhookUrl,
+    secret_token: webhookSecret
+  });
+}
+
+function ownerConnectLink(botUsername: string, tenantId: string): string {
+  return `https://t.me/${botUsername}?start=owner_${tenantId}`;
+}
+
+function parseOwnerConnectTenantId(text: string): string | null {
+  const match = /^\/start\s+owner_([a-z0-9-]{8,80})$/i.exec(txt(text, 120));
+  return match ? match[1] : null;
+}
+
+async function connectOwnerIfPending(
+  env: Env,
+  tenantId: string,
+  ownerChatId: string,
+  ownerNameHint?: string
+): Promise<boolean> {
+  const existing = await env.DB.prepare(
+    "SELECT id,phone,name FROM owner_contacts WHERE tenant_id=? AND is_primary=1 ORDER BY created_at LIMIT 1"
+  )
+    .bind(tenantId)
+    .first<{ id: string; phone: string; name: string }>();
+  if (!existing) {
+    return false;
+  }
+  if (!existing.phone.startsWith("pending:")) {
+    return false;
+  }
+  await env.DB.prepare("UPDATE owner_contacts SET phone=?, name=? WHERE id=?")
+    .bind(ownerChatId, txt(ownerNameHint ?? existing.name, 120) || existing.name, existing.id)
+    .run();
+  return true;
 }
 
 async function sendTelegram(botToken: string, chatId: string, text: string) {
@@ -453,7 +526,7 @@ async function createTenantRecord(
     name: string;
     slug: string;
     ownerName: string;
-    ownerChatId: string;
+    ownerChatId?: string | null;
     telegramBotToken: string;
     ownerEmail?: string | null;
     trialDays?: number;
@@ -465,6 +538,7 @@ async function createTenantRecord(
   const salt = crypto.randomUUID().replace(/-/g, "");
   const tenantApiKeyHash = `${salt}:${await sha256(`${salt}:${tenantApiKey}`)}`;
   const webhookSecret = crypto.randomUUID().replace(/-/g, "");
+  const ownerPhone = txt(input.ownerChatId ?? "", 64) || `pending:${tenantId}`;
   const trialDays = Math.max(1, Math.min(3650, Number(input.trialDays ?? 3650)));
   const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60_000).toISOString();
 
@@ -477,7 +551,7 @@ async function createTenantRecord(
   await env.DB.prepare(
     `INSERT INTO owner_contacts (id,tenant_id,name,phone,email,is_primary,created_at) VALUES (?,?,?,?,?,1,?)`
   )
-    .bind(crypto.randomUUID(), tenantId, input.ownerName, input.ownerChatId, input.ownerEmail ?? null, now())
+    .bind(crypto.randomUUID(), tenantId, input.ownerName, ownerPhone, input.ownerEmail ?? null, now())
     .run();
   await env.DB.prepare(
     `INSERT INTO tenant_configs (tenant_id,auto_reply_enabled,greeting_template,followup_30m_template,followup_24h_template_name,takeover_cooldown_minutes,metadata,updated_at)
@@ -511,7 +585,13 @@ async function createTenantRecord(
     )
     .run();
 
-  return { tenantId, tenantApiKey, trialEndsAt, webhookSecret };
+  return {
+    tenantId,
+    tenantApiKey,
+    trialEndsAt,
+    webhookSecret,
+    ownerConnected: !ownerPhone.startsWith("pending:")
+  };
 }
 
 async function processFollowups(env: Env) {
@@ -606,8 +686,27 @@ export default {
     }
     if (request.method === "GET" && path === "/health") return j({ ok: true, service: "bharatclaw-cf" });
 
-    if (request.method === "OPTIONS" && path === "/public/free-trial") {
+    if (
+      request.method === "OPTIONS" &&
+      (path === "/public/free-trial" || /^\/public\/free-trial\/[a-z0-9-]+\/status$/i.test(path))
+    ) {
       return new Response(null, { status: 204, headers: publicCorsHeaders });
+    }
+
+    if (request.method === "GET" && /^\/public\/free-trial\/[a-z0-9-]+\/status$/i.test(path)) {
+      const tenantId = path.split("/")[3] ?? "";
+      if (!tenantId) return jPublic({ error: "Missing tenant id" }, 400);
+      const owner = await env.DB.prepare(
+        "SELECT phone FROM owner_contacts WHERE tenant_id=? AND is_primary=1 ORDER BY created_at LIMIT 1"
+      )
+        .bind(tenantId)
+        .first<{ phone: string }>();
+      if (!owner) return jPublic({ error: "Tenant not found" }, 404);
+      return jPublic({
+        ok: true,
+        tenantId,
+        ownerConnected: !owner.phone.startsWith("pending:")
+      });
     }
 
     if (request.method === "POST" && path === "/public/free-trial") {
@@ -623,21 +722,74 @@ export default {
       const telegramBotToken = txt(body.telegramBotToken, 200);
       const ownerEmail = body.ownerEmail ? txt(body.ownerEmail, 200) : null;
 
-      if (!name || !ownerName || !ownerChatId || !telegramBotToken) {
+      if (!name || !ownerName || !telegramBotToken) {
         return jPublic({ error: "Missing required fields" }, 400);
       }
 
-      const slug = slugify(txt(body.slug ?? name, 64));
-      const created = await createTenantRecord(env, {
-        name,
-        slug,
-        ownerName,
-        ownerChatId,
-        telegramBotToken,
-        ownerEmail,
-        trialDays: 3650,
-        forceActive: true
-      });
+      let botUsername = "";
+      try {
+        const profile = await getBotProfile(telegramBotToken);
+        botUsername = String(profile.username ?? "");
+      } catch {
+        return jPublic({ error: "Invalid Telegram Bot Token" }, 400);
+      }
+      if (!botUsername) {
+        return jPublic({ error: "Bot username not found on Telegram" }, 400);
+      }
+
+      const slugBase = txt(body.slug ?? name, 64) || name;
+      let created:
+        | {
+            tenantId: string;
+            tenantApiKey: string;
+            trialEndsAt: string;
+            webhookSecret: string;
+            ownerConnected: boolean;
+          }
+        | null = null;
+      let lastCreateError: unknown = null;
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        const slug = slugify(slugBase);
+        try {
+          created = await createTenantRecord(env, {
+            name,
+            slug,
+            ownerName,
+            ownerChatId: ownerChatId || undefined,
+            telegramBotToken,
+            ownerEmail,
+            trialDays: 3650,
+            forceActive: true
+          });
+          break;
+        } catch (error) {
+          if (!isSlugConflict(error)) throw error;
+          lastCreateError = error;
+        }
+      }
+      if (!created) {
+        return jPublic(
+          {
+            error: "Could not create workspace right now",
+            detail: lastCreateError instanceof Error ? lastCreateError.message : "Slug collision retry limit reached"
+          },
+          409
+        );
+      }
+
+      const webhookUrl = `${url.origin}/webhooks/telegram/${created.tenantId}`;
+      try {
+        await setTelegramWebhook(telegramBotToken, webhookUrl, created.webhookSecret);
+      } catch (error) {
+        await env.DB.prepare("DELETE FROM tenants WHERE id=?").bind(created.tenantId).run();
+        return jPublic(
+          {
+            error: "Could not configure Telegram webhook",
+            detail: error instanceof Error ? error.message : "Unknown Telegram error"
+          },
+          502
+        );
+      }
 
       return jPublic(
         {
@@ -647,9 +799,14 @@ export default {
           tenantApiKey: created.tenantApiKey,
           trialEndsAt: created.trialEndsAt,
           webhookSecret: created.webhookSecret,
-          webhookUrl: `${url.origin}/webhooks/telegram/${created.tenantId}`,
-          setWebhookApi: `https://api.telegram.org/bot${telegramBotToken}/setWebhook`,
-          webhookSecretHint: "Use webhookSecret from this response while setting Telegram webhook."
+          webhookUrl,
+          webhookConfigured: true,
+          botUsername,
+          ownerConnected: created.ownerConnected,
+          ownerConnectUrl: created.ownerConnected ? null : ownerConnectLink(botUsername, created.tenantId),
+          nextStep: created.ownerConnected
+            ? "Workspace is fully ready. Send 'Hi' to your bot to test lead capture."
+            : "Open ownerConnectUrl and tap Start once. Then your owner alerts will be enabled."
         },
         201
       );
@@ -703,6 +860,29 @@ export default {
           .bind(msg.eventId)
           .first<{ ok: number }>();
         if (done) continue;
+
+        const ownerConnectTenantId = parseOwnerConnectTenantId(msg.text);
+        if (ownerConnectTenantId && ownerConnectTenantId === tenantId) {
+          const connected = await connectOwnerIfPending(env, tenantId, txt(msg.chatId, 64));
+          const tenantConfigForOwner = await env.DB.prepare("SELECT metadata FROM tenant_configs WHERE tenant_id=?")
+            .bind(tenantId)
+            .first<{ metadata: string }>();
+          const ownerMeta = JSON.parse(tenantConfigForOwner?.metadata || "{}") as Record<string, unknown>;
+          const ownerBotToken = String(ownerMeta.telegramBotToken ?? "");
+          if (ownerBotToken) {
+            await sendTelegram(
+              ownerBotToken,
+              txt(msg.chatId, 64),
+              connected
+                ? "Owner connected successfully. BharatClaw is now live for your leads."
+                : "Owner is already connected. Send 'Hi' to test your flow."
+            ).catch(() => {});
+          }
+          await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,'TELEGRAM',?)")
+            .bind(msg.eventId, now())
+            .run();
+          continue;
+        }
 
         if (!(await isAutomationAllowed(env, tenantId))) {
           await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,'TELEGRAM',?)")
