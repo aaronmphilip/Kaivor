@@ -14,6 +14,7 @@ interface Env {
   MASTER_API_KEY: string;
   TELEGRAM_WEBHOOK_SECRET: string;
   FOLLOWUP_MAX_RETRIES?: string;
+  LANDING_CTA_URL?: string;
 }
 
 type Ctx = { waitUntil(p: Promise<unknown>): void };
@@ -44,6 +45,363 @@ async function sendTelegram(botToken: string, chatId: string, text: string) {
   const payload = (await response.json()) as { ok: boolean; result?: { message_id?: number }; description?: string };
   if (!response.ok || !payload.ok) throw new Error(payload.description ?? "Telegram send failed");
   return String(payload.result?.message_id ?? "unknown");
+}
+
+function html(body: string, status = 200) {
+  return new Response(body, {
+    status,
+    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=300" }
+  });
+}
+
+function renderLandingPage(ctaUrl: string) {
+  const safeUrl = /^https?:\/\//i.test(ctaUrl) ? ctaUrl : "https://t.me";
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BharatClaw | Never miss a lead again</title>
+  <meta name="description" content="BharatClaw helps Indian businesses capture Telegram leads, follow up automatically, and close faster." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #0f1a2e;
+      --muted: #5a6781;
+      --line: #d8deea;
+      --paper: #f6f8fc;
+      --sun: #f7b341;
+      --ocean: #1f5eff;
+      --mint: #00b894;
+      --card: #ffffff;
+      --shadow: 0 20px 50px rgba(15, 26, 46, 0.12);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: "Manrope", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(45rem 24rem at 10% -10%, rgba(31, 94, 255, 0.18), transparent 60%),
+        radial-gradient(42rem 20rem at 92% 8%, rgba(247, 179, 65, 0.18), transparent 60%),
+        linear-gradient(180deg, #fbfcff 0%, #f1f5ff 100%);
+      min-height: 100vh;
+    }
+    .noise::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.18;
+      background-image: radial-gradient(rgba(12, 26, 62, 0.04) 1px, transparent 1px);
+      background-size: 4px 4px;
+      z-index: 1;
+    }
+    .container {
+      position: relative;
+      z-index: 2;
+      width: min(1120px, 92vw);
+      margin: 0 auto;
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 26px 0 14px;
+    }
+    .brand {
+      font-family: "Sora", sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: #17346e;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.86rem;
+      color: var(--muted);
+      backdrop-filter: blur(6px);
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 28px;
+      padding: 22px 0 46px;
+      align-items: stretch;
+    }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 30px;
+      animation: rise 550ms ease both;
+    }
+    h1 {
+      font-family: "Sora", sans-serif;
+      font-size: clamp(1.9rem, 4vw, 3rem);
+      line-height: 1.07;
+      margin: 0 0 14px;
+      letter-spacing: -0.02em;
+      color: #0f2659;
+    }
+    .subtitle {
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: 1.03rem;
+      max-width: 52ch;
+    }
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .btn {
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-primary {
+      background: linear-gradient(145deg, var(--ocean), #255af2);
+      color: #fff;
+      box-shadow: 0 12px 26px rgba(31, 94, 255, 0.32);
+    }
+    .btn-secondary {
+      background: #fff;
+      border-color: var(--line);
+      color: #253453;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 11px;
+      background: #fff;
+    }
+    .stat b {
+      display: block;
+      font-family: "Sora", sans-serif;
+      font-size: 1rem;
+      color: #163469;
+      margin-bottom: 2px;
+    }
+    .stat span {
+      color: var(--muted);
+      font-size: 0.83rem;
+    }
+    .chat-card {
+      background: linear-gradient(180deg, #ffffff, #f8faff);
+    }
+    .chat {
+      display: grid;
+      gap: 10px;
+    }
+    .bubble {
+      max-width: 92%;
+      padding: 11px 13px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      line-height: 1.35;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+    .bot {
+      border-left: 3px solid var(--ocean);
+      justify-self: start;
+    }
+    .user {
+      background: #e9fff8;
+      border-color: #bdecdc;
+      justify-self: end;
+      border-left: 3px solid var(--mint);
+    }
+    .section {
+      margin: 18px 0 34px;
+    }
+    .section h2 {
+      font-family: "Sora", sans-serif;
+      font-size: clamp(1.4rem, 2.5vw, 2rem);
+      margin: 0 0 14px;
+      color: #122d61;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      animation: rise 620ms ease both;
+    }
+    .card h3 {
+      margin: 0 0 6px;
+      font-family: "Sora", sans-serif;
+      font-size: 1rem;
+      color: #15336d;
+    }
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+    .pricing {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+    .pricing .card {
+      display: grid;
+      gap: 12px;
+      align-items: center;
+      grid-template-columns: 1fr auto;
+      background: linear-gradient(160deg, #fffef7 0%, #ffffff 52%);
+    }
+    .price {
+      font-family: "Sora", sans-serif;
+      font-size: 2rem;
+      color: #1a3264;
+      letter-spacing: -0.03em;
+    }
+    .price small {
+      font-family: "Manrope", sans-serif;
+      font-size: 0.88rem;
+      color: var(--muted);
+      font-weight: 600;
+      margin-left: 4px;
+    }
+    footer {
+      padding: 22px 0 30px;
+      color: #596683;
+      font-size: 0.86rem;
+      text-align: center;
+    }
+    @keyframes rise {
+      from {
+        transform: translateY(10px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    @media (max-width: 960px) {
+      .hero { grid-template-columns: 1fr; }
+      .grid-3 { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr; }
+      .pricing .card { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="noise">
+  <div class="container">
+    <nav class="nav">
+      <div class="brand">BharatClaw</div>
+      <div class="pill">Telegram-first lead automation for India</div>
+    </nav>
+
+    <section class="hero">
+      <div class="panel">
+        <h1>Never miss a lead again.</h1>
+        <p class="subtitle">
+          BharatClaw replies instantly, captures lead details, follows up automatically, and alerts the owner so your business closes faster.
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="${safeUrl}" target="_blank" rel="noreferrer">Start Free Trial</a>
+          <a class="btn btn-secondary" href="#how">See how it works</a>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <b>Fast Setup</b>
+            <span>Live in under 15 minutes</span>
+          </div>
+          <div class="stat">
+            <b>24/7 Response</b>
+            <span>Every lead gets immediate reply</span>
+          </div>
+          <div class="stat">
+            <b>Built for India</b>
+            <span>English + Hindi capture flow</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel chat-card">
+        <div class="chat">
+          <div class="bubble bot">Hey, thanks for reaching out. Choose your language: 1) English 2) Hindi</div>
+          <div class="bubble user">English</div>
+          <div class="bubble bot">Great. What should I call you?</div>
+          <div class="bubble user">Aman</div>
+          <div class="bubble bot">Perfect Aman. What do you need help with today?</div>
+          <div class="bubble user">Need AC repair in Sector 45 today</div>
+          <div class="bubble bot">Got it. Details saved. Owner will contact you shortly.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="how">
+      <h2>How BharatClaw Works</h2>
+      <div class="grid-3">
+        <article class="card">
+          <h3>1. Instant Response</h3>
+          <p>Your bot replies in seconds and starts a guided lead flow.</p>
+        </article>
+        <article class="card">
+          <h3>2. Smart Capture</h3>
+          <p>Captures language, name, and requirement with interruption-safe state handling.</p>
+        </article>
+        <article class="card">
+          <h3>3. Follow Up + Alert</h3>
+          <p>Automatic nudges and owner alerts ensure no lead is left behind.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section pricing">
+      <div class="card">
+        <div>
+          <h3>Simple Pricing</h3>
+          <p>7-day trial. No dashboard complexity. Built to ship fast and sell fast.</p>
+        </div>
+        <div class="price">₹1499<small>/month</small></div>
+      </div>
+    </section>
+
+    <footer>
+      BharatClaw. Premium Telegram lead capture for Indian businesses.
+    </footer>
+  </div>
+</body>
+</html>`;
 }
 
 async function isAutomationAllowed(env: Env, tenantId: string) {
@@ -148,6 +506,9 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, "") || "/";
 
+    if (request.method === "GET" && path === "/") {
+      return html(renderLandingPage(env.LANDING_CTA_URL ?? "https://t.me"));
+    }
     if (request.method === "GET" && path === "/health") return j({ ok: true, service: "bharatclaw-cf" });
 
     if (request.method === "POST" && path === "/admin/tenants") {

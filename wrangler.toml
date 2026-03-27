@@ -8,8 +8,9 @@ crons = ["*/1 * * * *"]
 
 [vars]
 FOLLOWUP_MAX_RETRIES = "3"
+LANDING_CTA_URL = "https://t.me"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "bharatclaw"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "cdb2cb57-89d0-4551-a282-c5d10fe2c6e7"

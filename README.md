@@ -23,6 +23,7 @@ Core promise: **Never miss a lead again.**
 
 ## Endpoints
 
+- `GET /` (premium landing page)
 - `GET /health`
 - `POST /webhooks/telegram/:tenantId`
 - `POST /admin/tenants`
@@ -65,6 +66,8 @@ npx wrangler d1 execute bharatclaw --remote --command "ALTER TABLE leads ADD COL
 npx wrangler secret put MASTER_API_KEY
 npx wrangler secret put TELEGRAM_WEBHOOK_SECRET
 ```
+Optional var in `wrangler.toml`:
+- `LANDING_CTA_URL` (your Telegram onboarding link)
 Optional for billing:
 ```bash
 npx wrangler secret put POLAR_WEBHOOK_SECRET
