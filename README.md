@@ -11,6 +11,7 @@ Core promise: **Never miss a lead again.**
 
 ## What is implemented
 
+- Vercel-ready premium landing pages (`/` and `/get-started`)
 - Telegram webhook ingestion (`POST /webhooks/telegram/:tenantId`)
 - Premium auto-reply flow: greet -> language selection -> name -> requirement
 - Lead capture and storage
@@ -19,11 +20,12 @@ Core promise: **Never miss a lead again.**
 - Manual takeover (`#takeover <chat_id>`)
 - Interruption handling (`/start` restart, language switch mid-flow, low-signal re-prompts)
 - Config APIs and tenant API keys
-- Billing gate logic (trial/subscription)
+- Free mode + public self-serve trial signup (`POST /public/free-trial`)
 
 ## Endpoints
 
 - `GET /` (premium landing page)
+- `POST /public/free-trial` (public free onboarding, no master key)
 - `GET /health`
 - `POST /webhooks/telegram/:tenantId`
 - `POST /admin/tenants`
@@ -37,6 +39,12 @@ Core promise: **Never miss a lead again.**
 - Wrangler config: `wrangler.toml`
 - D1 schema: `sql/d1_init.sql`
 - Local dev secrets template: `.dev.vars.example`
+
+## Files for Vercel landing site
+
+- Static landing pages: `apps/web/index.html`, `apps/web/get-started.html`
+- Static assets: `apps/web/styles.css`, `apps/web/get-started.js`
+- Vercel routing config: `vercel.json`
 
 ## Step-by-step setup (free MVP path)
 
@@ -67,7 +75,9 @@ npx wrangler secret put MASTER_API_KEY
 npx wrangler secret put TELEGRAM_WEBHOOK_SECRET
 ```
 Optional var in `wrangler.toml`:
-- `LANDING_CTA_URL` (your Telegram onboarding link)
+- `FREE_MODE` (`true` keeps automation always on)
+- `PUBLIC_SIGNUP_ENABLED` (`true` allows public onboarding endpoint)
+- `LANDING_CTA_URL` (where Start Free Trial should go, currently Vercel `/get-started`)
 Optional for billing:
 ```bash
 npx wrangler secret put POLAR_WEBHOOK_SECRET
@@ -134,7 +144,16 @@ curl -X POST "https://<WORKER_DOMAIN>/internal/takeover" \
 npm run dev:cf
 ```
 
+## Deploy Vercel site
+
+1. Connect this GitHub repo to Vercel project.
+2. Keep root directory as repo root.
+3. Deploy with `vercel.json` routing (already included).
+4. Your public pages:
+- `/`
+- `/get-started`
+
 ## Notes
 
 - Existing Node API/worker implementation is still in repo (`apps/api`, `apps/worker`) if you need non-Cloudflare hosting.
-- For fast free MVP, use the Cloudflare path above.
+- For fast free MVP: Cloudflare worker handles bot backend, Vercel handles marketing + onboarding pages.

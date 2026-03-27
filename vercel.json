@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "apps/web/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "^/$",
+      "dest": "/apps/web/index.html"
+    },
+    {
+      "src": "^/get-started$",
+      "dest": "/apps/web/get-started.html"
+    },
+    {
+      "src": "^/(styles\\.css|get-started\\.js)$",
+      "dest": "/apps/web/$1"
+    },
+    {
+      "src": "^/(.*)$",
+      "dest": "/apps/web/$1"
+    }
+  ]
+}

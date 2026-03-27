@@ -8,7 +8,9 @@ crons = ["*/1 * * * *"]
 
 [vars]
 FOLLOWUP_MAX_RETRIES = "3"
-LANDING_CTA_URL = "https://t.me"
+FREE_MODE = "true"
+PUBLIC_SIGNUP_ENABLED = "true"
+LANDING_CTA_URL = "https://bharatclawapp.vercel.app/get-started"
 
 [[d1_databases]]
 binding = "DB"

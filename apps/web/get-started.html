@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BharatClaw | Start Free</title>
+  <meta
+    name="description"
+    content="Start BharatClaw free. Submit your Telegram bot details and get your webhook URL instantly."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <nav class="nav">
+      <div class="brand">BharatClaw</div>
+      <a class="btn btn-secondary" href="/">Back to Home</a>
+    </nav>
+
+    <section class="hero">
+      <article class="panel">
+        <h1>Start Your Free Trial</h1>
+        <p class="lead">
+          No payment required. Fill this once, then set your Telegram webhook and your bot is live.
+        </p>
+        <form id="trial-form" class="form-wrap">
+          <label>
+            Business Name
+            <input required name="businessName" placeholder="Aman Repair Services" />
+          </label>
+          <label>
+            Owner Name
+            <input required name="ownerName" placeholder="Aman" />
+          </label>
+          <label>
+            Owner Telegram Chat ID
+            <input required name="ownerChatId" placeholder="123456789" />
+          </label>
+          <label>
+            Telegram Bot Token
+            <input required name="telegramBotToken" placeholder="123456:ABC..." />
+          </label>
+          <label>
+            Owner Email (Optional)
+            <input name="ownerEmail" type="email" placeholder="you@business.com" />
+          </label>
+          <button class="btn btn-primary" type="submit">Create Free Workspace</button>
+          <p class="hint">
+            Need chat ID? Send any message to your bot and open:
+            <code>https://api.telegram.org/bot&lt;BOT_TOKEN&gt;/getUpdates</code>
+          </p>
+          <p id="error" class="error"></p>
+        </form>
+      </article>
+
+      <article class="panel">
+        <h2>What happens next</h2>
+        <div class="cards">
+          <article class="card">
+            <h3>1. Workspace Created</h3>
+            <p>You get a tenant ID, API key, and unique webhook secret.</p>
+          </article>
+          <article class="card">
+            <h3>2. Set Telegram Webhook</h3>
+            <p>Run one command to point your bot to BharatClaw.</p>
+          </article>
+          <article class="card">
+            <h3>3. Start Receiving Leads</h3>
+            <p>Send “Hi” to your bot and verify capture flow end to end.</p>
+          </article>
+        </div>
+        <div id="result" class="result"></div>
+      </article>
+    </section>
+
+    <p class="foot">Free beta. No card required. You can start right now.</p>
+  </div>
+
+  <script src="/get-started.js"></script>
+</body>
+</html>

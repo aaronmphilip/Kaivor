@@ -15,12 +15,15 @@ interface Env {
   TELEGRAM_WEBHOOK_SECRET: string;
   FOLLOWUP_MAX_RETRIES?: string;
   LANDING_CTA_URL?: string;
+  FREE_MODE?: string;
+  PUBLIC_SIGNUP_ENABLED?: string;
 }
 
 type Ctx = { waitUntil(p: Promise<unknown>): void };
 
-const j = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+const j = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: jsonHeaders });
+const jPublic = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { ...jsonHeaders, ...publicCorsHeaders } });
 
 const now = () => new Date().toISOString();
 const plusMins = (m: number) => new Date(Date.now() + m * 60_000).toISOString();
@@ -30,11 +33,35 @@ const DEFAULT_FOLLOWUP_30M_EN = "Hey, just checking in. Are you still looking fo
 const DEFAULT_FOLLOWUP_30M_HI = "Hey, quick check. Kya aapko abhi bhi help chahiye? Reply kar dijiye.";
 const FOLLOWUP_24H_EN = "Hey, quick follow-up. Are you still looking for this? Reply and we will help.";
 const FOLLOWUP_24H_HI = "Namaste, ek quick follow-up. Kya aapko abhi bhi help chahiye? Reply kar dijiye.";
+const jsonHeaders = { "content-type": "application/json" };
+const publicCorsHeaders = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "POST,OPTIONS",
+  "access-control-allow-headers": "content-type"
+};
 
 const sha256 = async (raw: string) => {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
   return [...new Uint8Array(digest)].map((x) => x.toString(16).padStart(2, "0")).join("");
 };
+
+function isTrue(input: string | undefined, fallback = false): boolean {
+  if (input === undefined) return fallback;
+  return input.trim().toLowerCase() === "true";
+}
+
+function slugify(input: string): string {
+  const base = input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 42);
+  const suffix = Math.floor(1000 + Math.random() * 9000);
+  return `${base || "business"}-${suffix}`;
+}
 
 async function sendTelegram(botToken: string, chatId: string, text: string) {
   const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -389,10 +416,10 @@ function renderLandingPage(ctaUrl: string) {
     <section class="section pricing">
       <div class="card">
         <div>
-          <h3>Simple Pricing</h3>
-          <p>7-day trial. No dashboard complexity. Built to ship fast and sell fast.</p>
+          <h3>Free Beta Access</h3>
+          <p>No credit card. Start free and onboard your Telegram bot instantly.</p>
         </div>
-        <div class="price">₹1499<small>/month</small></div>
+        <div class="price">FREE<small>for now</small></div>
       </div>
     </section>
 
@@ -414,9 +441,77 @@ async function isAutomationAllowed(env: Env, tenantId: string) {
     .bind(tenantId)
     .first<{ trial_ends_at: string; auto_reply_enabled: number; status: string | null; subscription_trial_ends_at: string | null }>();
   if (!row || !row.auto_reply_enabled) return false;
+  if (isTrue(env.FREE_MODE, true)) return true;
   if ((row.status ?? "TRIALING") === "ACTIVE") return true;
   const trial = new Date(row.subscription_trial_ends_at ?? row.trial_ends_at).getTime();
   return trial >= Date.now();
+}
+
+async function createTenantRecord(
+  env: Env,
+  input: {
+    name: string;
+    slug: string;
+    ownerName: string;
+    ownerChatId: string;
+    telegramBotToken: string;
+    ownerEmail?: string | null;
+    trialDays?: number;
+    forceActive?: boolean;
+  }
+) {
+  const tenantId = crypto.randomUUID();
+  const tenantApiKey = `tnt_${crypto.randomUUID().replace(/-/g, "")}`;
+  const salt = crypto.randomUUID().replace(/-/g, "");
+  const tenantApiKeyHash = `${salt}:${await sha256(`${salt}:${tenantApiKey}`)}`;
+  const webhookSecret = crypto.randomUUID().replace(/-/g, "");
+  const trialDays = Math.max(1, Math.min(3650, Number(input.trialDays ?? 3650)));
+  const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60_000).toISOString();
+
+  await env.DB.prepare(
+    `INSERT INTO tenants (id,name,slug,whatsapp_phone_number_id,tenant_api_key_hash,trial_ends_at,created_at)
+     VALUES (?,?,?,?,?,?,?)`
+  )
+    .bind(tenantId, input.name, input.slug, `telegram:${input.slug}`, tenantApiKeyHash, trialEndsAt, now())
+    .run();
+  await env.DB.prepare(
+    `INSERT INTO owner_contacts (id,tenant_id,name,phone,email,is_primary,created_at) VALUES (?,?,?,?,?,1,?)`
+  )
+    .bind(crypto.randomUUID(), tenantId, input.ownerName, input.ownerChatId, input.ownerEmail ?? null, now())
+    .run();
+  await env.DB.prepare(
+    `INSERT INTO tenant_configs (tenant_id,auto_reply_enabled,greeting_template,followup_30m_template,followup_24h_template_name,takeover_cooldown_minutes,metadata,updated_at)
+     VALUES (?,1,?,?,?,?,?,?)`
+  )
+    .bind(
+      tenantId,
+      `Hey thanks for reaching out to ${input.name}. I will help you with this. Just a couple quick details first.`,
+      DEFAULT_FOLLOWUP_30M_EN,
+      "lead_followup_24h",
+      180,
+      JSON.stringify({
+        telegramBotToken: input.telegramBotToken,
+        businessName: input.name,
+        webhookSecret
+      }),
+      now()
+    )
+    .run();
+  await env.DB.prepare(
+    `INSERT INTO subscriptions (id,tenant_id,provider,status,trial_ends_at,created_at,updated_at)
+     VALUES (?,?, 'POLAR',?,?,?,?)`
+  )
+    .bind(
+      crypto.randomUUID(),
+      tenantId,
+      input.forceActive ? "ACTIVE" : "TRIALING",
+      trialEndsAt,
+      now(),
+      now()
+    )
+    .run();
+
+  return { tenantId, tenantApiKey, trialEndsAt, webhookSecret };
 }
 
 async function processFollowups(env: Env) {
@@ -511,6 +606,55 @@ export default {
     }
     if (request.method === "GET" && path === "/health") return j({ ok: true, service: "bharatclaw-cf" });
 
+    if (request.method === "OPTIONS" && path === "/public/free-trial") {
+      return new Response(null, { status: 204, headers: publicCorsHeaders });
+    }
+
+    if (request.method === "POST" && path === "/public/free-trial") {
+      if (!isTrue(env.PUBLIC_SIGNUP_ENABLED, true)) {
+        return jPublic({ error: "Public signup is disabled" }, 403);
+      }
+      const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+      if (!body) return jPublic({ error: "Invalid JSON" }, 400);
+
+      const name = txt(body.businessName ?? body.name, 120);
+      const ownerName = txt(body.ownerName, 120);
+      const ownerChatId = txt(body.ownerChatId, 64);
+      const telegramBotToken = txt(body.telegramBotToken, 200);
+      const ownerEmail = body.ownerEmail ? txt(body.ownerEmail, 200) : null;
+
+      if (!name || !ownerName || !ownerChatId || !telegramBotToken) {
+        return jPublic({ error: "Missing required fields" }, 400);
+      }
+
+      const slug = slugify(txt(body.slug ?? name, 64));
+      const created = await createTenantRecord(env, {
+        name,
+        slug,
+        ownerName,
+        ownerChatId,
+        telegramBotToken,
+        ownerEmail,
+        trialDays: 3650,
+        forceActive: true
+      });
+
+      return jPublic(
+        {
+          ok: true,
+          free: true,
+          tenantId: created.tenantId,
+          tenantApiKey: created.tenantApiKey,
+          trialEndsAt: created.trialEndsAt,
+          webhookSecret: created.webhookSecret,
+          webhookUrl: `${url.origin}/webhooks/telegram/${created.tenantId}`,
+          setWebhookApi: `https://api.telegram.org/bot${telegramBotToken}/setWebhook`,
+          webhookSecretHint: "Use webhookSecret from this response while setting Telegram webhook."
+        },
+        201
+      );
+    }
+
     if (request.method === "POST" && path === "/admin/tenants") {
       if (request.headers.get("x-master-api-key") !== env.MASTER_API_KEY) return j({ error: "Unauthorized" }, 401);
       const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
@@ -523,58 +667,33 @@ export default {
       const telegramBotToken = txt(body.telegramBotToken, 200);
       const ownerEmail = body.ownerEmail ? txt(body.ownerEmail, 200) : null;
       if (!name || !slug || !ownerName || !ownerChatId || !telegramBotToken) return j({ error: "Missing fields" }, 400);
-
-      const tenantId = crypto.randomUUID();
-      const tenantApiKey = `tnt_${crypto.randomUUID().replace(/-/g, "")}`;
-      const salt = crypto.randomUUID().replace(/-/g, "");
-      const tenantApiKeyHash = `${salt}:${await sha256(`${salt}:${tenantApiKey}`)}`;
-      const trialDays = Math.max(1, Math.min(30, Number(body.trialDays ?? 7)));
-      const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60_000).toISOString();
-
-      await env.DB.prepare(
-        `INSERT INTO tenants (id,name,slug,whatsapp_phone_number_id,tenant_api_key_hash,trial_ends_at,created_at)
-         VALUES (?,?,?,?,?,?,?)`
-      )
-        .bind(tenantId, name, slug, `telegram:${slug}`, tenantApiKeyHash, trialEndsAt, now())
-        .run();
-      await env.DB.prepare(
-        `INSERT INTO owner_contacts (id,tenant_id,name,phone,email,is_primary,created_at) VALUES (?,?,?,?,?,1,?)`
-      )
-        .bind(crypto.randomUUID(), tenantId, ownerName, ownerChatId, ownerEmail, now())
-        .run();
-      await env.DB.prepare(
-        `INSERT INTO tenant_configs (tenant_id,auto_reply_enabled,greeting_template,followup_30m_template,followup_24h_template_name,takeover_cooldown_minutes,metadata,updated_at)
-         VALUES (?,1,?,?,?,?,?,?)`
-      )
-        .bind(
-          tenantId,
-          `Hey thanks for reaching out to ${name}. I will help you with this. Just a couple quick details first.`,
-          DEFAULT_FOLLOWUP_30M_EN,
-          "lead_followup_24h",
-          180,
-          JSON.stringify({ telegramBotToken, businessName: name }),
-          now()
-        )
-        .run();
-      await env.DB.prepare(
-        `INSERT INTO subscriptions (id,tenant_id,provider,status,trial_ends_at,created_at,updated_at)
-         VALUES (?,?, 'POLAR','TRIALING',?,?,?)`
-      )
-        .bind(crypto.randomUUID(), tenantId, trialEndsAt, now(), now())
-        .run();
-
-      return j({ tenantId, tenantApiKey, trialEndsAt }, 201);
+      const created = await createTenantRecord(env, {
+        name,
+        slug,
+        ownerName,
+        ownerChatId,
+        telegramBotToken,
+        ownerEmail,
+        trialDays: Number(body.trialDays ?? 7),
+        forceActive: isTrue(env.FREE_MODE, true)
+      });
+      return j(created, 201);
     }
 
     if (request.method === "POST" && path.startsWith("/webhooks/telegram/")) {
       const tenantId = path.split("/").pop() || "";
       if (!tenantId) return j({ error: "Missing tenant id" }, 400);
-      if (!verifyTelegramSecret(request.headers.get("x-telegram-bot-api-secret-token") ?? undefined, env.TELEGRAM_WEBHOOK_SECRET)) {
-        return j({ error: "Invalid Telegram secret" }, 401);
-      }
 
       const tenant = await env.DB.prepare("SELECT * FROM tenants WHERE id=?").bind(tenantId).first();
       if (!tenant) return j({ error: "Tenant not found" }, 404);
+      const tenantConfig = await env.DB.prepare("SELECT metadata FROM tenant_configs WHERE tenant_id=?")
+        .bind(tenantId)
+        .first<{ metadata: string }>();
+      const metadata = JSON.parse(tenantConfig?.metadata || "{}") as Record<string, unknown>;
+      const expectedSecret = String(metadata.webhookSecret ?? env.TELEGRAM_WEBHOOK_SECRET ?? "");
+      if (!verifyTelegramSecret(request.headers.get("x-telegram-bot-api-secret-token") ?? undefined, expectedSecret)) {
+        return j({ error: "Invalid Telegram secret" }, 401);
+      }
       const payload = await request.json().catch(() => null);
       if (!payload) return j({ error: "Invalid JSON" }, 400);
       const inbound = parseTelegramWebhook(payload);
@@ -778,6 +897,7 @@ export default {
       const metadata = JSON.parse(existing.metadata || "{}") as Record<string, unknown>;
       if (body.telegramBotToken) metadata.telegramBotToken = txt(body.telegramBotToken, 200);
       if (body.businessName) metadata.businessName = txt(body.businessName, 120);
+      if (body.webhookSecret) metadata.webhookSecret = txt(body.webhookSecret, 120);
       await env.DB.prepare(
         "UPDATE tenant_configs SET auto_reply_enabled=?, greeting_template=?, followup_30m_template=?, followup_24h_template_name=?, takeover_cooldown_minutes=?, metadata=?, updated_at=? WHERE tenant_id=?"
       )
