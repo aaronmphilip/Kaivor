@@ -1,5 +1,8 @@
 MASTER_API_KEY=replace-with-strong-master-key
 TELEGRAM_WEBHOOK_SECRET=replace-with-random-secret-token
+OWNER_CONNECT_BOT_TOKEN=replace-with-owner-connect-bot-token
+OWNER_CONNECT_BOT_SECRET=replace-with-owner-connect-secret
+OWNER_CONNECT_BOT_USERNAME=bharatclawbot
 FOLLOWUP_MAX_RETRIES=3
 FREE_MODE=true
 PUBLIC_SIGNUP_ENABLED=true

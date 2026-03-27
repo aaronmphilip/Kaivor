@@ -11,6 +11,7 @@ FOLLOWUP_MAX_RETRIES = "3"
 FREE_MODE = "true"
 PUBLIC_SIGNUP_ENABLED = "true"
 LANDING_CTA_URL = "https://bharatclawapp.vercel.app/get-started"
+OWNER_CONNECT_BOT_USERNAME = "bharatclawbot"
 
 [[d1_databases]]
 binding = "DB"

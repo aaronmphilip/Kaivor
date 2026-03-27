@@ -13,6 +13,9 @@ interface Env {
   DB: { prepare(query: string): D1Prepared };
   MASTER_API_KEY: string;
   TELEGRAM_WEBHOOK_SECRET: string;
+  OWNER_CONNECT_BOT_TOKEN?: string;
+  OWNER_CONNECT_BOT_SECRET?: string;
+  OWNER_CONNECT_BOT_USERNAME?: string;
   FOLLOWUP_MAX_RETRIES?: string;
   LANDING_CTA_URL?: string;
   FREE_MODE?: string;
@@ -69,6 +72,127 @@ function isSlugConflict(error: unknown): boolean {
   return message.includes("UNIQUE constraint failed: tenants.slug");
 }
 
+function parseJsonObject(raw: string | null | undefined): Record<string, unknown> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    return parsed as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+function ownerConnectBotUsername(env: Env): string {
+  return txt(env.OWNER_CONNECT_BOT_USERNAME ?? "bharatclawbot", 64).replace(/^@/, "") || "bharatclawbot";
+}
+
+function ownerConnectBotUrl(env: Env): string {
+  return `https://t.me/${ownerConnectBotUsername(env)}`;
+}
+
+function ownerConnectStartUrl(env: Env, code: string): string {
+  return `${ownerConnectBotUrl(env)}?start=pair_${encodeURIComponent(code)}`;
+}
+
+function randomCode(length: number): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let output = "";
+  for (let i = 0; i < length; i += 1) {
+    output += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return output;
+}
+
+function generateOwnerPairCode(): string {
+  return `BC${randomCode(6)}`;
+}
+
+function parseOwnerPairCodeFromText(message: string): string | null {
+  const input = txt(message, 180);
+  if (!input) return null;
+
+  let token = input;
+  const startMatch = /^\/start\s+pair_([a-z0-9-]{4,40})$/i.exec(input);
+  if (startMatch) token = startMatch[1];
+  const pairMatch = /^\/pair\s+([a-z0-9-]{4,40})$/i.exec(token);
+  if (pairMatch) token = pairMatch[1];
+
+  const normalized = token.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!normalized) return null;
+  const finalCode = normalized.startsWith("BC") ? normalized : `BC${normalized}`;
+  if (finalCode.length < 8 || finalCode.length > 12) return null;
+  return finalCode;
+}
+
+async function ownerPairCodeExists(env: Env, pairCode: string): Promise<boolean> {
+  const rows = await env.DB.prepare("SELECT metadata FROM tenant_configs").all<{ metadata: string }>();
+  for (const row of rows.results ?? []) {
+    const metadata = parseJsonObject(row.metadata);
+    const existing = txt(metadata.ownerPairCode, 20).toUpperCase();
+    if (existing === pairCode) return true;
+  }
+  return false;
+}
+
+async function generateUniqueOwnerPairCode(env: Env, attempts = 8): Promise<string> {
+  for (let i = 0; i < attempts; i += 1) {
+    const pairCode = generateOwnerPairCode();
+    if (!(await ownerPairCodeExists(env, pairCode))) return pairCode;
+  }
+  return `BC${randomCode(10)}`;
+}
+
+async function connectOwnerByPairCode(
+  env: Env,
+  pairCode: string,
+  ownerChatId: string,
+  ownerNameHint?: string
+): Promise<"CONNECTED" | "ALREADY_CONNECTED" | "INVALID_CODE"> {
+  const rows = await env.DB.prepare(
+    `SELECT o.id AS owner_id,o.tenant_id,o.phone,o.name,c.metadata
+     FROM owner_contacts o
+     JOIN tenant_configs c ON c.tenant_id=o.tenant_id
+     WHERE o.is_primary=1`
+  ).all<{ owner_id: string; tenant_id: string; phone: string; name: string; metadata: string }>();
+
+  let matched:
+    | { ownerId: string; tenantId: string; phone: string; name: string; metadata: Record<string, unknown> }
+    | null = null;
+  for (const row of rows.results ?? []) {
+    const metadata = parseJsonObject(row.metadata);
+    const codeInRow = txt(metadata.ownerPairCode, 20).toUpperCase();
+    if (codeInRow === pairCode) {
+      matched = {
+        ownerId: row.owner_id,
+        tenantId: row.tenant_id,
+        phone: row.phone,
+        name: row.name,
+        metadata
+      };
+      break;
+    }
+  }
+
+  if (!matched) return "INVALID_CODE";
+  if (!matched.phone.startsWith("pending:")) return "ALREADY_CONNECTED";
+
+  await env.DB.prepare("UPDATE owner_contacts SET phone=?, name=? WHERE id=?")
+    .bind(ownerChatId, txt(ownerNameHint ?? matched.name, 120) || matched.name, matched.ownerId)
+    .run();
+
+  const nextMetadata = {
+    ...matched.metadata,
+    ownerPairedAt: now(),
+    ownerPairStatus: "PAIRED"
+  };
+  await env.DB.prepare("UPDATE tenant_configs SET metadata=?, updated_at=? WHERE tenant_id=?")
+    .bind(JSON.stringify(nextMetadata), now(), matched.tenantId)
+    .run();
+
+  return "CONNECTED";
+}
+
 async function telegramApi<T>(
   botToken: string,
   method: string,
@@ -102,38 +226,6 @@ async function setTelegramWebhook(botToken: string, webhookUrl: string, webhookS
     url: webhookUrl,
     secret_token: webhookSecret
   });
-}
-
-function ownerConnectLink(botUsername: string, tenantId: string): string {
-  return `https://t.me/${botUsername}?start=owner_${tenantId}`;
-}
-
-function parseOwnerConnectTenantId(text: string): string | null {
-  const match = /^\/start\s+owner_([a-z0-9-]{8,80})$/i.exec(txt(text, 120));
-  return match ? match[1] : null;
-}
-
-async function connectOwnerIfPending(
-  env: Env,
-  tenantId: string,
-  ownerChatId: string,
-  ownerNameHint?: string
-): Promise<boolean> {
-  const existing = await env.DB.prepare(
-    "SELECT id,phone,name FROM owner_contacts WHERE tenant_id=? AND is_primary=1 ORDER BY created_at LIMIT 1"
-  )
-    .bind(tenantId)
-    .first<{ id: string; phone: string; name: string }>();
-  if (!existing) {
-    return false;
-  }
-  if (!existing.phone.startsWith("pending:")) {
-    return false;
-  }
-  await env.DB.prepare("UPDATE owner_contacts SET phone=?, name=? WHERE id=?")
-    .bind(ownerChatId, txt(ownerNameHint ?? existing.name, 120) || existing.name, existing.id)
-    .run();
-  return true;
 }
 
 async function sendTelegram(botToken: string, chatId: string, text: string) {
@@ -506,14 +598,26 @@ function renderLandingPage(ctaUrl: string) {
 
 async function isAutomationAllowed(env: Env, tenantId: string) {
   const row = await env.DB.prepare(
-    `SELECT t.trial_ends_at, c.auto_reply_enabled, s.status, s.trial_ends_at AS subscription_trial_ends_at
+    `SELECT
+      t.trial_ends_at,
+      c.auto_reply_enabled,
+      s.status,
+      s.trial_ends_at AS subscription_trial_ends_at,
+      (SELECT phone FROM owner_contacts WHERE tenant_id=t.id AND is_primary=1 ORDER BY created_at LIMIT 1) AS owner_phone
      FROM tenants t JOIN tenant_configs c ON c.tenant_id=t.id
      LEFT JOIN subscriptions s ON s.tenant_id=t.id
      WHERE t.id=?`
   )
     .bind(tenantId)
-    .first<{ trial_ends_at: string; auto_reply_enabled: number; status: string | null; subscription_trial_ends_at: string | null }>();
+    .first<{
+      trial_ends_at: string;
+      auto_reply_enabled: number;
+      status: string | null;
+      subscription_trial_ends_at: string | null;
+      owner_phone: string | null;
+    }>();
   if (!row || !row.auto_reply_enabled) return false;
+  if (!row.owner_phone || row.owner_phone.startsWith("pending:")) return false;
   if (isTrue(env.FREE_MODE, true)) return true;
   if ((row.status ?? "TRIALING") === "ACTIVE") return true;
   const trial = new Date(row.subscription_trial_ends_at ?? row.trial_ends_at).getTime();
@@ -538,6 +642,7 @@ async function createTenantRecord(
   const salt = crypto.randomUUID().replace(/-/g, "");
   const tenantApiKeyHash = `${salt}:${await sha256(`${salt}:${tenantApiKey}`)}`;
   const webhookSecret = crypto.randomUUID().replace(/-/g, "");
+  const ownerPairCode = await generateUniqueOwnerPairCode(env);
   const ownerPhone = txt(input.ownerChatId ?? "", 64) || `pending:${tenantId}`;
   const trialDays = Math.max(1, Math.min(3650, Number(input.trialDays ?? 3650)));
   const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60_000).toISOString();
@@ -566,7 +671,9 @@ async function createTenantRecord(
       JSON.stringify({
         telegramBotToken: input.telegramBotToken,
         businessName: input.name,
-        webhookSecret
+        webhookSecret,
+        ownerPairCode,
+        ownerPairStatus: ownerPhone.startsWith("pending:") ? "PENDING" : "PAIRED"
       }),
       now()
     )
@@ -590,7 +697,8 @@ async function createTenantRecord(
     tenantApiKey,
     trialEndsAt,
     webhookSecret,
-    ownerConnected: !ownerPhone.startsWith("pending:")
+    ownerConnected: !ownerPhone.startsWith("pending:"),
+    ownerPairCode
   };
 }
 
@@ -631,6 +739,18 @@ async function processFollowups(env: Env) {
         .bind(job.tenant_id)
         .first<{ metadata: string; followup_30m_template: string }>();
       if (!lead || !config) throw new Error("Lead or config missing");
+
+      const owner = await env.DB.prepare(
+        "SELECT phone FROM owner_contacts WHERE tenant_id=? AND is_primary=1 ORDER BY created_at LIMIT 1"
+      )
+        .bind(job.tenant_id)
+        .first<{ phone: string }>();
+      if (!owner || owner.phone.startsWith("pending:")) {
+        await env.DB.prepare("UPDATE followup_jobs SET status='PENDING', run_at=?, updated_at=? WHERE id=?")
+          .bind(plusMins(30), now(), job.id)
+          .run();
+        continue;
+      }
 
       if (lead.bot_paused_until && new Date(lead.bot_paused_until).getTime() > Date.now()) {
         await env.DB.prepare("UPDATE followup_jobs SET status='SKIPPED', updated_at=? WHERE id=?").bind(now(), job.id).run();
@@ -745,6 +865,7 @@ export default {
             trialEndsAt: string;
             webhookSecret: string;
             ownerConnected: boolean;
+            ownerPairCode: string;
           }
         | null = null;
       let lastCreateError: unknown = null;
@@ -803,10 +924,13 @@ export default {
           webhookConfigured: true,
           botUsername,
           ownerConnected: created.ownerConnected,
-          ownerConnectUrl: created.ownerConnected ? null : ownerConnectLink(botUsername, created.tenantId),
+          ownerPairCode: created.ownerPairCode,
+          ownerConnectBot: ownerConnectBotUsername(env),
+          ownerConnectBotUrl: ownerConnectBotUrl(env),
+          ownerConnectUrl: created.ownerConnected ? null : ownerConnectStartUrl(env, created.ownerPairCode),
           nextStep: created.ownerConnected
             ? "Workspace is fully ready. Send 'Hi' to your bot to test lead capture."
-            : "Open ownerConnectUrl and tap Start once. Then your owner alerts will be enabled."
+            : "Open @bharatclawbot, send the pairing code, then check owner connection status."
         },
         201
       );
@@ -837,6 +961,46 @@ export default {
       return j(created, 201);
     }
 
+    if (request.method === "POST" && path === "/webhooks/owner-connect") {
+      const expectedSecret = txt(env.OWNER_CONNECT_BOT_SECRET ?? env.TELEGRAM_WEBHOOK_SECRET, 220);
+      if (!verifyTelegramSecret(request.headers.get("x-telegram-bot-api-secret-token") ?? undefined, expectedSecret)) {
+        return j({ error: "Invalid Telegram secret" }, 401);
+      }
+      const payload = await request.json().catch(() => null);
+      if (!payload) return j({ error: "Invalid JSON" }, 400);
+      const inbound = parseTelegramWebhook(payload);
+      const ownerConnectBotToken = txt(env.OWNER_CONNECT_BOT_TOKEN, 220);
+
+      for (const msg of inbound) {
+        const done = await env.DB.prepare("SELECT 1 as ok FROM processed_events WHERE event_id=? AND source='TELEGRAM_OWNER_CONNECT'")
+          .bind(msg.eventId)
+          .first<{ ok: number }>();
+        if (done) continue;
+
+        const pairCode = parseOwnerPairCodeFromText(msg.text);
+        let reply = "Invalid code. Open BharatClaw onboarding and copy the latest pairing code.";
+        if (!pairCode) {
+          reply = "Send your pairing code from BharatClaw onboarding. Example: /pair BCABC123";
+        } else {
+          const connected = await connectOwnerByPairCode(env, pairCode, txt(msg.chatId, 64));
+          if (connected === "CONNECTED") {
+            reply = "Pairing successful. Go back to BharatClaw and click Check Owner Connection.";
+          } else if (connected === "ALREADY_CONNECTED") {
+            reply = "This workspace is already paired.";
+          }
+        }
+
+        if (ownerConnectBotToken) {
+          await sendTelegram(ownerConnectBotToken, txt(msg.chatId, 64), reply).catch(() => {});
+        }
+        await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,'TELEGRAM_OWNER_CONNECT',?)")
+          .bind(msg.eventId, now())
+          .run();
+      }
+
+      return j({ ok: true });
+    }
+
     if (request.method === "POST" && path.startsWith("/webhooks/telegram/")) {
       const tenantId = path.split("/").pop() || "";
       if (!tenantId) return j({ error: "Missing tenant id" }, 400);
@@ -860,29 +1024,6 @@ export default {
           .bind(msg.eventId)
           .first<{ ok: number }>();
         if (done) continue;
-
-        const ownerConnectTenantId = parseOwnerConnectTenantId(msg.text);
-        if (ownerConnectTenantId && ownerConnectTenantId === tenantId) {
-          const connected = await connectOwnerIfPending(env, tenantId, txt(msg.chatId, 64));
-          const tenantConfigForOwner = await env.DB.prepare("SELECT metadata FROM tenant_configs WHERE tenant_id=?")
-            .bind(tenantId)
-            .first<{ metadata: string }>();
-          const ownerMeta = JSON.parse(tenantConfigForOwner?.metadata || "{}") as Record<string, unknown>;
-          const ownerBotToken = String(ownerMeta.telegramBotToken ?? "");
-          if (ownerBotToken) {
-            await sendTelegram(
-              ownerBotToken,
-              txt(msg.chatId, 64),
-              connected
-                ? "Owner connected successfully. BharatClaw is now live for your leads."
-                : "Owner is already connected. Send 'Hi' to test your flow."
-            ).catch(() => {});
-          }
-          await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,'TELEGRAM',?)")
-            .bind(msg.eventId, now())
-            .run();
-          continue;
-        }
 
         if (!(await isAutomationAllowed(env, tenantId))) {
           await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,'TELEGRAM',?)")

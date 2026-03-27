@@ -15,14 +15,20 @@ function renderOwnerConnect(payload) {
       <p style="margin:10px 0 0;"><strong>Owner is already connected.</strong> Send <code>Hi</code> to your bot to test lead capture.</p>
     `;
   }
-  const connectUrl = String(payload.ownerConnectUrl || "");
+  const connectUrl = String(payload.ownerConnectBotUrl || "https://t.me/bharatclawbot");
+  const pairCode = String(payload.ownerPairCode || "");
   const tenantId = String(payload.tenantId || "");
   return `
-    <p style="margin:10px 0 6px;"><strong>Final step:</strong> connect owner alerts.</p>
+    <p style="margin:10px 0 6px;"><strong>Final step:</strong> verify and connect owner.</p>
     <p style="margin:0 0 8px;">
-      <a class="btn btn-primary" href="${esc(connectUrl)}" target="_blank" rel="noreferrer">Open Bot and Press Start</a>
+      <a class="btn btn-primary" href="${esc(connectUrl)}" target="_blank" rel="noreferrer">Open @bharatclawbot</a>
     </p>
-    <p style="margin:0 0 8px;">After pressing Start, click check status:</p>
+    <p style="margin:0 0 4px;">Send this pairing code in the bot:</p>
+    <p style="margin:0 0 8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <code id="owner-pair-code">${esc(pairCode)}</code>
+      <button id="copy-pair-code" class="btn btn-secondary" type="button" data-pair-code="${esc(pairCode)}">Copy Code</button>
+    </p>
+    <p style="margin:0 0 8px;">After sending code, click check status:</p>
     <p style="margin:0;">
       <button id="check-owner-status" class="btn btn-secondary" type="button" data-tenant-id="${esc(tenantId)}">
         Check Owner Connection
@@ -30,6 +36,16 @@ function renderOwnerConnect(payload) {
     </p>
     <p id="owner-status-msg" class="hint" style="margin-top:8px;"></p>
   `;
+}
+
+async function copyPairCode(code) {
+  if (!code) return false;
+  try {
+    await navigator.clipboard.writeText(code);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function renderSuccess(payload) {
@@ -54,7 +70,7 @@ async function checkOwnerStatus(tenantId) {
     }
     statusEl.textContent = data.ownerConnected
       ? "Owner connected. Alerts are active."
-      : "Owner not connected yet. Open the bot link and press Start first.";
+      : "Owner not connected yet. Open @bharatclawbot, send pairing code, then check again.";
   } catch (error) {
     statusEl.textContent = error instanceof Error ? error.message : "Failed to check status";
   }
@@ -108,6 +124,20 @@ async function submitTrial(event) {
         const tenantId = checkBtn.getAttribute("data-tenant-id");
         if (tenantId) {
           checkOwnerStatus(tenantId);
+        }
+      });
+    }
+
+    const copyBtn = document.getElementById("copy-pair-code");
+    if (copyBtn) {
+      copyBtn.addEventListener("click", async () => {
+        const code = copyBtn.getAttribute("data-pair-code") || "";
+        const copied = await copyPairCode(code);
+        const statusEl = document.getElementById("owner-status-msg");
+        if (statusEl) {
+          statusEl.textContent = copied
+            ? "Code copied. Send it in @bharatclawbot."
+            : "Copy failed. Manually copy the code and send it in @bharatclawbot.";
         }
       });
     }

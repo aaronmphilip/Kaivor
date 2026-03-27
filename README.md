@@ -28,6 +28,7 @@ Core promise: **Never miss a lead again.**
 - `POST /public/free-trial` (public free onboarding, no master key)
 - `GET /public/free-trial/:tenantId/status` (owner-connect status check)
 - `GET /health`
+- `POST /webhooks/owner-connect` (pairing code verification for `@bharatclawbot`)
 - `POST /webhooks/telegram/:tenantId`
 - `POST /admin/tenants`
 - `POST /admin/tenants/:tenantId/config`
@@ -74,11 +75,14 @@ npx wrangler d1 execute bharatclaw --remote --command "ALTER TABLE leads ADD COL
 ```bash
 npx wrangler secret put MASTER_API_KEY
 npx wrangler secret put TELEGRAM_WEBHOOK_SECRET
+npx wrangler secret put OWNER_CONNECT_BOT_TOKEN
+npx wrangler secret put OWNER_CONNECT_BOT_SECRET
 ```
 Optional var in `wrangler.toml`:
 - `FREE_MODE` (`true` keeps automation always on)
 - `PUBLIC_SIGNUP_ENABLED` (`true` allows public onboarding endpoint)
 - `LANDING_CTA_URL` (where Start Free Trial should go, currently Vercel `/get-started`)
+- `OWNER_CONNECT_BOT_USERNAME` (default: `bharatclawbot`)
 Optional for billing:
 ```bash
 npx wrangler secret put POLAR_WEBHOOK_SECRET
@@ -91,10 +95,20 @@ npx wrangler secret put POLAR_PRODUCT_ID
 npm run deploy:cf
 ```
 
-6. Publish landing/onboarding page on Vercel
+6. Set owner-connect bot webhook once
+```bash
+curl -X POST "https://api.telegram.org/bot<OWNER_CONNECT_BOT_TOKEN>/setWebhook" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url":"https://<WORKER_DOMAIN>/webhooks/owner-connect",
+    "secret_token":"<OWNER_CONNECT_BOT_SECRET>"
+  }'
+```
+
+7. Publish landing/onboarding page on Vercel
 - Your CTA should point to `https://bharatclawapp.vercel.app/get-started`.
 
-7. Customer onboarding (no-code path)
+8. Customer onboarding (no-code path)
 - Open `/get-started`.
 - Fill: business name, owner name, Telegram bot token, optional owner email.
 - Click **Create Free Workspace**.
@@ -102,14 +116,15 @@ npm run deploy:cf
   - create tenant + API key
   - configure Telegram webhook
   - generate secure webhook secret
-  - return owner connect link
+  - generate owner pairing code
 
-8. Owner connect (one tap)
-- Open the returned Telegram owner link (`https://t.me/<botUsername>?start=owner_<tenantId>`).
-- Press **Start**.
+9. Owner connect (pairing code)
+- Open `https://t.me/bharatclawbot`.
+- Send pairing code shown on onboarding.
 - Owner alerts are now active.
+- Until pairing is complete, tenant bot automation is blocked.
 
-9. Smoke test
+10. Smoke test
 - Send to bot: `Hi` -> `English` (or `Hindi`) -> `Aman` -> `Need AC repair`
 - Verify:
   - bot replies each step
@@ -117,7 +132,7 @@ npm run deploy:cf
   - owner alert sent
   - follow-up jobs created
 
-10. Test takeover
+11. Test takeover
 ```bash
 curl -X POST "https://<WORKER_DOMAIN>/internal/takeover" \
   -H "Content-Type: application/json" \
