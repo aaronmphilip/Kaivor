@@ -34,8 +34,8 @@ const defaultConfig: AppConfig = {
 
 const defaultTenantConfig: Omit<TenantConfig, "tenantId" | "updatedAt"> = {
   autoReplyEnabled: true,
-  greetingTemplate: "Namaste! BharatClaw se bol raha hoon. Aapka naam bata do please?",
-  followup30mTemplate: "Quick follow-up. Kya aapko abhi bhi help chahiye?",
+  greetingTemplate: "Hey, thanks for reaching out. I will help you with this. Just a couple quick details first.",
+  followup30mTemplate: "Hey, just checking in. Are you still looking for this?",
   followup24hTemplateName: "lead_followup_24h",
   takeoverCooldownMinutes: 180,
   metadata: {}
@@ -70,7 +70,8 @@ export class InMemoryLeadRepository implements LeadRepository {
       tenantId,
       ...defaultTenantConfig,
       metadata: {
-        telegramBotToken: "test-bot-token"
+        telegramBotToken: "test-bot-token",
+        businessName: "Test Tenant"
       },
       updatedAt: new Date()
     });
@@ -132,7 +133,8 @@ export class InMemoryLeadRepository implements LeadRepository {
     const config = this.tenantConfigs.get(tenantId)!;
     config.metadata = {
       ...(config.metadata ?? {}),
-      telegramBotToken: input.telegramBotToken
+      telegramBotToken: input.telegramBotToken,
+      businessName: input.name
     };
     this.tenantConfigs.set(tenantId, config);
     this.subscription.set(tenantId, { status: "TRIALING", trialEndsAt });

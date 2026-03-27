@@ -38,6 +38,7 @@ const updateConfigSchema = z.object({
   followup30mTemplate: z.string().min(5).max(320).optional(),
   followup24hTemplateName: z.string().min(2).max(100).optional(),
   takeoverCooldownMinutes: z.number().int().min(5).max(1440).optional(),
+  businessName: z.string().min(2).max(120).optional(),
   metadata: z.record(z.unknown()).optional(),
   ownerName: z.string().min(2).optional(),
   ownerChatId: z.string().min(5).optional(),
@@ -130,10 +131,21 @@ export function createApiApp(services: ApiServices) {
         continue;
       }
 
-      const transition = computeTransition(conversation.state, inbound.text);
+      const transition = computeTransition(conversation.state, inbound.text, lead.preferredLanguage);
+      const nextLanguage =
+        transition.preferredLanguage !== undefined
+          ? transition.preferredLanguage
+          : lead.preferredLanguage;
+      const nextName = transition.clearLeadProfile
+        ? transition.customerName
+        : (transition.customerName ?? lead.customerName);
+      const nextRequirement = transition.clearLeadProfile
+        ? transition.requirement
+        : (transition.requirement ?? lead.requirement);
       const updatedLead = await repository.updateLead(lead.id, {
-        customerName: transition.customerName ?? lead.customerName,
-        requirement: transition.requirement ?? lead.requirement,
+        preferredLanguage: nextLanguage,
+        customerName: nextName,
+        requirement: nextRequirement,
         status: transition.nextLeadStatus
       });
 
@@ -146,9 +158,14 @@ export function createApiApp(services: ApiServices) {
           throw new Error("Missing telegramBotToken in tenant config metadata");
         }
 
+        const replyLanguage =
+          transition.preferredLanguage !== undefined
+            ? transition.preferredLanguage ?? undefined
+            : updatedLead.preferredLanguage ?? undefined;
         const replyBody = buildAutoReply({
-          previousState: conversation.state,
-          customerName: transition.customerName,
+          transition,
+          customerName: transition.customerName ?? (updatedLead.customerName ?? undefined),
+          language: replyLanguage,
           config: tenantConfig
         });
 
@@ -231,7 +248,16 @@ export function createApiApp(services: ApiServices) {
     }
 
     const payload = updateConfigSchema.parse(request.body);
-    const updated = await repository.upsertTenantConfig({ tenantId, ...payload });
+    const { businessName, ...configPatch } = payload;
+    const metadataPatch = {
+      ...(configPatch.metadata ?? {}),
+      ...(businessName ? { businessName } : {})
+    };
+    const updated = await repository.upsertTenantConfig({
+      tenantId,
+      ...configPatch,
+      metadata: metadataPatch
+    });
     return reply.code(200).send({ config: updated });
   });
 

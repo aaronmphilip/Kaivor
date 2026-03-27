@@ -22,9 +22,9 @@ import type {
 } from "./types.js";
 
 const DEFAULT_GREETING =
-  "Namaste! BharatClaw se bol raha hoon. Aapka naam bata do please?";
+  "Hey, thanks for reaching out. I will help you with this. Just a couple quick details first.";
 const DEFAULT_FOLLOWUP_30M =
-  "Quick follow-up. Kya aapko abhi bhi help chahiye? Reply karke bata do.";
+  "Hey, just checking in. Are you still looking for this? Reply and we will help.";
 const DEFAULT_FOLLOWUP_24H_TEMPLATE = "lead_followup_24h";
 const DEFAULT_TAKEOVER_COOLDOWN_MINUTES = 180;
 
@@ -94,6 +94,7 @@ function mapLead(row: Record<string, unknown>): Lead {
     tenantId: String(row.tenant_id),
     customerPhone: String(row.customer_phone),
     customerName: row.customer_name ? String(row.customer_name) : undefined,
+    preferredLanguage: row.preferred_language ? String(row.preferred_language) as Lead["preferredLanguage"] : undefined,
     requirement: row.requirement ? String(row.requirement) : undefined,
     status: String(row.status) as Lead["status"],
     botPausedUntil: row.bot_paused_until ? new Date(String(row.bot_paused_until)) : undefined,
@@ -178,7 +179,7 @@ export class PostgresLeadRepository implements LeadRepository {
       );
       await client.query("UPDATE tenant_configs SET metadata = $2::jsonb WHERE tenant_id = $1", [
         tenantId,
-        JSON.stringify({ telegramBotToken: input.telegramBotToken })
+        JSON.stringify({ telegramBotToken: input.telegramBotToken, businessName: input.name })
       ]);
 
       await client.query(
@@ -366,6 +367,9 @@ export class PostgresLeadRepository implements LeadRepository {
 
     if (patch.customerName !== undefined) {
       append("customer_name", patch.customerName ?? null);
+    }
+    if (patch.preferredLanguage !== undefined) {
+      append("preferred_language", patch.preferredLanguage ?? null);
     }
     if (patch.requirement !== undefined) {
       append("requirement", patch.requirement ?? null);

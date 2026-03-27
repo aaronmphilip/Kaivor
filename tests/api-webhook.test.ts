@@ -63,22 +63,30 @@ describe("API telegram webhook routes", () => {
       method: "POST",
       url: `/webhooks/telegram/${tenant.id}`,
       headers: { "x-telegram-bot-api-secret-token": services.config.telegramWebhookSecret },
-      payload: buildTelegramPayload({ updateId: 12, chatId: "919888887777", text: "Aman" })
+      payload: buildTelegramPayload({ updateId: 12, chatId: "919888887777", text: "English" })
     });
 
     await app.inject({
       method: "POST",
       url: `/webhooks/telegram/${tenant.id}`,
       headers: { "x-telegram-bot-api-secret-token": services.config.telegramWebhookSecret },
-      payload: buildTelegramPayload({ updateId: 13, chatId: "919888887777", text: "Need washing machine repair" })
+      payload: buildTelegramPayload({ updateId: 13, chatId: "919888887777", text: "Aman" })
+    });
+
+    await app.inject({
+      method: "POST",
+      url: `/webhooks/telegram/${tenant.id}`,
+      headers: { "x-telegram-bot-api-secret-token": services.config.telegramWebhookSecret },
+      payload: buildTelegramPayload({ updateId: 14, chatId: "919888887777", text: "Need washing machine repair" })
     });
 
     const lead = [...services.repository.leads.values()][0];
     expect(lead.customerName).toBe("Aman");
     expect(lead.requirement).toContain("repair");
+    expect(lead.preferredLanguage).toBe("en");
     expect(lead.status).toBe("FOLLOWUP_PENDING");
     expect(services.repository.followupJobs.size).toBe(2);
-    expect(services.sentMessages.length).toBe(3);
+    expect(services.sentMessages.length).toBe(4);
   });
 
   it("does not process duplicate event id twice", async () => {
@@ -103,5 +111,47 @@ describe("API telegram webhook routes", () => {
     });
 
     expect(services.sentMessages.length).toBe(1);
+  });
+
+  it("handles /start interruption by restarting flow", async () => {
+    const services = createFakeServices();
+    const app = createApiApp(services);
+    apps.push(app);
+    const tenant = services.repository.firstTenant();
+
+    await app.inject({
+      method: "POST",
+      url: `/webhooks/telegram/${tenant.id}`,
+      headers: { "x-telegram-bot-api-secret-token": services.config.telegramWebhookSecret },
+      payload: buildTelegramPayload({ updateId: 201, chatId: "919555554444", text: "Hi" })
+    });
+
+    await app.inject({
+      method: "POST",
+      url: `/webhooks/telegram/${tenant.id}`,
+      headers: { "x-telegram-bot-api-secret-token": services.config.telegramWebhookSecret },
+      payload: buildTelegramPayload({ updateId: 202, chatId: "919555554444", text: "English" })
+    });
+
+    await app.inject({
+      method: "POST",
+      url: `/webhooks/telegram/${tenant.id}`,
+      headers: { "x-telegram-bot-api-secret-token": services.config.telegramWebhookSecret },
+      payload: buildTelegramPayload({ updateId: 203, chatId: "919555554444", text: "Riya" })
+    });
+
+    await app.inject({
+      method: "POST",
+      url: `/webhooks/telegram/${tenant.id}`,
+      headers: { "x-telegram-bot-api-secret-token": services.config.telegramWebhookSecret },
+      payload: buildTelegramPayload({ updateId: 204, chatId: "919555554444", text: "/start" })
+    });
+
+    const lead = [...services.repository.leads.values()][0];
+    expect(lead.status).toBe("IN_PROGRESS");
+    expect(lead.preferredLanguage).toBeNull();
+    expect(lead.customerName).toBe("");
+    expect(lead.requirement).toBe("");
+    expect(services.sentMessages.length).toBe(4);
   });
 });

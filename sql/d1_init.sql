@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS leads (
   tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
   customer_phone TEXT NOT NULL,
   customer_name TEXT,
+  preferred_language TEXT CHECK (preferred_language IN ('en', 'hi')),
   requirement TEXT,
   status TEXT NOT NULL CHECK (status IN ('NEW', 'IN_PROGRESS', 'CAPTURED', 'FOLLOWUP_PENDING', 'OWNER_TAKEOVER', 'CLOSED')),
   bot_paused_until TEXT,

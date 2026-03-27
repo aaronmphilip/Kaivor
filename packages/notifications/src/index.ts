@@ -34,7 +34,8 @@ export class NotificationService {
       "New BharatClaw lead captured.",
       `Name: ${lead.customerName ?? "Not provided"}`,
       `Chat: ${lead.customerPhone}`,
-      `Requirement: ${lead.requirement ?? "Not provided"}`
+      `Requirement: ${lead.requirement ?? "Not provided"}`,
+      `Language: ${lead.preferredLanguage === "hi" ? "Hindi" : "English"}`
     ].join("\n");
 
     for (const owner of owners) {

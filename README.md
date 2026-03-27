@@ -12,11 +12,12 @@ Core promise: **Never miss a lead again.**
 ## What is implemented
 
 - Telegram webhook ingestion (`POST /webhooks/telegram/:tenantId`)
-- Auto-reply flow: greet -> name -> requirement
+- Premium auto-reply flow: greet -> language selection -> name -> requirement
 - Lead capture and storage
 - Follow-up jobs (+30 min, +24h)
 - Owner notification to Telegram
 - Manual takeover (`#takeover <chat_id>`)
+- Interruption handling (`/start` restart, language switch mid-flow, low-signal re-prompts)
 - Config APIs and tenant API keys
 - Billing gate logic (trial/subscription)
 
@@ -52,6 +53,11 @@ Core promise: **Never miss a lead again.**
 3. Apply D1 schema
 ```bash
 npm run cf:migrate:remote
+```
+
+If you already had an older DB and are upgrading, run this one-time migration:
+```bash
+npx wrangler d1 execute bharatclaw --remote --command "ALTER TABLE leads ADD COLUMN preferred_language TEXT;"
 ```
 
 4. Configure secrets
@@ -98,7 +104,7 @@ curl -X POST "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \
 ```
 
 8. Smoke test
-- Send to bot: `Hi` -> `Aman` -> `Need AC repair`
+- Send to bot: `Hi` -> `English` (or `Hindi`) -> `Aman` -> `Need AC repair`
 - Verify:
   - bot replies each step
   - lead saved

@@ -17,6 +17,7 @@ export type LeadStatus =
 
 export type MessageDirection = "INBOUND" | "OUTBOUND";
 export type MessageType = "TEXT" | "TEMPLATE" | "SYSTEM";
+export type LeadLanguage = "en" | "hi";
 
 export type FollowupJobType = "FOLLOWUP_30M" | "FOLLOWUP_24H";
 export type FollowupJobStatus =
@@ -70,6 +71,7 @@ export interface Lead {
   tenantId: string;
   customerPhone: string;
   customerName?: string;
+  preferredLanguage?: LeadLanguage | null;
   requirement?: string;
   status: LeadStatus;
   botPausedUntil?: Date;

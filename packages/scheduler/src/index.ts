@@ -8,6 +8,11 @@ interface SchedulerDeps {
   maxRetries: number;
 }
 
+const DEFAULT_FOLLOWUP_30M_EN = "Hey, just checking in. Are you still looking for this? Reply and we will help.";
+const DEFAULT_FOLLOWUP_30M_HI = "Hey, quick check. Kya aapko abhi bhi help chahiye? Reply kar dijiye.";
+const FOLLOWUP_24H_EN = "Hey, quick follow-up. Are you still looking for this? Reply and we will help.";
+const FOLLOWUP_24H_HI = "Namaste, ek quick follow-up. Kya aapko abhi bhi help chahiye? Reply kar dijiye.";
+
 export class FollowupScheduler {
   constructor(private readonly deps: SchedulerDeps) {}
 
@@ -48,6 +53,7 @@ export class FollowupScheduler {
 
     const config = await this.deps.repository.getTenantConfig(job.tenantId);
     const botToken = String(config.metadata.telegramBotToken ?? "");
+    const language = lead.preferredLanguage === "hi" ? "hi" : "en";
     if (!botToken) {
       throw new Error("Missing telegramBotToken in tenant config metadata");
     }
@@ -57,7 +63,11 @@ export class FollowupScheduler {
     let externalMessageId = "";
 
     if (job.jobType === "FOLLOWUP_30M") {
-      body = buildFollowup30m(config);
+      const configured30m = buildFollowup30m(config);
+      body =
+        language === "hi" && configured30m === DEFAULT_FOLLOWUP_30M_EN
+          ? DEFAULT_FOLLOWUP_30M_HI
+          : configured30m;
       externalMessageId = await this.deps.telegramClient.sendMessage({
         botToken,
         chatId: lead.customerPhone,
@@ -65,7 +75,7 @@ export class FollowupScheduler {
       });
       messageType = "TEXT";
     } else {
-      body = "24h follow-up: Agar aapko abhi bhi help chahiye, reply karo. Hum ready hain.";
+      body = language === "hi" ? FOLLOWUP_24H_HI : FOLLOWUP_24H_EN;
       externalMessageId = await this.deps.telegramClient.sendMessage({
         botToken,
         chatId: lead.customerPhone,

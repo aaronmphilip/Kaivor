@@ -25,6 +25,10 @@ const now = () => new Date().toISOString();
 const plusMins = (m: number) => new Date(Date.now() + m * 60_000).toISOString();
 const plusHours = (h: number) => new Date(Date.now() + h * 60 * 60_000).toISOString();
 const txt = (v: unknown, n = 320) => String(v ?? "").trim().replace(/\s+/g, " ").slice(0, n);
+const DEFAULT_FOLLOWUP_30M_EN = "Hey, just checking in. Are you still looking for this? Reply and we will help.";
+const DEFAULT_FOLLOWUP_30M_HI = "Hey, quick check. Kya aapko abhi bhi help chahiye? Reply kar dijiye.";
+const FOLLOWUP_24H_EN = "Hey, quick follow-up. Are you still looking for this? Reply and we will help.";
+const FOLLOWUP_24H_HI = "Namaste, ek quick follow-up. Kya aapko abhi bhi help chahiye? Reply kar dijiye.";
 
 const sha256 = async (raw: string) => {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
@@ -83,7 +87,13 @@ async function processFollowups(env: Env) {
 
       const lead = await env.DB.prepare("SELECT * FROM leads WHERE id=? AND tenant_id=?")
         .bind(job.lead_id, job.tenant_id)
-        .first<{ id: string; customer_phone: string; bot_paused_until: string | null; last_inbound_at: string | null }>();
+        .first<{
+          id: string;
+          customer_phone: string;
+          preferred_language: "en" | "hi" | null;
+          bot_paused_until: string | null;
+          last_inbound_at: string | null;
+        }>();
       const config = await env.DB.prepare("SELECT * FROM tenant_configs WHERE tenant_id=?")
         .bind(job.tenant_id)
         .first<{ metadata: string; followup_30m_template: string }>();
@@ -101,10 +111,16 @@ async function processFollowups(env: Env) {
       const metadata = JSON.parse(config.metadata || "{}") as Record<string, unknown>;
       const botToken = String(metadata.telegramBotToken ?? "");
       if (!botToken) throw new Error("Missing telegramBotToken");
+      const language = lead.preferred_language === "hi" ? "hi" : "en";
+      const configured30m = txt(config.followup_30m_template);
       const body =
         job.job_type === "FOLLOWUP_30M"
-          ? txt(config.followup_30m_template)
-          : "24h follow-up: Agar aapko abhi bhi help chahiye, reply karo. Hum ready hain.";
+          ? language === "hi" && configured30m === DEFAULT_FOLLOWUP_30M_EN
+            ? DEFAULT_FOLLOWUP_30M_HI
+            : configured30m
+          : language === "hi"
+            ? FOLLOWUP_24H_HI
+            : FOLLOWUP_24H_EN;
 
       const externalId = await sendTelegram(botToken, lead.customer_phone, body);
       await env.DB.prepare(
@@ -171,11 +187,11 @@ export default {
       )
         .bind(
           tenantId,
-          "Namaste! BharatClaw se bol raha hoon. Aapka naam bata do please?",
-          "Quick follow-up. Kya aapko abhi bhi help chahiye? Reply karke bata do.",
+          `Hey thanks for reaching out to ${name}. I will help you with this. Just a couple quick details first.`,
+          DEFAULT_FOLLOWUP_30M_EN,
           "lead_followup_24h",
           180,
-          JSON.stringify({ telegramBotToken }),
+          JSON.stringify({ telegramBotToken, businessName: name }),
           now()
         )
         .run();
@@ -217,7 +233,15 @@ export default {
 
         let lead = await env.DB.prepare("SELECT * FROM leads WHERE tenant_id=? AND customer_phone=?")
           .bind(tenantId, txt(msg.chatId, 64))
-          .first<{ id: string; customer_phone: string; customer_name: string | null; requirement: string | null; bot_paused_until: string | null; status: string }>();
+          .first<{
+            id: string;
+            customer_phone: string;
+            customer_name: string | null;
+            preferred_language: "en" | "hi" | null;
+            requirement: string | null;
+            bot_paused_until: string | null;
+            status: string;
+          }>();
         if (!lead) {
           const leadId = crypto.randomUUID();
           await env.DB.prepare(
@@ -226,7 +250,13 @@ export default {
             .bind(leadId, tenantId, txt(msg.chatId, 64), now(), now(), now())
             .run();
           lead = await env.DB.prepare("SELECT * FROM leads WHERE id=?").bind(leadId).first<{
-            id: string; customer_phone: string; customer_name: string | null; requirement: string | null; bot_paused_until: string | null; status: string;
+            id: string;
+            customer_phone: string;
+            customer_name: string | null;
+            preferred_language: "en" | "hi" | null;
+            requirement: string | null;
+            bot_paused_until: string | null;
+            status: string;
           }>();
         }
         if (!lead) continue;
@@ -258,9 +288,30 @@ export default {
           convo = { id, state: "NEW" };
         }
 
-        const transition = computeTransition(convo.state as never, txt(msg.text, 500));
-        await env.DB.prepare("UPDATE leads SET customer_name=?, requirement=?, status=?, updated_at=? WHERE id=?")
-          .bind(transition.customerName ?? lead.customer_name, transition.requirement ?? lead.requirement, transition.nextLeadStatus, now(), lead.id)
+        const transition = computeTransition(convo.state as never, txt(msg.text, 500), lead.preferred_language ?? undefined);
+        const nextLanguage =
+          transition.preferredLanguage !== undefined
+            ? transition.preferredLanguage
+            : lead.preferred_language;
+        const nextName = transition.clearLeadProfile
+          ? transition.customerName ?? null
+          : transition.customerName ?? lead.customer_name;
+        const nextRequirement = transition.clearLeadProfile
+          ? transition.requirement ?? null
+          : transition.requirement ?? lead.requirement;
+        const replyLanguage =
+          transition.preferredLanguage !== undefined
+            ? transition.preferredLanguage ?? undefined
+            : lead.preferred_language ?? undefined;
+        await env.DB.prepare("UPDATE leads SET customer_name=?, preferred_language=?, requirement=?, status=?, updated_at=? WHERE id=?")
+          .bind(
+            nextName,
+            nextLanguage,
+            nextRequirement,
+            transition.nextLeadStatus,
+            now(),
+            lead.id
+          )
           .run();
         await env.DB.prepare("UPDATE conversations SET state=?, last_message_at=?, updated_at=? WHERE id=?")
           .bind(transition.nextState, now(), now(), convo.id)
@@ -275,8 +326,9 @@ export default {
 
         if (transition.shouldReply && config) {
           const reply = buildAutoReply({
-            previousState: convo.state as never,
-            customerName: transition.customerName,
+            transition,
+            customerName: transition.customerName ?? (nextName ?? undefined),
+            language: replyLanguage,
             config: {
               tenantId,
               autoReplyEnabled: Boolean(config.auto_reply_enabled),
@@ -314,12 +366,15 @@ export default {
           const owners = await env.DB.prepare("SELECT * FROM owner_contacts WHERE tenant_id=? AND is_primary=1 ORDER BY created_at")
             .bind(tenantId)
             .all<{ phone: string }>();
-          const updated = await env.DB.prepare("SELECT * FROM leads WHERE id=?").bind(lead.id).first<{ customer_name: string | null; customer_phone: string; requirement: string | null }>();
+          const updated = await env.DB.prepare("SELECT * FROM leads WHERE id=?")
+            .bind(lead.id)
+            .first<{ customer_name: string | null; customer_phone: string; requirement: string | null; preferred_language: "en" | "hi" | null }>();
           const summary = [
             "New lead captured.",
             `Name: ${updated?.customer_name ?? "Not provided"}`,
             `Chat: ${updated?.customer_phone ?? lead.customer_phone}`,
-            `Requirement: ${updated?.requirement ?? "Not provided"}`
+            `Requirement: ${updated?.requirement ?? "Not provided"}`,
+            `Language: ${updated?.preferred_language === "hi" ? "Hindi" : "English"}`
           ].join("\n");
           for (const owner of owners.results ?? []) {
             try {
@@ -361,6 +416,7 @@ export default {
       if (!existing) return j({ error: "Tenant config missing" }, 404);
       const metadata = JSON.parse(existing.metadata || "{}") as Record<string, unknown>;
       if (body.telegramBotToken) metadata.telegramBotToken = txt(body.telegramBotToken, 200);
+      if (body.businessName) metadata.businessName = txt(body.businessName, 120);
       await env.DB.prepare(
         "UPDATE tenant_configs SET auto_reply_enabled=?, greeting_template=?, followup_30m_template=?, followup_24h_template_name=?, takeover_cooldown_minutes=?, metadata=?, updated_at=? WHERE tenant_id=?"
       )
