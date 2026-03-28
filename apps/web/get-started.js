@@ -111,7 +111,17 @@ async function submitTrial(event) {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(data?.error || data?.detail || "Unable to create workspace");
+      const missingFields = data?.missing
+        ? Object.entries(data.missing)
+            .filter(([, missing]) => Boolean(missing))
+            .map(([key]) => key)
+        : [];
+      const message = missingFields.length
+        ? `Missing: ${missingFields.join(", ")}`
+        : data?.detail
+          ? `${data?.error || "Unable to create workspace"}: ${data.detail}`
+          : data?.error || "Unable to create workspace";
+      throw new Error(message);
     }
     resultEl.innerHTML = renderSuccess(data);
     resultEl.style.display = "block";
@@ -141,7 +151,16 @@ async function submitTrial(event) {
       });
     }
   } catch (error) {
-    errorEl.textContent = error instanceof Error ? error.message : "Something went wrong. Try again.";
+    const rawMessage = error instanceof Error ? error.message : "Something went wrong. Try again.";
+    if (rawMessage === "Missing required fields") {
+      errorEl.textContent =
+        "Backend is running an older build. Deploy the latest Cloudflare Worker, then try again.";
+    } else if (rawMessage === "Shared bot is not configured on server") {
+      errorEl.textContent =
+        "Server is missing shared bot secrets. Set OWNER_CONNECT_BOT_TOKEN and OWNER_CONNECT_BOT_SECRET in Worker secrets.";
+    } else {
+      errorEl.textContent = rawMessage;
+    }
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;

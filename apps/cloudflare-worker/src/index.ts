@@ -651,6 +651,27 @@ function renderLandingPage(ctaUrl: string) {
 </html>`;
 }
 
+function isPublicPath(path: string): boolean {
+  return path === "/" || path.startsWith("/public/");
+}
+
+function errorDetail(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error ?? "Unknown error");
+}
+
+function errorResponse(path: string, error: unknown): Response {
+  const detail = errorDetail(error).slice(0, 500);
+  return (isPublicPath(path) ? jPublic : j)(
+    {
+      error: "Request failed",
+      detail,
+      code: "WORKER_RUNTIME_ERROR"
+    },
+    500
+  );
+}
+
 async function isAutomationAllowed(env: Env, tenantId: string) {
   const row = await env.DB.prepare(
     `SELECT
@@ -703,71 +724,75 @@ async function createTenantRecord(
   const ownerPhone = txt(input.ownerChatId ?? "", 64) || `pending:${tenantId}`;
   const trialDays = Math.max(1, Math.min(3650, Number(input.trialDays ?? 3650)));
   const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60_000).toISOString();
-
-  await env.DB.prepare(
-    `INSERT INTO tenants (id,name,slug,whatsapp_phone_number_id,tenant_api_key_hash,trial_ends_at,created_at)
-     VALUES (?,?,?,?,?,?,?)`
-  )
-    .bind(tenantId, input.name, input.slug, `telegram:${input.slug}`, tenantApiKeyHash, trialEndsAt, now())
-    .run();
-  await env.DB.prepare(
-    `INSERT INTO owner_contacts (id,tenant_id,name,phone,email,is_primary,created_at) VALUES (?,?,?,?,?,1,?)`
-  )
-    .bind(crypto.randomUUID(), tenantId, input.ownerName, ownerPhone, input.ownerEmail ?? null, now())
-    .run();
-  await env.DB.prepare(
-    `INSERT INTO tenant_configs (tenant_id,auto_reply_enabled,greeting_template,followup_30m_template,followup_24h_template_name,takeover_cooldown_minutes,metadata,updated_at)
-     VALUES (?,1,?,?,?,?,?,?)`
-  )
-    .bind(
-      tenantId,
-      `Hey thanks for reaching out to ${input.name}. I will help you with this. Just a couple quick details first.`,
-      DEFAULT_FOLLOWUP_30M_EN,
-      "lead_followup_24h",
-      180,
-      JSON.stringify(
-        (() => {
-          const metadata: Record<string, unknown> = {
-            businessName: input.name,
-            webhookSecret,
-            ownerPairCode,
-            leadJoinCode,
-            ownerPairStatus: ownerPhone.startsWith("pending:") ? "PENDING" : "PAIRED",
-            sharedBotMode: Boolean(input.sharedBotMode)
-          };
-          if (input.telegramBotToken) {
-            metadata.telegramBotToken = input.telegramBotToken;
-          }
-          return metadata;
-        })()
-      ),
-      now()
+  try {
+    await env.DB.prepare(
+      `INSERT INTO tenants (id,name,slug,whatsapp_phone_number_id,tenant_api_key_hash,trial_ends_at,created_at)
+       VALUES (?,?,?,?,?,?,?)`
     )
-    .run();
-  await env.DB.prepare(
-    `INSERT INTO subscriptions (id,tenant_id,provider,status,trial_ends_at,created_at,updated_at)
-     VALUES (?,?, 'POLAR',?,?,?,?)`
-  )
-    .bind(
-      crypto.randomUUID(),
+      .bind(tenantId, input.name, input.slug, `telegram:${input.slug}`, tenantApiKeyHash, trialEndsAt, now())
+      .run();
+    await env.DB.prepare(
+      `INSERT INTO owner_contacts (id,tenant_id,name,phone,email,is_primary,created_at) VALUES (?,?,?,?,?,1,?)`
+    )
+      .bind(crypto.randomUUID(), tenantId, input.ownerName, ownerPhone, input.ownerEmail ?? null, now())
+      .run();
+    await env.DB.prepare(
+      `INSERT INTO tenant_configs (tenant_id,auto_reply_enabled,greeting_template,followup_30m_template,followup_24h_template_name,takeover_cooldown_minutes,metadata,updated_at)
+       VALUES (?,1,?,?,?,?,?,?)`
+    )
+      .bind(
+        tenantId,
+        `Hey thanks for reaching out to ${input.name}. I will help you with this. Just a couple quick details first.`,
+        DEFAULT_FOLLOWUP_30M_EN,
+        "lead_followup_24h",
+        180,
+        JSON.stringify(
+          (() => {
+            const metadata: Record<string, unknown> = {
+              businessName: input.name,
+              webhookSecret,
+              ownerPairCode,
+              leadJoinCode,
+              ownerPairStatus: ownerPhone.startsWith("pending:") ? "PENDING" : "PAIRED",
+              sharedBotMode: Boolean(input.sharedBotMode)
+            };
+            if (input.telegramBotToken) {
+              metadata.telegramBotToken = input.telegramBotToken;
+            }
+            return metadata;
+          })()
+        ),
+        now()
+      )
+      .run();
+    await env.DB.prepare(
+      `INSERT INTO subscriptions (id,tenant_id,provider,status,trial_ends_at,created_at,updated_at)
+       VALUES (?,?, 'POLAR',?,?,?,?)`
+    )
+      .bind(
+        crypto.randomUUID(),
+        tenantId,
+        input.forceActive ? "ACTIVE" : "TRIALING",
+        trialEndsAt,
+        now(),
+        now()
+      )
+      .run();
+
+    return {
       tenantId,
-      input.forceActive ? "ACTIVE" : "TRIALING",
+      tenantApiKey,
       trialEndsAt,
-      now(),
-      now()
-    )
-    .run();
-
-  return {
-    tenantId,
-    tenantApiKey,
-    trialEndsAt,
-    webhookSecret,
-    ownerConnected: !ownerPhone.startsWith("pending:"),
-    ownerPairCode,
-    leadJoinCode,
-    sharedBotMode: Boolean(input.sharedBotMode)
-  };
+      webhookSecret,
+      ownerConnected: !ownerPhone.startsWith("pending:"),
+      ownerPairCode,
+      leadJoinCode,
+      sharedBotMode: Boolean(input.sharedBotMode)
+    };
+  } catch (error) {
+    await env.DB.prepare("DELETE FROM tenants WHERE id=?").bind(tenantId).run().catch(() => undefined);
+    throw error;
+  }
 }
 
 async function processFollowups(env: Env) {
@@ -983,7 +1008,12 @@ async function processTenantMessage(
     }>();
   const metadata = parseJsonObject(config?.metadata);
   const botToken = resolveOutboundBotToken(metadata, env);
-  if (!botToken) throw new Error("Missing outbound bot token");
+  if (!botToken) {
+    await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,?,?)")
+      .bind(msg.eventId, source, now())
+      .run();
+    return;
+  }
 
   if (transition.shouldReply && config) {
     const reply = buildAutoReply({
@@ -1055,11 +1085,12 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, "") || "/";
+    try {
 
-    if (request.method === "GET" && path === "/") {
-      return html(renderLandingPage(env.LANDING_CTA_URL ?? "https://t.me"));
-    }
-    if (request.method === "GET" && path === "/health") return j({ ok: true, service: "bharatclaw-cf" });
+      if (request.method === "GET" && path === "/") {
+        return html(renderLandingPage(env.LANDING_CTA_URL ?? "https://t.me"));
+      }
+      if (request.method === "GET" && path === "/health") return j({ ok: true, service: "bharatclaw-cf" });
 
     if (
       request.method === "OPTIONS" &&
@@ -1089,16 +1120,26 @@ export default {
         return jPublic({ error: "Public signup is disabled" }, 403);
       }
       const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-      if (!body) return jPublic({ error: "Invalid JSON" }, 400);
+      if (!body || typeof body !== "object" || Array.isArray(body)) return jPublic({ error: "Invalid JSON" }, 400);
 
-      const name = txt(body.businessName ?? body.name, 120);
-      const ownerName = txt(body.ownerName, 120);
+      const name = txt(body.businessName ?? body.name ?? body.business, 120);
+      const ownerName = txt(body.ownerName ?? body.owner ?? body.contactName, 120);
       const ownerChatId = txt(body.ownerChatId, 64);
       const telegramBotToken = txt(body.telegramBotToken, 200);
       const ownerEmail = body.ownerEmail ? txt(body.ownerEmail, 200) : null;
 
       if (!name || !ownerName) {
-        return jPublic({ error: "Missing required fields" }, 400);
+        return jPublic(
+          {
+            error: "Missing required fields",
+            missing: {
+              businessName: !name,
+              ownerName: !ownerName
+            },
+            receivedKeys: Object.keys(body)
+          },
+          400
+        );
       }
 
       const sharedBotMode = !telegramBotToken;
@@ -1310,7 +1351,7 @@ export default {
       const tenantConfig = await env.DB.prepare("SELECT metadata FROM tenant_configs WHERE tenant_id=?")
         .bind(tenantId)
         .first<{ metadata: string }>();
-      const metadata = JSON.parse(tenantConfig?.metadata || "{}") as Record<string, unknown>;
+      const metadata = parseJsonObject(tenantConfig?.metadata);
       const expectedSecret = String(metadata.webhookSecret ?? env.TELEGRAM_WEBHOOK_SECRET ?? "");
       if (!verifyTelegramSecret(request.headers.get("x-telegram-bot-api-secret-token") ?? undefined, expectedSecret)) {
         return j({ error: "Invalid Telegram secret" }, 401);
@@ -1347,7 +1388,7 @@ export default {
         .bind(tenantId)
         .first<{ auto_reply_enabled: number; greeting_template: string; followup_30m_template: string; followup_24h_template_name: string; takeover_cooldown_minutes: number; metadata: string }>();
       if (!existing) return j({ error: "Tenant config missing" }, 404);
-      const metadata = JSON.parse(existing.metadata || "{}") as Record<string, unknown>;
+      const metadata = parseJsonObject(existing.metadata);
       if (body.telegramBotToken) metadata.telegramBotToken = txt(body.telegramBotToken, 200);
       if (body.businessName) metadata.businessName = txt(body.businessName, 120);
       if (body.webhookSecret) metadata.webhookSecret = txt(body.webhookSecret, 120);
@@ -1393,7 +1434,11 @@ export default {
       return j({ ok: true });
     }
 
-    return j({ error: "Not found" }, 404);
+      return j({ error: "Not found" }, 404);
+    } catch (error) {
+      console.error("bharatclaw-worker-error", { path, detail: errorDetail(error) });
+      return errorResponse(path, error);
+    }
   },
 
   async scheduled(_event: unknown, env: Env, ctx: Ctx): Promise<void> {
