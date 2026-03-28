@@ -20,11 +20,15 @@
       "dest": "/apps/web/get-started.html"
     },
     {
+      "src": "^/auth$",
+      "dest": "/apps/web/auth.html"
+    },
+    {
       "src": "^/workspace$",
       "dest": "/apps/web/workspace.html"
     },
     {
-      "src": "^/(styles\\.css|get-started\\.js|workspace\\.js|home\\.js)$",
+      "src": "^/(styles\\.css|get-started\\.js|workspace\\.js|home\\.js|auth\\.js)$",
       "dest": "/apps/web/$1"
     },
     {

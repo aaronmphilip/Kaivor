@@ -28,7 +28,7 @@ const jsonHeaders = { "content-type": "application/json" };
 const publicCorsHeaders = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET,POST,OPTIONS",
-  "access-control-allow-headers": "content-type"
+  "access-control-allow-headers": "content-type,authorization"
 };
 
 const j = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: jsonHeaders });
@@ -103,6 +103,229 @@ function isStartStatusPath(path: string): boolean {
   return /^\/public\/(?:start|free-trial)\/[a-z0-9-]+\/status$/i.test(path);
 }
 
+function normalizeEmail(input: unknown): string {
+  return txt(input, 200).toLowerCase();
+}
+
+async function ensureAuthTables(env: Env): Promise<void> {
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS app_users (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )`
+  ).run();
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS app_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      token_hash TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    )`
+  ).run();
+}
+
+async function hashWithSalt(raw: string, salt?: string): Promise<string> {
+  const actualSalt = salt ?? crypto.randomUUID().replace(/-/g, "");
+  return `${actualSalt}:${await sha256(`${actualSalt}:${raw}`)}`;
+}
+
+async function verifySaltedHash(raw: string, stored: string): Promise<boolean> {
+  const [salt, hash] = stored.split(":");
+  if (!salt || !hash) return false;
+  const actual = await sha256(`${salt}:${raw}`);
+  return actual === hash;
+}
+
+function generateSessionToken(): string {
+  return `bcsess_${crypto.randomUUID().replace(/-/g, "")}`;
+}
+
+function readBearerToken(request: Request): string {
+  const auth = txt(request.headers.get("authorization"), 500);
+  const match = /^bearer\s+(.+)$/i.exec(auth);
+  return match ? txt(match[1], 220) : "";
+}
+
+async function resolveAuthenticatedUser(
+  env: Env,
+  request: Request
+): Promise<{ id: string; name: string; email: string } | null> {
+  const token = readBearerToken(request);
+  if (!token) return null;
+  await ensureAuthTables(env);
+  const tokenHash = await sha256(token);
+  const row = await env.DB.prepare(
+    `SELECT u.id,u.name,u.email,s.expires_at
+     FROM app_sessions s
+     JOIN app_users u ON u.id=s.user_id
+     WHERE s.token_hash=?
+     ORDER BY s.created_at DESC
+     LIMIT 1`
+  )
+    .bind(tokenHash)
+    .first<{ id: string; name: string; email: string; expires_at: string }>();
+  if (!row) return null;
+  if (new Date(row.expires_at).getTime() < Date.now()) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    email: normalizeEmail(row.email)
+  };
+}
+
+async function createSessionForUser(
+  env: Env,
+  userId: string
+): Promise<{ token: string; expiresAt: string }> {
+  await ensureAuthTables(env);
+  const token = generateSessionToken();
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60_000).toISOString();
+  await env.DB.prepare("INSERT INTO app_sessions (id,user_id,token_hash,expires_at,created_at) VALUES (?,?,?,?,?)")
+    .bind(crypto.randomUUID(), userId, await sha256(token), expiresAt, now())
+    .run();
+  return { token, expiresAt };
+}
+
+function summarizeTenantAccess(
+  env: Env,
+  input: {
+    tenantId: string;
+    businessName: string;
+    ownerName: string;
+    ownerEmail: string | null;
+    ownerPhone: string;
+    metadata: Record<string, unknown>;
+  }
+) {
+  const pairCode = txt(input.metadata.ownerPairCode, 20).toUpperCase();
+  const ownerConsole = workspaceUrlFromMetadata(env, input.tenantId, input.metadata);
+  const ownerConnected = !input.ownerPhone.startsWith("pending:");
+  return {
+    tenantId: input.tenantId,
+    businessName: input.businessName,
+    ownerName: input.ownerName,
+    ownerEmail: input.ownerEmail,
+    ownerConnected,
+    ownerPairCode: pairCode,
+    pairingCode: pairCode,
+    ownerPairStatus: txt(input.metadata.ownerPairStatus, 30) || (ownerConnected ? "PAIRED" : "PENDING"),
+    pairedAt: txt(input.metadata.ownerPairedAt, 80) || null,
+    leadEntryUrl: leadEntryUrlFromMetadata(env, input.metadata),
+    ownerConsoleUrl: ownerConsole,
+    workspaceUrl: ownerConsole,
+    ownerConnectBot: ownerConnectBotUsername(env),
+    ownerConnectBotUrl: ownerConnectBotUrl(env),
+    ownerConnectUrl: ownerConnected || !pairCode ? null : ownerConnectStartUrl(env, pairCode)
+  };
+}
+
+async function listAuthenticatedTenants(
+  env: Env,
+  email: string
+): Promise<
+  Array<{
+    tenantId: string;
+    businessName: string;
+    ownerName: string;
+    ownerEmail: string | null;
+    ownerConnected: boolean;
+    ownerPairCode: string;
+    pairingCode: string;
+    ownerPairStatus: string;
+    pairedAt: string | null;
+    leadEntryUrl: string;
+    ownerConsoleUrl: string | null;
+    workspaceUrl: string | null;
+    ownerConnectBot: string;
+    ownerConnectBotUrl: string;
+    ownerConnectUrl: string | null;
+  }>
+> {
+  const rows = await env.DB.prepare(
+    `SELECT t.id AS tenant_id,t.name AS business_name,o.name AS owner_name,o.email,o.phone,c.metadata
+     FROM owner_contacts o
+     JOIN tenants t ON t.id=o.tenant_id
+     JOIN tenant_configs c ON c.tenant_id=o.tenant_id
+     WHERE o.is_primary=1 AND lower(o.email)=?
+     ORDER BY t.created_at DESC`
+  )
+    .bind(normalizeEmail(email))
+    .all<{
+      tenant_id: string;
+      business_name: string;
+      owner_name: string;
+      email: string | null;
+      phone: string;
+      metadata: string;
+    }>();
+
+  return (rows.results ?? []).map((row) =>
+    summarizeTenantAccess(env, {
+      tenantId: row.tenant_id,
+      businessName: row.business_name,
+      ownerName: row.owner_name,
+      ownerEmail: row.email,
+      ownerPhone: row.phone,
+      metadata: parseJsonObject(row.metadata)
+    })
+  );
+}
+
+async function findExistingTenantForOwner(
+  env: Env,
+  businessName: string,
+  ownerEmail: string
+): Promise<{
+  tenantId: string;
+  businessName: string;
+  ownerName: string;
+  ownerEmail: string | null;
+  ownerPhone: string;
+  metadata: Record<string, unknown>;
+} | null> {
+  const row = await env.DB.prepare(
+    `SELECT t.id AS tenant_id,t.name AS business_name,o.name AS owner_name,o.email,o.phone,c.metadata
+     FROM owner_contacts o
+     JOIN tenants t ON t.id=o.tenant_id
+     JOIN tenant_configs c ON c.tenant_id=o.tenant_id
+     WHERE o.is_primary=1 AND lower(o.email)=? AND lower(t.name)=?
+     ORDER BY t.created_at DESC
+     LIMIT 1`
+  )
+    .bind(normalizeEmail(ownerEmail), txt(businessName, 120).toLowerCase())
+    .first<{
+      tenant_id: string;
+      business_name: string;
+      owner_name: string;
+      email: string | null;
+      phone: string;
+      metadata: string;
+    }>();
+  if (!row) return null;
+  return {
+    tenantId: row.tenant_id,
+    businessName: row.business_name,
+    ownerName: row.owner_name,
+    ownerEmail: row.email,
+    ownerPhone: row.phone,
+    metadata: parseJsonObject(row.metadata)
+  };
+}
+
+async function userOwnsTenant(env: Env, tenantId: string, email: string): Promise<boolean> {
+  const row = await env.DB.prepare(
+    "SELECT 1 AS ok FROM owner_contacts WHERE tenant_id=? AND is_primary=1 AND lower(email)=? LIMIT 1"
+  )
+    .bind(tenantId, normalizeEmail(email))
+    .first<{ ok: number }>();
+  return Boolean(row?.ok);
+}
+
 function ownerConnectBotUsername(env: Env): string {
   return txt(env.OWNER_CONNECT_BOT_USERNAME ?? "bharatclawbot", 64).replace(/^@/, "") || "bharatclawbot";
 }
@@ -145,18 +368,24 @@ function generateOwnerPairCode(): string {
 function parseOwnerPairCodeFromText(message: string): string | null {
   const input = txt(message, 180);
   if (!input) return null;
-
-  let token = input;
   const startMatch = /^\/start\s+pair_([a-z0-9-]{4,40})$/i.exec(input);
-  if (startMatch) token = startMatch[1];
-  const pairMatch = /^\/pair\s+([a-z0-9-]{4,40})$/i.exec(token);
-  if (pairMatch) token = pairMatch[1];
+  if (startMatch) {
+    const normalized = startMatch[1].toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const finalCode = normalized.startsWith("BC") ? normalized : `BC${normalized}`;
+    return /^BC[A-Z0-9]{6,10}$/.test(finalCode) ? finalCode : null;
+  }
 
-  const normalized = token.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  if (!normalized) return null;
-  const finalCode = normalized.startsWith("BC") ? normalized : `BC${normalized}`;
-  if (finalCode.length < 8 || finalCode.length > 12) return null;
-  return finalCode;
+  const pairMatch = /^\/pair\s+([a-z0-9-]{4,40})$/i.exec(input);
+  if (pairMatch) {
+    const normalized = pairMatch[1].toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const finalCode = normalized.startsWith("BC") ? normalized : `BC${normalized}`;
+    return /^BC[A-Z0-9]{6,10}$/.test(finalCode) ? finalCode : null;
+  }
+
+  const compact = input.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!/^[A-Z0-9\s-]+$/i.test(input)) return null;
+  if (/^BC[A-Z0-9]{6,10}$/.test(compact)) return compact;
+  return null;
 }
 
 async function ownerPairCodeExists(env: Env, pairCode: string): Promise<boolean> {
@@ -1172,6 +1401,61 @@ async function createTenantRecord(
   }
 }
 
+async function disconnectOwnerPairing(env: Env, tenantId: string) {
+  const owner = await env.DB.prepare(
+    "SELECT id,name,email FROM owner_contacts WHERE tenant_id=? AND is_primary=1 ORDER BY created_at LIMIT 1"
+  )
+    .bind(tenantId)
+    .first<{ id: string; name: string; email: string | null }>();
+  const config = await env.DB.prepare("SELECT metadata FROM tenant_configs WHERE tenant_id=?")
+    .bind(tenantId)
+    .first<{ metadata: string }>();
+  const tenant = await env.DB.prepare("SELECT name FROM tenants WHERE id=?")
+    .bind(tenantId)
+    .first<{ name: string }>();
+  if (!owner || !config || !tenant) {
+    throw new Error("Tenant not found");
+  }
+
+  const metadata = parseJsonObject(config.metadata);
+  const nextPairCode = await generateUniqueOwnerPairCode(env);
+  const nextMetadata = {
+    ...metadata,
+    ownerPairCode: nextPairCode,
+    ownerPairStatus: "PENDING",
+    ownerPairedAt: null
+  };
+
+  await env.DB.prepare("UPDATE owner_contacts SET phone=? WHERE id=?")
+    .bind(`pending:${tenantId}`, owner.id)
+    .run();
+  await env.DB.prepare("UPDATE tenant_configs SET metadata=?, updated_at=? WHERE tenant_id=?")
+    .bind(JSON.stringify(nextMetadata), now(), tenantId)
+    .run();
+  await env.DB.prepare(
+    "INSERT INTO audit_events (id,tenant_id,lead_id,actor,action,metadata,created_at) VALUES (?,?,?,?,?,?,?)"
+  )
+    .bind(
+      crypto.randomUUID(),
+      tenantId,
+      null,
+      "OWNER",
+      "OWNER_DISCONNECTED",
+      JSON.stringify({ nextPairCode }),
+      now()
+    )
+    .run();
+
+  return summarizeTenantAccess(env, {
+    tenantId,
+    businessName: tenant.name,
+    ownerName: owner.name,
+    ownerEmail: owner.email,
+    ownerPhone: `pending:${tenantId}`,
+    metadata: nextMetadata
+  });
+}
+
 async function processFollowups(env: Env) {
   const maxRetries = Number(env.FOLLOWUP_MAX_RETRIES ?? "3");
   const jobs = await env.DB.prepare(
@@ -1520,35 +1804,137 @@ export default {
       }
       if (request.method === "GET" && path === "/health") return j({ ok: true, service: "bharatclaw-cf" });
 
-    if (
-      request.method === "OPTIONS" &&
-      (isStartCreatePath(path) || isStartStatusPath(path) || path === "/public/waitlist" || /^\/public\/workspaces\/[a-z0-9-]+$/i.test(path))
-    ) {
-      return new Response(null, { status: 204, headers: publicCorsHeaders });
-    }
+      if (request.method === "OPTIONS" && path.startsWith("/public/")) {
+        return new Response(null, { status: 204, headers: publicCorsHeaders });
+      }
 
-    if (request.method === "GET" && isStartStatusPath(path)) {
-      const tenantId = path.split("/")[3] ?? "";
-      if (!tenantId) return jPublic({ error: "Missing tenant id" }, 400);
-      const owner = await env.DB.prepare(
-        "SELECT phone FROM owner_contacts WHERE tenant_id=? AND is_primary=1 ORDER BY created_at LIMIT 1"
-      )
-        .bind(tenantId)
-        .first<{ phone: string }>();
-      if (!owner) return jPublic({ error: "Tenant not found" }, 404);
-      const config = await env.DB.prepare("SELECT metadata FROM tenant_configs WHERE tenant_id=?")
-        .bind(tenantId)
-        .first<{ metadata: string }>();
-      const metadata = parseJsonObject(config?.metadata);
-      return jPublic({
-        ok: true,
-        tenantId,
-        ownerConnected: !owner.phone.startsWith("pending:"),
-        leadEntryUrl: leadEntryUrlFromMetadata(env, metadata),
-        workspaceUrl: workspaceUrlFromMetadata(env, tenantId, metadata),
-        ownerConsoleUrl: workspaceUrlFromMetadata(env, tenantId, metadata)
-      });
-    }
+      if (request.method === "POST" && path === "/public/auth/signup") {
+        const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+        if (!body || typeof body !== "object" || Array.isArray(body)) return jPublic({ error: "Invalid JSON" }, 400);
+        const name = txt(body.name, 120);
+        const email = normalizeEmail(body.email);
+        const password = txt(body.password, 200);
+        if (!name || !email || !password) return jPublic({ error: "Missing required fields" }, 400);
+        if (password.length < 8) return jPublic({ error: "Password must be at least 8 characters" }, 400);
+
+        await ensureAuthTables(env);
+        const existing = await env.DB.prepare("SELECT id FROM app_users WHERE email=?")
+          .bind(email)
+          .first<{ id: string }>();
+        if (existing) return jPublic({ error: "Account already exists" }, 409);
+
+        const userId = crypto.randomUUID();
+        await env.DB.prepare(
+          "INSERT INTO app_users (id,name,email,password_hash,created_at,updated_at) VALUES (?,?,?,?,?,?)"
+        )
+          .bind(userId, name, email, await hashWithSalt(password), now(), now())
+          .run();
+        const session = await createSessionForUser(env, userId);
+        return jPublic(
+          {
+            ok: true,
+            token: session.token,
+            expiresAt: session.expiresAt,
+            user: { id: userId, name, email },
+            tenants: await listAuthenticatedTenants(env, email)
+          },
+          201
+        );
+      }
+
+      if (request.method === "POST" && path === "/public/auth/login") {
+        const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+        if (!body || typeof body !== "object" || Array.isArray(body)) return jPublic({ error: "Invalid JSON" }, 400);
+        const email = normalizeEmail(body.email);
+        const password = txt(body.password, 200);
+        if (!email || !password) return jPublic({ error: "Missing required fields" }, 400);
+
+        await ensureAuthTables(env);
+        const user = await env.DB.prepare("SELECT id,name,email,password_hash FROM app_users WHERE email=?")
+          .bind(email)
+          .first<{ id: string; name: string; email: string; password_hash: string }>();
+        if (!user || !(await verifySaltedHash(password, user.password_hash))) {
+          return jPublic({ error: "Invalid email or password" }, 401);
+        }
+
+        const session = await createSessionForUser(env, user.id);
+        return jPublic({
+          ok: true,
+          token: session.token,
+          expiresAt: session.expiresAt,
+          user: { id: user.id, name: user.name, email: normalizeEmail(user.email) },
+          tenants: await listAuthenticatedTenants(env, email)
+        });
+      }
+
+      if (request.method === "POST" && path === "/public/auth/logout") {
+        const token = readBearerToken(request);
+        if (token) {
+          await ensureAuthTables(env);
+          await env.DB.prepare("DELETE FROM app_sessions WHERE token_hash=?")
+            .bind(await sha256(token))
+            .run()
+            .catch(() => undefined);
+        }
+        return jPublic({ ok: true });
+      }
+
+      if (request.method === "GET" && path === "/public/auth/me") {
+        const user = await resolveAuthenticatedUser(env, request);
+        if (!user) return jPublic({ error: "Unauthorized" }, 401);
+        return jPublic({
+          ok: true,
+          user,
+          tenants: await listAuthenticatedTenants(env, user.email)
+        });
+      }
+
+      if (request.method === "GET" && path === "/public/auth/tenants") {
+        const user = await resolveAuthenticatedUser(env, request);
+        if (!user) return jPublic({ error: "Unauthorized" }, 401);
+        return jPublic({
+          ok: true,
+          user,
+          tenants: await listAuthenticatedTenants(env, user.email)
+        });
+      }
+
+      if (request.method === "POST" && /^\/public\/auth\/tenants\/[a-z0-9-]+\/disconnect-owner$/i.test(path)) {
+        const user = await resolveAuthenticatedUser(env, request);
+        if (!user) return jPublic({ error: "Unauthorized" }, 401);
+        const tenantId = path.split("/")[4] ?? "";
+        if (!tenantId) return jPublic({ error: "Missing tenant id" }, 400);
+        if (!(await userOwnsTenant(env, tenantId, user.email))) return jPublic({ error: "Forbidden" }, 403);
+        const disconnected = await disconnectOwnerPairing(env, tenantId);
+        return jPublic({ ok: true, tenant: disconnected });
+      }
+
+      if (request.method === "GET" && isStartStatusPath(path)) {
+        const tenantId = path.split("/")[3] ?? "";
+        if (!tenantId) return jPublic({ error: "Missing tenant id" }, 400);
+        const owner = await env.DB.prepare(
+          "SELECT phone FROM owner_contacts WHERE tenant_id=? AND is_primary=1 ORDER BY created_at LIMIT 1"
+        )
+          .bind(tenantId)
+          .first<{ phone: string }>();
+        if (!owner) return jPublic({ error: "Tenant not found" }, 404);
+        const config = await env.DB.prepare("SELECT metadata FROM tenant_configs WHERE tenant_id=?")
+          .bind(tenantId)
+          .first<{ metadata: string }>();
+        const metadata = parseJsonObject(config?.metadata);
+        return jPublic({
+          ok: true,
+          tenantId,
+          ownerConnected: !owner.phone.startsWith("pending:"),
+          ownerPairStatus: txt(metadata.ownerPairStatus, 30) || (!owner.phone.startsWith("pending:") ? "PAIRED" : "PENDING"),
+          ownerPairCode: txt(metadata.ownerPairCode, 20).toUpperCase(),
+          pairingCode: txt(metadata.ownerPairCode, 20).toUpperCase(),
+          pairedAt: txt(metadata.ownerPairedAt, 80) || null,
+          leadEntryUrl: leadEntryUrlFromMetadata(env, metadata),
+          workspaceUrl: workspaceUrlFromMetadata(env, tenantId, metadata),
+          ownerConsoleUrl: workspaceUrlFromMetadata(env, tenantId, metadata)
+        });
+      }
 
     if (request.method === "GET" && /^\/public\/workspaces\/[a-z0-9-]+$/i.test(path)) {
       const tenantId = path.split("/")[3] ?? "";
@@ -1666,10 +2052,11 @@ export default {
       if (!body || typeof body !== "object" || Array.isArray(body)) return jPublic({ error: "Invalid JSON" }, 400);
 
       const name = txt(body.businessName ?? body.name ?? body.business, 120);
-      const ownerName = txt(body.ownerName ?? body.owner ?? body.contactName, 120);
+      const sessionUser = await resolveAuthenticatedUser(env, request);
+      const ownerName = txt(body.ownerName ?? body.owner ?? body.contactName, 120) || txt(sessionUser?.name, 120);
       const ownerChatId = txt(body.ownerChatId, 64);
       const telegramBotToken = txt(body.telegramBotToken, 200);
-      const ownerEmail = body.ownerEmail ? txt(body.ownerEmail, 200) : null;
+      const ownerEmail = sessionUser?.email || (body.ownerEmail ? normalizeEmail(body.ownerEmail) : "");
 
       if (!name || !ownerName) {
         return jPublic(
@@ -1688,6 +2075,26 @@ export default {
       const sharedBotMode = !telegramBotToken;
       if (sharedBotMode && !txt(env.OWNER_CONNECT_BOT_TOKEN, 220)) {
         return jPublic({ error: "Shared bot is not configured on server" }, 503);
+      }
+
+      if (ownerEmail) {
+        const existing = await findExistingTenantForOwner(env, name, ownerEmail);
+        if (existing) {
+          const summary = summarizeTenantAccess(env, existing);
+          return jPublic(
+            {
+              ok: true,
+              existing: true,
+              free: true,
+              ...summary,
+              statusUrl: `${url.origin}/public/start/${existing.tenantId}/status`,
+              nextStep: summary.ownerConnected
+                ? "This BharatClaw setup is already paired. Open your owner console or share the lead link."
+                : "This BharatClaw setup already exists. Open @bharatclawbot and finish pairing."
+            },
+            200
+          );
+        }
       }
 
       let botUsername = "";
@@ -1730,7 +2137,7 @@ export default {
             ownerChatId: ownerChatId || undefined,
             telegramBotToken: telegramBotToken || null,
             sharedBotMode,
-            ownerEmail,
+            ownerEmail: ownerEmail || null,
             trialDays: 3650,
             forceActive: true
           });

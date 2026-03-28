@@ -17,7 +17,10 @@
   <div class="container">
     <nav class="nav">
       <div class="brand">BharatClaw</div>
-      <a class="btn btn-secondary" href="/">Back to Home</a>
+      <div class="nav-actions">
+        <a class="btn btn-secondary" href="/auth">Sign In</a>
+        <a class="btn btn-secondary" href="/">Back to Home</a>
+      </div>
     </nav>
 
     <section class="hero hero-wide">
@@ -27,6 +30,7 @@
         <p class="lead hero-copy">
           Enter your name and business, get your pairing code, connect your owner chat in Telegram, and BharatClaw takes over lead handling from there.
         </p>
+        <div id="auth-state" class="account-banner"></div>
         <form id="trial-form" class="form-wrap">
           <label>
             Your Name
@@ -41,7 +45,7 @@
             <input name="ownerEmail" type="email" placeholder="you@business.com" />
           </label>
           <button class="btn btn-primary" type="submit">Start</button>
-          <p class="hint">No customer-facing setup. BharatClaw runs through the shared Telegram bot and pairing code.</p>
+          <p class="hint">If you sign in first, BharatClaw will remember your setup and pairing state automatically.</p>
           <p id="error" class="error"></p>
         </form>
       </article>
@@ -63,10 +67,11 @@
           </div>
         </div>
         <div id="result" class="result result-start"></div>
+        <div id="remembered-starts" class="remembered-list"></div>
       </article>
     </section>
 
-    <p class="foot">BharatClaw is meant to start fast and feel like a real operator, not a bot experiment.</p>
+    <p class="foot">BharatClaw is meant to start fast and keep working without making you re-do setup every time.</p>
   </div>
 
   <script src="/get-started.js"></script>

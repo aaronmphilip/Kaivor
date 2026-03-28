@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BharatClaw | Sign In</title>
+  <meta
+    name="description"
+    content="Create your BharatClaw account or sign in to manage remembered setups, pairing, and the owner console."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <nav class="nav">
+      <div class="brand">BharatClaw</div>
+      <div class="nav-actions">
+        <a class="btn btn-secondary" href="/start">Start</a>
+        <a class="btn btn-secondary" href="/">Back to Home</a>
+      </div>
+    </nav>
+
+    <section class="section">
+      <article class="panel panel-glow">
+        <p class="eyebrow">Account Access</p>
+        <h1>Sign up or sign in</h1>
+        <p class="lead hero-copy">
+          Use an account if you want BharatClaw to remember your setup, pairing state, and owner console access across sessions.
+        </p>
+        <div id="auth-session-state" class="account-banner"></div>
+      </article>
+    </section>
+
+    <section class="waitlist-grid auth-grid">
+      <article class="panel">
+        <p class="eyebrow">Create Account</p>
+        <form id="signup-form" class="form-wrap">
+          <label>
+            Your Name
+            <input required name="name" placeholder="Aaron" />
+          </label>
+          <label>
+            Email
+            <input required name="email" type="email" placeholder="you@business.com" />
+          </label>
+          <label>
+            Password
+            <input required name="password" type="password" placeholder="At least 8 characters" />
+          </label>
+          <button class="btn btn-primary" type="submit">Create Account</button>
+          <p id="signup-error" class="error"></p>
+        </form>
+      </article>
+
+      <article class="panel panel-contrast">
+        <p class="eyebrow">Sign In</p>
+        <form id="login-form" class="form-wrap">
+          <label>
+            Email
+            <input required name="email" type="email" placeholder="you@business.com" />
+          </label>
+          <label>
+            Password
+            <input required name="password" type="password" placeholder="Your password" />
+          </label>
+          <button class="btn btn-secondary" type="submit">Sign In</button>
+          <p id="login-error" class="error"></p>
+        </form>
+      </article>
+    </section>
+
+    <p class="foot">Auth is lightweight on purpose. The goal is remembered setup, not bloated account complexity.</p>
+  </div>
+
+  <script src="/auth.js"></script>
+</body>
+</html>
