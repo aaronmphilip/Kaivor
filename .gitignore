@@ -13,6 +13,8 @@ vitest.config.js
 .wrangler/
 .dev.vars
 !apps/web/get-started.js
+!apps/web/home.js
+!apps/web/workspace.js
 
 .vercel
 .env*.local

@@ -58,6 +58,7 @@ class MockD1 {
   public tenantConfigs: TenantConfigRow[] = [];
   public subscriptions: Array<{ id: string; tenant_id: string; status: string }> = [];
   public auditEvents: Array<{ tenant_id: string; action: string }> = [];
+  public waitlist: Array<{ name: string; business_name: string; email: string | null }> = [];
 
   constructor(private readonly mode: "ok" | "fail" = "ok") {}
 
@@ -129,6 +130,19 @@ class MockD1 {
   }
 
   async run(query: string, values: unknown[]): Promise<{ meta?: { changes?: number } }> {
+    if (query.includes("CREATE TABLE IF NOT EXISTS waitlist_signups")) {
+      return { meta: { changes: 0 } };
+    }
+
+    if (query.includes("INSERT INTO waitlist_signups")) {
+      this.waitlist.push({
+        name: String(values[1]),
+        business_name: String(values[2]),
+        email: values[3] == null ? null : String(values[3])
+      });
+      return { meta: { changes: 1 } };
+    }
+
     if (query.includes("INSERT INTO tenants")) {
       this.tenants.push({
         id: String(values[0]),
@@ -207,9 +221,9 @@ function createEnv(db: MockD1) {
 }
 
 describe("cloudflare worker", () => {
-  it("creates a workspace in shared bot mode", async () => {
+  it("creates a start in shared bot mode", async () => {
     const env = createEnv(new MockD1());
-    const request = new Request("https://bharatclaw-telegram.bharatclaw.workers.dev/public/free-trial", {
+    const request = new Request("https://bharatclaw-telegram.bharatclaw.workers.dev/public/start", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -227,11 +241,12 @@ describe("cloudflare worker", () => {
     expect(String(body.ownerPairCode)).toMatch(/^BC/);
     expect(String(body.leadEntryUrl)).toContain("lead_");
     expect(String(body.ownerConnectBotUrl)).toBe("https://t.me/bharatclawbot");
+    expect(String(body.statusUrl)).toContain("/public/start/");
   });
 
   it("returns structured json instead of crashing when the database throws", async () => {
     const env = createEnv(new MockD1("fail"));
-    const request = new Request("https://bharatclaw-telegram.bharatclaw.workers.dev/public/free-trial", {
+    const request = new Request("https://bharatclaw-telegram.bharatclaw.workers.dev/public/start", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -250,7 +265,7 @@ describe("cloudflare worker", () => {
 
   it("returns authenticated workspace data", async () => {
     const env = createEnv(new MockD1());
-    const createRequest = new Request("https://bharatclaw-telegram.bharatclaw.workers.dev/public/free-trial", {
+    const createRequest = new Request("https://bharatclaw-telegram.bharatclaw.workers.dev/public/start", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -275,6 +290,28 @@ describe("cloudflare worker", () => {
     expect(workspaceResponse.status).toBe(200);
     expect(body.businessName).toBe("Acme Business");
     expect(String(body.leadEntryUrl)).toContain("lead_");
+  });
+
+  it("stores waitlist signups", async () => {
+    const db = new MockD1();
+    const env = createEnv(db);
+    const request = new Request("https://bharatclaw-telegram.bharatclaw.workers.dev/public/waitlist", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: "Aaron",
+        businessName: "Acme Business",
+        email: "aaron@example.com"
+      })
+    });
+
+    const response = await worker.fetch(request, env);
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(response.status).toBe(201);
+    expect(body.ok).toBe(true);
+    expect(db.waitlist).toHaveLength(1);
+    expect(db.waitlist[0]?.business_name).toBe("Acme Business");
   });
 
   it("does not crash when tenant metadata contains invalid json", async () => {

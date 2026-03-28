@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BharatClaw | Start Free</title>
+  <title>BharatClaw | Start with BharatClaw</title>
   <meta
     name="description"
-    content="Start BharatClaw free. Create your workspace, pair once in Telegram, and go live."
+    content="Start BharatClaw, pair your owner chat in Telegram, and go live with lead handling."
   />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -20,54 +20,53 @@
       <a class="btn btn-secondary" href="/">Back to Home</a>
     </nav>
 
-    <section class="hero">
-      <article class="panel">
-        <h1>Start Your Free Trial</h1>
-        <p class="lead">
-          No payment required. Create your BharatClaw workspace once, pair once in Telegram, and start capturing leads in a product-ready flow.
+    <section class="hero hero-wide">
+      <article class="panel panel-glow">
+        <p class="eyebrow">Start with BharatClaw</p>
+        <h1>Start with BharatClaw</h1>
+        <p class="lead hero-copy">
+          Enter your name and business, get your pairing code, connect your owner chat in Telegram, and BharatClaw takes over lead handling from there.
         </p>
         <form id="trial-form" class="form-wrap">
           <label>
+            Your Name
+            <input required name="ownerName" placeholder="Aaron" />
+          </label>
+          <label>
             Business Name
-            <input required name="businessName" placeholder="Aman Repair Services" />
+            <input required name="businessName" placeholder="Aaron Fitness" />
           </label>
           <label>
-            Owner Name
-            <input required name="ownerName" placeholder="Aman" />
-          </label>
-          <label>
-            Owner Email (Optional)
+            Email (Optional)
             <input name="ownerEmail" type="email" placeholder="you@business.com" />
           </label>
-          <button class="btn btn-primary" type="submit">Create Free Workspace</button>
-          <p class="hint">
-            No bot token needed from customers. Pairing code verification handles activation.
-          </p>
+          <button class="btn btn-primary" type="submit">Start</button>
+          <p class="hint">No customer-facing setup. BharatClaw runs through the shared Telegram bot and pairing code.</p>
           <p id="error" class="error"></p>
         </form>
       </article>
 
-      <article class="panel">
-        <h2>What happens next</h2>
-        <div class="cards">
-          <article class="card">
-            <h3>1. Workspace Created</h3>
-            <p>Workspace, owner access, and lead link are generated instantly.</p>
-          </article>
-          <article class="card">
-            <h3>2. Connect Owner</h3>
-            <p>Open @bharatclawbot and send your pairing code to activate the owner console.</p>
-          </article>
-          <article class="card">
-            <h3>3. Share Lead Link</h3>
-            <p>Share your lead entry link so customers enter the BharatClaw lead capture flow.</p>
-          </article>
+      <article class="panel panel-contrast">
+        <p class="eyebrow">How it goes live</p>
+        <div class="timeline">
+          <div class="timeline-item">
+            <strong>1. Start created</strong>
+            <span>We generate your pairing code and lead link.</span>
+          </div>
+          <div class="timeline-item">
+            <strong>2. Pair owner chat</strong>
+            <span>Open <code>@bharatclawbot</code> and send the pairing code.</span>
+          </div>
+          <div class="timeline-item">
+            <strong>3. Start receiving leads</strong>
+            <span>Share your BharatClaw lead link and the bot handles replies, capture, and follow-up.</span>
+          </div>
         </div>
-        <div id="result" class="result"></div>
+        <div id="result" class="result result-start"></div>
       </article>
     </section>
 
-    <p class="foot">Free beta. No card required. You can start right now.</p>
+    <p class="foot">BharatClaw is meant to start fast and feel like a real operator, not a bot experiment.</p>
   </div>
 
   <script src="/get-started.js"></script>

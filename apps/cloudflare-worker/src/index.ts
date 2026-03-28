@@ -1,5 +1,5 @@
 import { buildAutoReply } from "../../../packages/reply-engine/src/premium.js";
-import { computeTransition } from "../../../packages/state-machine/src/index.js";
+import { computeTransition } from "../../../packages/state-machine/src/premium.js";
 import { parseTelegramWebhook, verifyTelegramSecret } from "../../../packages/telegram/src/index.js";
 
 interface D1Prepared {
@@ -81,6 +81,26 @@ function parseJsonObject(raw: string | null | undefined): Record<string, unknown
   } catch {
     return {};
   }
+}
+
+async function ensureWaitlistTable(env: Env): Promise<void> {
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS waitlist_signups (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      business_name TEXT NOT NULL,
+      email TEXT,
+      created_at TEXT NOT NULL
+    )`
+  ).run();
+}
+
+function isStartCreatePath(path: string): boolean {
+  return path === "/public/start" || path === "/public/free-trial";
+}
+
+function isStartStatusPath(path: string): boolean {
+  return /^\/public\/(?:start|free-trial)\/[a-z0-9-]+\/status$/i.test(path);
 }
 
 function ownerConnectBotUsername(env: Env): string {
@@ -784,7 +804,7 @@ function telegramReplyOptionsForKey(replyKey: string): Record<string, unknown> |
 function ownerActionMarkup(leadUrl: string, ownerWorkspaceUrl: string | null): Record<string, unknown> {
   const firstRow = [];
   if (ownerWorkspaceUrl) {
-    firstRow.push({ text: "Open Workspace", url: ownerWorkspaceUrl });
+    firstRow.push({ text: "Open Owner Console", url: ownerWorkspaceUrl });
   }
   firstRow.push({ text: "Open Lead Link", url: leadUrl });
   return {
@@ -811,15 +831,15 @@ function buildOwnerWelcomeMessage(input: {
   return [
     `BharatClaw is live for ${input.businessName}.`,
     "",
-    "Your customer lead link:",
+    "Share this lead link with customers:",
     input.leadUrl,
     "",
-    input.ownerWorkspaceUrl ? `Owner workspace:\n${input.ownerWorkspaceUrl}\n` : "",
+    input.ownerWorkspaceUrl ? `Owner console:\n${input.ownerWorkspaceUrl}\n` : "",
     "Owner commands:",
-    "/status  workspace health",
+    "/status  system health",
     "/leads  recent leads",
     "/link  resend lead link",
-    "/workspace  open workspace",
+    "/workspace  open owner console",
     "#takeover <chat_id>  pause bot for a lead",
     "#resume <chat_id>  resume bot replies"
   ]
@@ -948,7 +968,7 @@ async function handleOwnerMessage(
       .first<{ count: number }>();
     const pairedAt = txt(input.metadata.ownerPairedAt, 80) || "Not tracked";
     const body = [
-      `${input.businessName} workspace status`,
+      `${input.businessName} owner console`,
       `Owner: ${input.ownerName}`,
       `Owner paired: ${pairedAt}`,
       `Total leads: ${Number(total?.count ?? 0)}`,
@@ -999,7 +1019,7 @@ async function handleOwnerMessage(
     await sendTelegram(
       input.botToken,
       input.ownerChatId,
-      ownerWorkspaceUrl ? `Open your BharatClaw workspace:\n${ownerWorkspaceUrl}` : "Workspace link is not ready yet.",
+      ownerWorkspaceUrl ? `Open your BharatClaw owner console:\n${ownerWorkspaceUrl}` : "Owner console link is not ready yet.",
       ownerActionMarkup(leadUrl, ownerWorkspaceUrl)
     );
     return;
@@ -1502,16 +1522,12 @@ export default {
 
     if (
       request.method === "OPTIONS" &&
-      (
-        path === "/public/free-trial" ||
-        /^\/public\/free-trial\/[a-z0-9-]+\/status$/i.test(path) ||
-        /^\/public\/workspaces\/[a-z0-9-]+$/i.test(path)
-      )
+      (isStartCreatePath(path) || isStartStatusPath(path) || path === "/public/waitlist" || /^\/public\/workspaces\/[a-z0-9-]+$/i.test(path))
     ) {
       return new Response(null, { status: 204, headers: publicCorsHeaders });
     }
 
-    if (request.method === "GET" && /^\/public\/free-trial\/[a-z0-9-]+\/status$/i.test(path)) {
+    if (request.method === "GET" && isStartStatusPath(path)) {
       const tenantId = path.split("/")[3] ?? "";
       if (!tenantId) return jPublic({ error: "Missing tenant id" }, 400);
       const owner = await env.DB.prepare(
@@ -1529,7 +1545,8 @@ export default {
         tenantId,
         ownerConnected: !owner.phone.startsWith("pending:"),
         leadEntryUrl: leadEntryUrlFromMetadata(env, metadata),
-        workspaceUrl: workspaceUrlFromMetadata(env, tenantId, metadata)
+        workspaceUrl: workspaceUrlFromMetadata(env, tenantId, metadata),
+        ownerConsoleUrl: workspaceUrlFromMetadata(env, tenantId, metadata)
       });
     }
 
@@ -1608,7 +1625,40 @@ export default {
       });
     }
 
-    if (request.method === "POST" && path === "/public/free-trial") {
+    if (request.method === "POST" && path === "/public/waitlist") {
+      const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+      if (!body || typeof body !== "object" || Array.isArray(body)) return jPublic({ error: "Invalid JSON" }, 400);
+      const name = txt(body.name, 120);
+      const businessName = txt(body.businessName ?? body.business, 120);
+      const email = body.email ? txt(body.email, 200) : null;
+      if (!name || !businessName) {
+        return jPublic(
+          {
+            error: "Missing required fields",
+            missing: {
+              name: !name,
+              businessName: !businessName
+            }
+          },
+          400
+        );
+      }
+      await ensureWaitlistTable(env);
+      await env.DB.prepare(
+        "INSERT INTO waitlist_signups (id,name,business_name,email,created_at) VALUES (?,?,?,?,?)"
+      )
+        .bind(crypto.randomUUID(), name, businessName, email, now())
+        .run();
+      return jPublic(
+        {
+          ok: true,
+          message: "You are on the BharatClaw waitlist. We will send product updates as we ship them."
+        },
+        201
+      );
+    }
+
+    if (request.method === "POST" && isStartCreatePath(path)) {
       if (!isTrue(env.PUBLIC_SIGNUP_ENABLED, true)) {
         return jPublic({ error: "Public signup is disabled" }, 403);
       }
@@ -1693,7 +1743,7 @@ export default {
       if (!created) {
         return jPublic(
           {
-            error: "Could not create workspace right now",
+            error: "Could not start BharatClaw right now",
             detail: lastCreateError instanceof Error ? lastCreateError.message : "Slug collision retry limit reached"
           },
           409
@@ -1731,16 +1781,19 @@ export default {
           botUsername,
           sharedBotMode: created.sharedBotMode,
           leadJoinCode: created.leadJoinCode,
+          pairingCode: created.ownerPairCode,
           leadEntryUrl: `${ownerConnectBotUrl(env)}?start=lead_${created.leadJoinCode}`,
           workspaceUrl: workspaceUrl(env, created.tenantId, created.ownerAccessToken),
+          ownerConsoleUrl: workspaceUrl(env, created.tenantId, created.ownerAccessToken),
           ownerConnected: created.ownerConnected,
           ownerPairCode: created.ownerPairCode,
           ownerConnectBot: ownerConnectBotUsername(env),
           ownerConnectBotUrl: ownerConnectBotUrl(env),
           ownerConnectUrl: created.ownerConnected ? null : ownerConnectStartUrl(env, created.ownerPairCode),
+          statusUrl: `${url.origin}/public/start/${created.tenantId}/status`,
           nextStep: created.ownerConnected
-            ? "Workspace is paired. Share leadEntryUrl and start receiving leads on @bharatclawbot."
-            : "Open @bharatclawbot, send the pairing code, then check owner connection status."
+            ? "BharatClaw is paired. Share your lead link and start receiving leads."
+            : "Open @bharatclawbot, send the pairing code, and BharatClaw will activate."
         },
         201
       );

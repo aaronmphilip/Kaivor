@@ -4,7 +4,7 @@ import { PolarBillingService } from "../../../packages/billing/src/index.js";
 import type { AppConfig } from "../../../packages/config/src/index.js";
 import { NotificationService } from "../../../packages/notifications/src/index.js";
 import { buildAutoReply } from "../../../packages/reply-engine/src/premium.js";
-import { computeTransition } from "../../../packages/state-machine/src/index.js";
+import { computeTransition } from "../../../packages/state-machine/src/premium.js";
 import type { LeadRepository } from "../../../packages/storage/src/index.js";
 import { parseTelegramWebhook, TelegramClient, verifyTelegramSecret } from "../../../packages/telegram/src/index.js";
 

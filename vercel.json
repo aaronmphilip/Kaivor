@@ -16,11 +16,15 @@
       "dest": "/apps/web/get-started.html"
     },
     {
+      "src": "^/start$",
+      "dest": "/apps/web/get-started.html"
+    },
+    {
       "src": "^/workspace$",
       "dest": "/apps/web/workspace.html"
     },
     {
-      "src": "^/(styles\\.css|get-started\\.js|workspace\\.js)$",
+      "src": "^/(styles\\.css|get-started\\.js|workspace\\.js|home\\.js)$",
       "dest": "/apps/web/$1"
     },
     {
