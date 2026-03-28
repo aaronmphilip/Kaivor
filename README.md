@@ -17,6 +17,7 @@ Core promise: **Never miss a lead again.**
 - Lead capture and storage
 - Follow-up jobs (+30 min, +24h)
 - Owner notification to Telegram
+- Owner pairing code verification via `@bharatclawbot`
 - Manual takeover (`#takeover <chat_id>`)
 - Interruption handling (`/start` restart, language switch mid-flow, low-signal re-prompts)
 - Config APIs and tenant API keys
@@ -50,9 +51,10 @@ Core promise: **Never miss a lead again.**
 
 ## Step-by-step setup (free MVP path)
 
-1. Create Telegram bot
+1. Create BharatClaw bot (platform-level, one time)
 - Open Telegram -> `@BotFather`
 - Run `/newbot`
+- Use username `bharatclawbot` (or your variant)
 - Copy bot token
 
 2. Create Cloudflare Worker + D1
@@ -110,13 +112,12 @@ curl -X POST "https://api.telegram.org/bot<OWNER_CONNECT_BOT_TOKEN>/setWebhook" 
 
 8. Customer onboarding (no-code path)
 - Open `/get-started`.
-- Fill: business name, owner name, Telegram bot token, optional owner email.
+- Fill: business name, owner name, optional owner email.
 - Click **Create Free Workspace**.
 - Backend will automatically:
   - create tenant + API key
-  - configure Telegram webhook
-  - generate secure webhook secret
   - generate owner pairing code
+  - generate lead entry link
 
 9. Owner connect (pairing code)
 - Open `https://t.me/bharatclawbot`.
@@ -124,7 +125,11 @@ curl -X POST "https://api.telegram.org/bot<OWNER_CONNECT_BOT_TOKEN>/setWebhook" 
 - Owner alerts are now active.
 - Until pairing is complete, tenant bot automation is blocked.
 
-10. Smoke test
+10. Share lead entry link
+- Share `leadEntryUrl` with customers.
+- Customer starts chat from that link and flow begins.
+
+11. Smoke test
 - Send to bot: `Hi` -> `English` (or `Hindi`) -> `Aman` -> `Need AC repair`
 - Verify:
   - bot replies each step
@@ -132,7 +137,7 @@ curl -X POST "https://api.telegram.org/bot<OWNER_CONNECT_BOT_TOKEN>/setWebhook" 
   - owner alert sent
   - follow-up jobs created
 
-11. Test takeover
+12. Test takeover
 ```bash
 curl -X POST "https://<WORKER_DOMAIN>/internal/takeover" \
   -H "Content-Type: application/json" \

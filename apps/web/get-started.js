@@ -15,7 +15,7 @@ function renderOwnerConnect(payload) {
       <p style="margin:10px 0 0;"><strong>Owner is already connected.</strong> Send <code>Hi</code> to your bot to test lead capture.</p>
     `;
   }
-  const connectUrl = String(payload.ownerConnectBotUrl || "https://t.me/bharatclawbot");
+  const connectUrl = String(payload.ownerConnectUrl || payload.ownerConnectBotUrl || "https://t.me/bharatclawbot");
   const pairCode = String(payload.ownerPairCode || "");
   const tenantId = String(payload.tenantId || "");
   return `
@@ -50,10 +50,10 @@ async function copyPairCode(code) {
 
 function renderSuccess(payload) {
   return `
-    <strong>Workspace created and bot webhook configured.</strong>
+    <strong>Workspace created.</strong>
     <p style="margin:8px 0 6px;">Tenant ID: <code>${esc(payload.tenantId)}</code></p>
-    <p style="margin:0 0 6px;">Bot Username: <code>@${esc(payload.botUsername)}</code></p>
-    <p style="margin:0 0 6px;">Webhook URL: <code>${esc(payload.webhookUrl)}</code></p>
+    <p style="margin:0 0 6px;">BharatClaw Bot: <code>@${esc(payload.ownerConnectBot || "bharatclawbot")}</code></p>
+    <p style="margin:0 0 6px;">Lead Entry Link: <code>${esc(payload.leadEntryUrl || "")}</code></p>
     ${renderOwnerConnect(payload)}
   `;
 }
@@ -90,11 +90,10 @@ async function submitTrial(event) {
   const payload = {
     businessName: String(formData.get("businessName") || "").trim(),
     ownerName: String(formData.get("ownerName") || "").trim(),
-    telegramBotToken: String(formData.get("telegramBotToken") || "").trim(),
     ownerEmail: String(formData.get("ownerEmail") || "").trim() || undefined
   };
 
-  if (!payload.businessName || !payload.ownerName || !payload.telegramBotToken) {
+  if (!payload.businessName || !payload.ownerName) {
     errorEl.textContent = "Please fill all required fields.";
     return;
   }

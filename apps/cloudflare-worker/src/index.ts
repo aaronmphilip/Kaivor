@@ -143,6 +143,40 @@ async function generateUniqueOwnerPairCode(env: Env, attempts = 8): Promise<stri
   return `BC${randomCode(10)}`;
 }
 
+function generateLeadJoinCode(): string {
+  return `LD${randomCode(6)}`;
+}
+
+function parseLeadJoinCodeFromText(message: string): string | null {
+  const input = txt(message, 180);
+  if (!input) return null;
+  const match = /^\/start\s+lead_([a-z0-9-]{4,40})$/i.exec(input);
+  if (!match) return null;
+  const normalized = match[1].toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!normalized) return null;
+  const finalCode = normalized.startsWith("LD") ? normalized : `LD${normalized}`;
+  if (finalCode.length < 8 || finalCode.length > 12) return null;
+  return finalCode;
+}
+
+async function leadJoinCodeExists(env: Env, joinCode: string): Promise<boolean> {
+  const rows = await env.DB.prepare("SELECT metadata FROM tenant_configs").all<{ metadata: string }>();
+  for (const row of rows.results ?? []) {
+    const metadata = parseJsonObject(row.metadata);
+    const existing = txt(metadata.leadJoinCode, 20).toUpperCase();
+    if (existing === joinCode) return true;
+  }
+  return false;
+}
+
+async function generateUniqueLeadJoinCode(env: Env, attempts = 8): Promise<string> {
+  for (let i = 0; i < attempts; i += 1) {
+    const joinCode = generateLeadJoinCode();
+    if (!(await leadJoinCodeExists(env, joinCode))) return joinCode;
+  }
+  return `LD${randomCode(10)}`;
+}
+
 async function connectOwnerByPairCode(
   env: Env,
   pairCode: string,
@@ -191,6 +225,27 @@ async function connectOwnerByPairCode(
     .run();
 
   return "CONNECTED";
+}
+
+async function resolveTenantIdByLeadJoinCode(env: Env, joinCode: string): Promise<string | null> {
+  const rows = await env.DB.prepare("SELECT tenant_id, metadata FROM tenant_configs").all<{ tenant_id: string; metadata: string }>();
+  for (const row of rows.results ?? []) {
+    const metadata = parseJsonObject(row.metadata);
+    const codeInRow = txt(metadata.leadJoinCode, 20).toUpperCase();
+    if (codeInRow === joinCode) return row.tenant_id;
+  }
+  return null;
+}
+
+async function resolveLatestTenantIdByChat(env: Env, chatId: string): Promise<string | null> {
+  const row = await env.DB.prepare("SELECT tenant_id FROM leads WHERE customer_phone=? ORDER BY updated_at DESC LIMIT 1")
+    .bind(chatId)
+    .first<{ tenant_id: string }>();
+  return row?.tenant_id ?? null;
+}
+
+function resolveOutboundBotToken(metadata: Record<string, unknown>, env: Env): string {
+  return txt(metadata.telegramBotToken, 220) || txt(env.OWNER_CONNECT_BOT_TOKEN, 220);
 }
 
 async function telegramApi<T>(
@@ -631,7 +686,8 @@ async function createTenantRecord(
     slug: string;
     ownerName: string;
     ownerChatId?: string | null;
-    telegramBotToken: string;
+    telegramBotToken?: string | null;
+    sharedBotMode?: boolean;
     ownerEmail?: string | null;
     trialDays?: number;
     forceActive?: boolean;
@@ -643,6 +699,7 @@ async function createTenantRecord(
   const tenantApiKeyHash = `${salt}:${await sha256(`${salt}:${tenantApiKey}`)}`;
   const webhookSecret = crypto.randomUUID().replace(/-/g, "");
   const ownerPairCode = await generateUniqueOwnerPairCode(env);
+  const leadJoinCode = await generateUniqueLeadJoinCode(env);
   const ownerPhone = txt(input.ownerChatId ?? "", 64) || `pending:${tenantId}`;
   const trialDays = Math.max(1, Math.min(3650, Number(input.trialDays ?? 3650)));
   const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60_000).toISOString();
@@ -668,13 +725,22 @@ async function createTenantRecord(
       DEFAULT_FOLLOWUP_30M_EN,
       "lead_followup_24h",
       180,
-      JSON.stringify({
-        telegramBotToken: input.telegramBotToken,
-        businessName: input.name,
-        webhookSecret,
-        ownerPairCode,
-        ownerPairStatus: ownerPhone.startsWith("pending:") ? "PENDING" : "PAIRED"
-      }),
+      JSON.stringify(
+        (() => {
+          const metadata: Record<string, unknown> = {
+            businessName: input.name,
+            webhookSecret,
+            ownerPairCode,
+            leadJoinCode,
+            ownerPairStatus: ownerPhone.startsWith("pending:") ? "PENDING" : "PAIRED",
+            sharedBotMode: Boolean(input.sharedBotMode)
+          };
+          if (input.telegramBotToken) {
+            metadata.telegramBotToken = input.telegramBotToken;
+          }
+          return metadata;
+        })()
+      ),
       now()
     )
     .run();
@@ -698,7 +764,9 @@ async function createTenantRecord(
     trialEndsAt,
     webhookSecret,
     ownerConnected: !ownerPhone.startsWith("pending:"),
-    ownerPairCode
+    ownerPairCode,
+    leadJoinCode,
+    sharedBotMode: Boolean(input.sharedBotMode)
   };
 }
 
@@ -761,9 +829,9 @@ async function processFollowups(env: Env) {
         continue;
       }
 
-      const metadata = JSON.parse(config.metadata || "{}") as Record<string, unknown>;
-      const botToken = String(metadata.telegramBotToken ?? "");
-      if (!botToken) throw new Error("Missing telegramBotToken");
+      const metadata = parseJsonObject(config.metadata);
+      const botToken = resolveOutboundBotToken(metadata, env);
+      if (!botToken) throw new Error("Missing outbound bot token");
       const language = lead.preferred_language === "hi" ? "hi" : "en";
       const configured30m = txt(config.followup_30m_template);
       const body =
@@ -794,6 +862,193 @@ async function processFollowups(env: Env) {
         .run();
     }
   }
+}
+
+type ParsedInboundMessage = ReturnType<typeof parseTelegramWebhook>[number];
+
+async function processTenantMessage(
+  env: Env,
+  tenantId: string,
+  msg: ParsedInboundMessage,
+  source: "TELEGRAM" | "TELEGRAM_SHARED"
+) {
+  const done = await env.DB.prepare("SELECT 1 as ok FROM processed_events WHERE event_id=? AND source=?")
+    .bind(msg.eventId, source)
+    .first<{ ok: number }>();
+  if (done) return;
+
+  if (!(await isAutomationAllowed(env, tenantId))) {
+    await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,?,?)")
+      .bind(msg.eventId, source, now())
+      .run();
+    return;
+  }
+
+  let lead = await env.DB.prepare("SELECT * FROM leads WHERE tenant_id=? AND customer_phone=?")
+    .bind(tenantId, txt(msg.chatId, 64))
+    .first<{
+      id: string;
+      customer_phone: string;
+      customer_name: string | null;
+      preferred_language: "en" | "hi" | null;
+      requirement: string | null;
+      bot_paused_until: string | null;
+      status: string;
+    }>();
+  if (!lead) {
+    const leadId = crypto.randomUUID();
+    await env.DB.prepare(
+      "INSERT INTO leads (id,tenant_id,customer_phone,status,last_inbound_at,created_at,updated_at) VALUES (?,?,?,'NEW',?,?,?)"
+    )
+      .bind(leadId, tenantId, txt(msg.chatId, 64), now(), now(), now())
+      .run();
+    lead = await env.DB.prepare("SELECT * FROM leads WHERE id=?").bind(leadId).first<{
+      id: string;
+      customer_phone: string;
+      customer_name: string | null;
+      preferred_language: "en" | "hi" | null;
+      requirement: string | null;
+      bot_paused_until: string | null;
+      status: string;
+    }>();
+  }
+  if (!lead) return;
+
+  await env.DB.prepare(
+    "INSERT OR IGNORE INTO messages (id,tenant_id,lead_id,direction,message_type,body,external_message_id,idempotency_key,created_at) VALUES (?,?,?,'INBOUND','TEXT',?,?,?,?)"
+  )
+    .bind(crypto.randomUUID(), tenantId, lead.id, txt(msg.text, 500), msg.eventId, `inbound:${source}:${msg.eventId}`, now())
+    .run();
+  await env.DB.prepare("UPDATE leads SET last_inbound_at=?,updated_at=? WHERE id=?").bind(now(), now(), lead.id).run();
+
+  if (lead.bot_paused_until && new Date(lead.bot_paused_until).getTime() > Date.now()) {
+    await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,?,?)")
+      .bind(msg.eventId, source, now())
+      .run();
+    return;
+  }
+
+  let convo = await env.DB.prepare("SELECT * FROM conversations WHERE tenant_id=? AND lead_id=?")
+    .bind(tenantId, lead.id)
+    .first<{ id: string; state: string }>();
+  if (!convo) {
+    const id = crypto.randomUUID();
+    await env.DB.prepare(
+      "INSERT INTO conversations (id,tenant_id,lead_id,state,last_message_at,created_at,updated_at) VALUES (?,?,?,'NEW',?,?,?)"
+    )
+      .bind(id, tenantId, lead.id, now(), now(), now())
+      .run();
+    convo = { id, state: "NEW" };
+  }
+
+  const transition = computeTransition(convo.state as never, txt(msg.text, 500), lead.preferred_language ?? undefined);
+  const nextLanguage =
+    transition.preferredLanguage !== undefined
+      ? transition.preferredLanguage
+      : lead.preferred_language;
+  const nextName = transition.clearLeadProfile
+    ? transition.customerName ?? null
+    : transition.customerName ?? lead.customer_name;
+  const nextRequirement = transition.clearLeadProfile
+    ? transition.requirement ?? null
+    : transition.requirement ?? lead.requirement;
+  const replyLanguage =
+    transition.preferredLanguage !== undefined
+      ? transition.preferredLanguage ?? undefined
+      : lead.preferred_language ?? undefined;
+  await env.DB.prepare("UPDATE leads SET customer_name=?, preferred_language=?, requirement=?, status=?, updated_at=? WHERE id=?")
+    .bind(
+      nextName,
+      nextLanguage,
+      nextRequirement,
+      transition.nextLeadStatus,
+      now(),
+      lead.id
+    )
+    .run();
+  await env.DB.prepare("UPDATE conversations SET state=?, last_message_at=?, updated_at=? WHERE id=?")
+    .bind(transition.nextState, now(), now(), convo.id)
+    .run();
+
+  const config = await env.DB.prepare("SELECT * FROM tenant_configs WHERE tenant_id=?")
+    .bind(tenantId)
+    .first<{
+      greeting_template: string;
+      followup_30m_template: string;
+      followup_24h_template_name: string;
+      takeover_cooldown_minutes: number;
+      auto_reply_enabled: number;
+      metadata: string;
+      updated_at: string;
+    }>();
+  const metadata = parseJsonObject(config?.metadata);
+  const botToken = resolveOutboundBotToken(metadata, env);
+  if (!botToken) throw new Error("Missing outbound bot token");
+
+  if (transition.shouldReply && config) {
+    const reply = buildAutoReply({
+      transition,
+      customerName: transition.customerName ?? (nextName ?? undefined),
+      language: replyLanguage,
+      config: {
+        tenantId,
+        autoReplyEnabled: Boolean(config.auto_reply_enabled),
+        greetingTemplate: config.greeting_template,
+        followup30mTemplate: config.followup_30m_template,
+        followup24hTemplateName: config.followup_24h_template_name,
+        takeoverCooldownMinutes: Number(config.takeover_cooldown_minutes),
+        metadata,
+        updatedAt: new Date(config.updated_at)
+      }
+    });
+    const ext = await sendTelegram(botToken, lead.customer_phone, reply);
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO messages (id,tenant_id,lead_id,direction,message_type,body,external_message_id,idempotency_key,created_at) VALUES (?,?,?,'OUTBOUND','TEXT',?,?,?,?)"
+    )
+      .bind(crypto.randomUUID(), tenantId, lead.id, reply, ext, `outbound:reply:${source}:${msg.eventId}`, now())
+      .run();
+    await env.DB.prepare("UPDATE leads SET last_outbound_at=?,updated_at=? WHERE id=?").bind(now(), now(), lead.id).run();
+  }
+
+  if (transition.shouldScheduleFollowups) {
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO followup_jobs (id,tenant_id,lead_id,job_type,run_at,status,attempt_count,idempotency_key,created_at,updated_at) VALUES (?,?,?,'FOLLOWUP_30M',?,'PENDING',0,?,?,?)"
+    )
+      .bind(crypto.randomUUID(), tenantId, lead.id, plusMins(30), `${tenantId}:${lead.id}:FOLLOWUP_30M`, now(), now())
+      .run();
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO followup_jobs (id,tenant_id,lead_id,job_type,run_at,status,attempt_count,idempotency_key,created_at,updated_at) VALUES (?,?,?,'FOLLOWUP_24H',?,'PENDING',0,?,?,?)"
+    )
+      .bind(crypto.randomUUID(), tenantId, lead.id, plusHours(24), `${tenantId}:${lead.id}:FOLLOWUP_24H`, now(), now())
+      .run();
+  }
+
+  if (transition.shouldNotifyOwner && config) {
+    const owners = await env.DB.prepare("SELECT * FROM owner_contacts WHERE tenant_id=? AND is_primary=1 ORDER BY created_at")
+      .bind(tenantId)
+      .all<{ phone: string }>();
+    const updated = await env.DB.prepare("SELECT * FROM leads WHERE id=?")
+      .bind(lead.id)
+      .first<{ customer_name: string | null; customer_phone: string; requirement: string | null; preferred_language: "en" | "hi" | null }>();
+    const summary = [
+      "New lead captured.",
+      `Name: ${updated?.customer_name ?? "Not provided"}`,
+      `Chat: ${updated?.customer_phone ?? lead.customer_phone}`,
+      `Requirement: ${updated?.requirement ?? "Not provided"}`,
+      `Language: ${updated?.preferred_language === "hi" ? "Hindi" : "English"}`
+    ].join("\n");
+    for (const owner of owners.results ?? []) {
+      try {
+        await sendTelegram(botToken, owner.phone, summary);
+      } catch {
+        // best effort for MVP
+      }
+    }
+  }
+
+  await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,?,?)")
+    .bind(msg.eventId, source, now())
+    .run();
 }
 
 export default {
@@ -842,16 +1097,25 @@ export default {
       const telegramBotToken = txt(body.telegramBotToken, 200);
       const ownerEmail = body.ownerEmail ? txt(body.ownerEmail, 200) : null;
 
-      if (!name || !ownerName || !telegramBotToken) {
+      if (!name || !ownerName) {
         return jPublic({ error: "Missing required fields" }, 400);
       }
 
+      const sharedBotMode = !telegramBotToken;
+      if (sharedBotMode && !txt(env.OWNER_CONNECT_BOT_TOKEN, 220)) {
+        return jPublic({ error: "Shared bot is not configured on server" }, 503);
+      }
+
       let botUsername = "";
-      try {
-        const profile = await getBotProfile(telegramBotToken);
-        botUsername = String(profile.username ?? "");
-      } catch {
-        return jPublic({ error: "Invalid Telegram Bot Token" }, 400);
+      if (telegramBotToken) {
+        try {
+          const profile = await getBotProfile(telegramBotToken);
+          botUsername = String(profile.username ?? "");
+        } catch {
+          return jPublic({ error: "Invalid Telegram Bot Token" }, 400);
+        }
+      } else {
+        botUsername = ownerConnectBotUsername(env);
       }
       if (!botUsername) {
         return jPublic({ error: "Bot username not found on Telegram" }, 400);
@@ -866,6 +1130,8 @@ export default {
             webhookSecret: string;
             ownerConnected: boolean;
             ownerPairCode: string;
+            leadJoinCode: string;
+            sharedBotMode: boolean;
           }
         | null = null;
       let lastCreateError: unknown = null;
@@ -877,7 +1143,8 @@ export default {
             slug,
             ownerName,
             ownerChatId: ownerChatId || undefined,
-            telegramBotToken,
+            telegramBotToken: telegramBotToken || null,
+            sharedBotMode,
             ownerEmail,
             trialDays: 3650,
             forceActive: true
@@ -898,18 +1165,22 @@ export default {
         );
       }
 
-      const webhookUrl = `${url.origin}/webhooks/telegram/${created.tenantId}`;
-      try {
-        await setTelegramWebhook(telegramBotToken, webhookUrl, created.webhookSecret);
-      } catch (error) {
-        await env.DB.prepare("DELETE FROM tenants WHERE id=?").bind(created.tenantId).run();
-        return jPublic(
-          {
-            error: "Could not configure Telegram webhook",
-            detail: error instanceof Error ? error.message : "Unknown Telegram error"
-          },
-          502
-        );
+      const webhookUrl = sharedBotMode
+        ? `${url.origin}/webhooks/owner-connect`
+        : `${url.origin}/webhooks/telegram/${created.tenantId}`;
+      if (!sharedBotMode) {
+        try {
+          await setTelegramWebhook(telegramBotToken, webhookUrl, created.webhookSecret);
+        } catch (error) {
+          await env.DB.prepare("DELETE FROM tenants WHERE id=?").bind(created.tenantId).run();
+          return jPublic(
+            {
+              error: "Could not configure Telegram webhook",
+              detail: error instanceof Error ? error.message : "Unknown Telegram error"
+            },
+            502
+          );
+        }
       }
 
       return jPublic(
@@ -923,13 +1194,16 @@ export default {
           webhookUrl,
           webhookConfigured: true,
           botUsername,
+          sharedBotMode: created.sharedBotMode,
+          leadJoinCode: created.leadJoinCode,
+          leadEntryUrl: `${ownerConnectBotUrl(env)}?start=lead_${created.leadJoinCode}`,
           ownerConnected: created.ownerConnected,
           ownerPairCode: created.ownerPairCode,
           ownerConnectBot: ownerConnectBotUsername(env),
           ownerConnectBotUrl: ownerConnectBotUrl(env),
           ownerConnectUrl: created.ownerConnected ? null : ownerConnectStartUrl(env, created.ownerPairCode),
           nextStep: created.ownerConnected
-            ? "Workspace is fully ready. Send 'Hi' to your bot to test lead capture."
+            ? "Workspace is paired. Share leadEntryUrl and start receiving leads on @bharatclawbot."
             : "Open @bharatclawbot, send the pairing code, then check owner connection status."
         },
         201
@@ -972,30 +1246,56 @@ export default {
       const ownerConnectBotToken = txt(env.OWNER_CONNECT_BOT_TOKEN, 220);
 
       for (const msg of inbound) {
-        const done = await env.DB.prepare("SELECT 1 as ok FROM processed_events WHERE event_id=? AND source='TELEGRAM_OWNER_CONNECT'")
-          .bind(msg.eventId)
-          .first<{ ok: number }>();
-        if (done) continue;
-
         const pairCode = parseOwnerPairCodeFromText(msg.text);
-        let reply = "Invalid code. Open BharatClaw onboarding and copy the latest pairing code.";
-        if (!pairCode) {
-          reply = "Send your pairing code from BharatClaw onboarding. Example: /pair BCABC123";
-        } else {
+        if (pairCode) {
+          const done = await env.DB.prepare("SELECT 1 as ok FROM processed_events WHERE event_id=? AND source='TELEGRAM_OWNER_CONNECT'")
+            .bind(msg.eventId)
+            .first<{ ok: number }>();
+          if (done) continue;
+
+          let reply = "Invalid code. Open BharatClaw onboarding and copy the latest pairing code.";
           const connected = await connectOwnerByPairCode(env, pairCode, txt(msg.chatId, 64));
           if (connected === "CONNECTED") {
             reply = "Pairing successful. Go back to BharatClaw and click Check Owner Connection.";
           } else if (connected === "ALREADY_CONNECTED") {
             reply = "This workspace is already paired.";
           }
+          if (ownerConnectBotToken) {
+            await sendTelegram(ownerConnectBotToken, txt(msg.chatId, 64), reply).catch(() => {});
+          }
+          await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,'TELEGRAM_OWNER_CONNECT',?)")
+            .bind(msg.eventId, now())
+            .run();
+          continue;
         }
 
-        if (ownerConnectBotToken) {
-          await sendTelegram(ownerConnectBotToken, txt(msg.chatId, 64), reply).catch(() => {});
+        const joinCode = parseLeadJoinCodeFromText(msg.text);
+        let tenantId: string | null = null;
+        if (joinCode) {
+          tenantId = await resolveTenantIdByLeadJoinCode(env, joinCode);
+        } else {
+          tenantId = await resolveLatestTenantIdByChat(env, txt(msg.chatId, 64));
         }
-        await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,'TELEGRAM_OWNER_CONNECT',?)")
-          .bind(msg.eventId, now())
-          .run();
+
+        if (!tenantId) {
+          const done = await env.DB.prepare("SELECT 1 as ok FROM processed_events WHERE event_id=? AND source='TELEGRAM_OWNER_CONNECT'")
+            .bind(msg.eventId)
+            .first<{ ok: number }>();
+          if (done) continue;
+          if (ownerConnectBotToken) {
+            await sendTelegram(
+              ownerConnectBotToken,
+              txt(msg.chatId, 64),
+              "Workspace not linked. Owner must pair first, then leads should start from the lead link."
+            ).catch(() => {});
+          }
+          await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,'TELEGRAM_OWNER_CONNECT',?)")
+            .bind(msg.eventId, now())
+            .run();
+          continue;
+        }
+
+        await processTenantMessage(env, tenantId, msg, "TELEGRAM_SHARED");
       }
 
       return j({ ok: true });
@@ -1020,175 +1320,7 @@ export default {
       const inbound = parseTelegramWebhook(payload);
 
       for (const msg of inbound) {
-        const done = await env.DB.prepare("SELECT 1 as ok FROM processed_events WHERE event_id=? AND source='TELEGRAM'")
-          .bind(msg.eventId)
-          .first<{ ok: number }>();
-        if (done) continue;
-
-        if (!(await isAutomationAllowed(env, tenantId))) {
-          await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,'TELEGRAM',?)")
-            .bind(msg.eventId, now())
-            .run();
-          continue;
-        }
-
-        let lead = await env.DB.prepare("SELECT * FROM leads WHERE tenant_id=? AND customer_phone=?")
-          .bind(tenantId, txt(msg.chatId, 64))
-          .first<{
-            id: string;
-            customer_phone: string;
-            customer_name: string | null;
-            preferred_language: "en" | "hi" | null;
-            requirement: string | null;
-            bot_paused_until: string | null;
-            status: string;
-          }>();
-        if (!lead) {
-          const leadId = crypto.randomUUID();
-          await env.DB.prepare(
-            "INSERT INTO leads (id,tenant_id,customer_phone,status,last_inbound_at,created_at,updated_at) VALUES (?,?,?,'NEW',?,?,?)"
-          )
-            .bind(leadId, tenantId, txt(msg.chatId, 64), now(), now(), now())
-            .run();
-          lead = await env.DB.prepare("SELECT * FROM leads WHERE id=?").bind(leadId).first<{
-            id: string;
-            customer_phone: string;
-            customer_name: string | null;
-            preferred_language: "en" | "hi" | null;
-            requirement: string | null;
-            bot_paused_until: string | null;
-            status: string;
-          }>();
-        }
-        if (!lead) continue;
-
-        await env.DB.prepare(
-          "INSERT OR IGNORE INTO messages (id,tenant_id,lead_id,direction,message_type,body,external_message_id,idempotency_key,created_at) VALUES (?,?,?,'INBOUND','TEXT',?,?,?,?)"
-        )
-          .bind(crypto.randomUUID(), tenantId, lead.id, txt(msg.text, 500), msg.eventId, `inbound:${msg.eventId}`, now())
-          .run();
-        await env.DB.prepare("UPDATE leads SET last_inbound_at=?,updated_at=? WHERE id=?").bind(now(), now(), lead.id).run();
-
-        if (lead.bot_paused_until && new Date(lead.bot_paused_until).getTime() > Date.now()) {
-          await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,'TELEGRAM',?)")
-            .bind(msg.eventId, now())
-            .run();
-          continue;
-        }
-
-        let convo = await env.DB.prepare("SELECT * FROM conversations WHERE tenant_id=? AND lead_id=?")
-          .bind(tenantId, lead.id)
-          .first<{ id: string; state: string }>();
-        if (!convo) {
-          const id = crypto.randomUUID();
-          await env.DB.prepare(
-            "INSERT INTO conversations (id,tenant_id,lead_id,state,last_message_at,created_at,updated_at) VALUES (?,?,?,'NEW',?,?,?)"
-          )
-            .bind(id, tenantId, lead.id, now(), now(), now())
-            .run();
-          convo = { id, state: "NEW" };
-        }
-
-        const transition = computeTransition(convo.state as never, txt(msg.text, 500), lead.preferred_language ?? undefined);
-        const nextLanguage =
-          transition.preferredLanguage !== undefined
-            ? transition.preferredLanguage
-            : lead.preferred_language;
-        const nextName = transition.clearLeadProfile
-          ? transition.customerName ?? null
-          : transition.customerName ?? lead.customer_name;
-        const nextRequirement = transition.clearLeadProfile
-          ? transition.requirement ?? null
-          : transition.requirement ?? lead.requirement;
-        const replyLanguage =
-          transition.preferredLanguage !== undefined
-            ? transition.preferredLanguage ?? undefined
-            : lead.preferred_language ?? undefined;
-        await env.DB.prepare("UPDATE leads SET customer_name=?, preferred_language=?, requirement=?, status=?, updated_at=? WHERE id=?")
-          .bind(
-            nextName,
-            nextLanguage,
-            nextRequirement,
-            transition.nextLeadStatus,
-            now(),
-            lead.id
-          )
-          .run();
-        await env.DB.prepare("UPDATE conversations SET state=?, last_message_at=?, updated_at=? WHERE id=?")
-          .bind(transition.nextState, now(), now(), convo.id)
-          .run();
-
-        const config = await env.DB.prepare("SELECT * FROM tenant_configs WHERE tenant_id=?")
-          .bind(tenantId)
-          .first<{ greeting_template: string; followup_30m_template: string; followup_24h_template_name: string; takeover_cooldown_minutes: number; auto_reply_enabled: number; metadata: string; updated_at: string }>();
-        const metadata = JSON.parse(config?.metadata || "{}") as Record<string, unknown>;
-        const botToken = String(metadata.telegramBotToken ?? "");
-        if (!botToken) throw new Error("Missing telegramBotToken");
-
-        if (transition.shouldReply && config) {
-          const reply = buildAutoReply({
-            transition,
-            customerName: transition.customerName ?? (nextName ?? undefined),
-            language: replyLanguage,
-            config: {
-              tenantId,
-              autoReplyEnabled: Boolean(config.auto_reply_enabled),
-              greetingTemplate: config.greeting_template,
-              followup30mTemplate: config.followup_30m_template,
-              followup24hTemplateName: config.followup_24h_template_name,
-              takeoverCooldownMinutes: Number(config.takeover_cooldown_minutes),
-              metadata,
-              updatedAt: new Date(config.updated_at)
-            }
-          });
-          const ext = await sendTelegram(botToken, lead.customer_phone, reply);
-          await env.DB.prepare(
-            "INSERT OR IGNORE INTO messages (id,tenant_id,lead_id,direction,message_type,body,external_message_id,idempotency_key,created_at) VALUES (?,?,?,'OUTBOUND','TEXT',?,?,?,?)"
-          )
-            .bind(crypto.randomUUID(), tenantId, lead.id, reply, ext, `outbound:reply:${msg.eventId}`, now())
-            .run();
-          await env.DB.prepare("UPDATE leads SET last_outbound_at=?,updated_at=? WHERE id=?").bind(now(), now(), lead.id).run();
-        }
-
-        if (transition.shouldScheduleFollowups) {
-          await env.DB.prepare(
-            "INSERT OR IGNORE INTO followup_jobs (id,tenant_id,lead_id,job_type,run_at,status,attempt_count,idempotency_key,created_at,updated_at) VALUES (?,?,?,'FOLLOWUP_30M',?,'PENDING',0,?,?,?)"
-          )
-            .bind(crypto.randomUUID(), tenantId, lead.id, plusMins(30), `${tenantId}:${lead.id}:FOLLOWUP_30M`, now(), now())
-            .run();
-          await env.DB.prepare(
-            "INSERT OR IGNORE INTO followup_jobs (id,tenant_id,lead_id,job_type,run_at,status,attempt_count,idempotency_key,created_at,updated_at) VALUES (?,?,?,'FOLLOWUP_24H',?,'PENDING',0,?,?,?)"
-          )
-            .bind(crypto.randomUUID(), tenantId, lead.id, plusHours(24), `${tenantId}:${lead.id}:FOLLOWUP_24H`, now(), now())
-            .run();
-        }
-
-        if (transition.shouldNotifyOwner && config) {
-          const owners = await env.DB.prepare("SELECT * FROM owner_contacts WHERE tenant_id=? AND is_primary=1 ORDER BY created_at")
-            .bind(tenantId)
-            .all<{ phone: string }>();
-          const updated = await env.DB.prepare("SELECT * FROM leads WHERE id=?")
-            .bind(lead.id)
-            .first<{ customer_name: string | null; customer_phone: string; requirement: string | null; preferred_language: "en" | "hi" | null }>();
-          const summary = [
-            "New lead captured.",
-            `Name: ${updated?.customer_name ?? "Not provided"}`,
-            `Chat: ${updated?.customer_phone ?? lead.customer_phone}`,
-            `Requirement: ${updated?.requirement ?? "Not provided"}`,
-            `Language: ${updated?.preferred_language === "hi" ? "Hindi" : "English"}`
-          ].join("\n");
-          for (const owner of owners.results ?? []) {
-            try {
-              await sendTelegram(botToken, owner.phone, summary);
-            } catch {
-              // best effort for MVP
-            }
-          }
-        }
-
-        await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,'TELEGRAM',?)")
-          .bind(msg.eventId, now())
-          .run();
+        await processTenantMessage(env, tenantId, msg, "TELEGRAM");
       }
 
       return j({ ok: true });
