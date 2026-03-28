@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BharatClaw | Workspace</title>
+  <meta
+    name="description"
+    content="View your BharatClaw workspace, recent leads, and setup status."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <nav class="nav">
+      <div class="brand">BharatClaw</div>
+      <a class="btn btn-secondary" href="/">Back to Home</a>
+    </nav>
+
+    <section class="section">
+      <article class="panel workspace-hero">
+        <div>
+          <p class="eyebrow">Owner Workspace</p>
+          <h1 id="workspace-name">Loading workspace...</h1>
+          <p class="lead">
+            BharatClaw is building the lead operating system for Indian businesses. Telegram is the first wedge. Captured leads, follow-ups, and owner visibility are the product.
+          </p>
+        </div>
+        <div id="workspace-actions" class="workspace-actions"></div>
+      </article>
+    </section>
+
+    <p id="workspace-error" class="error"></p>
+
+    <section class="workspace-grid">
+      <article class="panel">
+        <p class="eyebrow">Live Status</p>
+        <div id="workspace-metrics" class="metrics-grid"></div>
+      </article>
+
+      <article class="panel">
+        <p class="eyebrow">Setup</p>
+        <div id="workspace-setup" class="detail-list"></div>
+      </article>
+    </section>
+
+    <section class="section">
+      <article class="panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Recent Leads</p>
+            <h2>Captured inside BharatClaw</h2>
+          </div>
+        </div>
+        <div id="workspace-leads" class="lead-list"></div>
+      </article>
+    </section>
+
+    <section class="section">
+      <article class="panel vision-panel">
+        <p class="eyebrow">Vision</p>
+        <h2>BharatClaw is not just a bot.</h2>
+        <p class="lead">
+          The plan is bigger: build the lead layer for Indian small businesses. First Telegram. Then more channels. One system that responds, captures, follows up, and helps owners close faster without hiring extra people.
+        </p>
+      </article>
+    </section>
+  </div>
+
+  <script src="/workspace.js"></script>
+</body>
+</html>

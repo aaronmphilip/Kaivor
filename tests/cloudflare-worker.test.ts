@@ -57,6 +57,7 @@ class MockD1 {
   public owners: OwnerRow[] = [];
   public tenantConfigs: TenantConfigRow[] = [];
   public subscriptions: Array<{ id: string; tenant_id: string; status: string }> = [];
+  public auditEvents: Array<{ tenant_id: string; action: string }> = [];
 
   constructor(private readonly mode: "ok" | "fail" = "ok") {}
 
@@ -79,10 +80,35 @@ class MockD1 {
       return (this.tenants.find((row) => row.id === tenantId) ?? null) as T | null;
     }
 
+    if (query.includes("SELECT name,phone,email FROM owner_contacts WHERE tenant_id=?")) {
+      const tenantId = String(values[0] ?? "");
+      const owner = this.owners.find((row) => row.tenant_id === tenantId && row.is_primary === 1) ?? null;
+      return owner ? ({ name: owner.name, phone: owner.phone, email: owner.email } as T) : null;
+    }
+
     if (query.includes("SELECT metadata FROM tenant_configs WHERE tenant_id=?")) {
       const tenantId = String(values[0] ?? "");
       const row = this.tenantConfigs.find((item) => item.tenant_id === tenantId) ?? null;
       return row ? ({ metadata: row.metadata } as T) : null;
+    }
+
+    if (query.includes("SELECT t.name AS tenant_name,c.metadata")) {
+      const tenantId = String(values[0] ?? "");
+      const tenant = this.tenants.find((row) => row.id === tenantId) ?? null;
+      const config = this.tenantConfigs.find((row) => row.tenant_id === tenantId) ?? null;
+      return tenant && config ? ({ tenant_name: tenant.name, metadata: config.metadata } as T) : null;
+    }
+
+    if (query.includes("SELECT COUNT(*) AS count FROM leads WHERE tenant_id=? AND status='FOLLOWUP_PENDING'")) {
+      return { count: 0 } as T;
+    }
+
+    if (query.includes("SELECT COUNT(*) AS count FROM leads WHERE tenant_id=? AND status!='CLOSED'")) {
+      return { count: 0 } as T;
+    }
+
+    if (query.includes("SELECT COUNT(*) AS count FROM leads WHERE tenant_id=?")) {
+      return { count: 0 } as T;
     }
 
     throw new Error(`Unhandled first query: ${query}`);
@@ -93,6 +119,10 @@ class MockD1 {
       return {
         results: this.tenantConfigs.map((row) => ({ metadata: row.metadata } as T))
       };
+    }
+
+    if (query.includes("FROM leads") && query.includes("ORDER BY updated_at DESC")) {
+      return { results: [] };
     }
 
     throw new Error(`Unhandled all query: ${query}`);
@@ -138,6 +168,14 @@ class MockD1 {
         id: String(values[0]),
         tenant_id: String(values[1]),
         status: String(values[2])
+      });
+      return { meta: { changes: 1 } };
+    }
+
+    if (query.includes("INSERT INTO audit_events")) {
+      this.auditEvents.push({
+        tenant_id: String(values[1]),
+        action: String(values[4])
       });
       return { meta: { changes: 1 } };
     }
@@ -208,6 +246,35 @@ describe("cloudflare worker", () => {
     expect(response.status).toBe(500);
     expect(body.code).toBe("WORKER_RUNTIME_ERROR");
     expect(String(body.detail)).toContain("db down");
+  });
+
+  it("returns authenticated workspace data", async () => {
+    const env = createEnv(new MockD1());
+    const createRequest = new Request("https://bharatclaw-telegram.bharatclaw.workers.dev/public/free-trial", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        businessName: "Acme Business",
+        ownerName: "Aaron",
+        ownerEmail: "aaron@example.com"
+      })
+    });
+
+    const createResponse = await worker.fetch(createRequest, env);
+    const created = (await createResponse.json()) as Record<string, unknown>;
+    const workspace = new URL(String(created.workspaceUrl));
+    const tenantId = workspace.searchParams.get("tenantId");
+    const token = workspace.searchParams.get("token");
+
+    const workspaceResponse = await worker.fetch(
+      new Request(`https://bharatclaw-telegram.bharatclaw.workers.dev/public/workspaces/${tenantId}?token=${token}`),
+      env
+    );
+    const body = (await workspaceResponse.json()) as Record<string, unknown>;
+
+    expect(workspaceResponse.status).toBe(200);
+    expect(body.businessName).toBe("Acme Business");
+    expect(String(body.leadEntryUrl)).toContain("lead_");
   });
 
   it("does not crash when tenant metadata contains invalid json", async () => {

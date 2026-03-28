@@ -12,7 +12,11 @@ function esc(value) {
 function renderOwnerConnect(payload) {
   if (payload.ownerConnected) {
     return `
-      <p style="margin:10px 0 0;"><strong>Owner is already connected.</strong> Send <code>Hi</code> to your bot to test lead capture.</p>
+      <p style="margin:10px 0 8px;"><strong>Owner is already connected.</strong> Share your lead link and start capturing leads.</p>
+      <p style="margin:0; display:flex; gap:8px; flex-wrap:wrap;">
+        <a class="btn btn-primary" href="${esc(payload.workspaceUrl || "#")}" target="_blank" rel="noreferrer">Open Workspace</a>
+        <a class="btn btn-secondary" href="${esc(payload.leadEntryUrl || "#")}" target="_blank" rel="noreferrer">Open Lead Link</a>
+      </p>
     `;
   }
   const connectUrl = String(payload.ownerConnectUrl || payload.ownerConnectBotUrl || "https://t.me/bharatclawbot");
@@ -54,6 +58,10 @@ function renderSuccess(payload) {
     <p style="margin:8px 0 6px;">Tenant ID: <code>${esc(payload.tenantId)}</code></p>
     <p style="margin:0 0 6px;">BharatClaw Bot: <code>@${esc(payload.ownerConnectBot || "bharatclawbot")}</code></p>
     <p style="margin:0 0 6px;">Lead Entry Link: <code>${esc(payload.leadEntryUrl || "")}</code></p>
+    <p style="margin:0 0 12px; display:flex; gap:8px; flex-wrap:wrap;">
+      <a class="btn btn-primary" href="${esc(payload.workspaceUrl || "#")}" target="_blank" rel="noreferrer">Open Workspace</a>
+      <a class="btn btn-secondary" href="${esc(payload.leadEntryUrl || "#")}" target="_blank" rel="noreferrer">Open Lead Link</a>
+    </p>
     ${renderOwnerConnect(payload)}
   `;
 }
@@ -69,7 +77,7 @@ async function checkOwnerStatus(tenantId) {
       throw new Error(data?.error || "Unable to check status");
     }
     statusEl.textContent = data.ownerConnected
-      ? "Owner connected. Alerts are active."
+      ? "Owner connected. Alerts are active. Open your workspace to view leads."
       : "Owner not connected yet. Open @bharatclawbot, send pairing code, then check again.";
   } catch (error) {
     statusEl.textContent = error instanceof Error ? error.message : "Failed to check status";
