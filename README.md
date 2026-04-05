@@ -18,11 +18,12 @@ Core promise: **Never miss a lead again.**
 - Follow-up jobs (+30 min, +24h)
 - Owner notification to Telegram
 - Owner pairing code verification via `@bharatclawbot`
-- AI copilot layer for reply drafts, workspace advice, and takeover recommendations
+- Always-on AI layer with a free local sandbox mode plus optional remote model mode
 - Manual takeover (`#takeover <chat_id>`)
 - Manual owner reply (`#reply <chat_id> <message>`)
 - AI owner draft command (`#ai <chat_id>`)
 - Workspace copilot command (`/copilot`)
+- Priority rescue queue command (`/priority`)
 - Interruption handling (`/start` restart, language switch mid-flow, low-signal re-prompts)
 - Config APIs and tenant API keys
 - Free mode + public self-serve trial signup (`POST /public/free-trial`)
@@ -51,7 +52,7 @@ Core promise: **Never miss a lead again.**
 
 1. Every Telegram message enters the Cloudflare Worker and is attached to the right tenant, lead, and conversation state.
 2. The premium state machine still handles deterministic capture steps first, so greeting, language, name, and requirement collection stay reliable.
-3. Once a lead is captured or a higher-context message arrives, BharatClaw can call an optional OpenAI-compatible endpoint with:
+3. BharatClaw routes replies through its AI layer. In free testing mode, that layer uses a local heuristic sandbox. In remote mode, it can call an OpenAI-compatible endpoint with:
    - workspace metadata
    - business context
    - recent transcript
@@ -108,12 +109,13 @@ npx wrangler secret put TELEGRAM_WEBHOOK_SECRET
 npx wrangler secret put OWNER_CONNECT_BOT_TOKEN
 npx wrangler secret put OWNER_CONNECT_BOT_SECRET
 ```
-Optional AI copilot secrets/vars:
+Optional remote AI secrets/vars:
 ```bash
 npx wrangler secret put AI_AGENT_API_KEY
 ```
 Set these as vars or secrets depending on your deployment style:
 - `AI_AGENT_ENABLED=true`
+- `AI_AGENT_MODE=mock` for free testing or `AI_AGENT_MODE=remote` for paid external model usage
 - `AI_AGENT_MODEL=<your-openai-compatible-model-id>`
 - `AI_AGENT_API_URL=https://api.openai.com/v1/chat/completions`
 - `AI_AGENT_SYSTEM_PROMPT=<optional business-specific guardrails>`

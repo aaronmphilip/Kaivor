@@ -4,6 +4,10 @@
     document.querySelector('meta[name="bharatclaw-worker-base"]')?.getAttribute("content")?.trim() || "";
   const useCurrentOrigin = /workers\.dev$/i.test(window.location.hostname);
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const preferredTheme = getStoredTheme();
+  const resolvedTheme = preferredTheme || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+  applyTheme(resolvedTheme);
 
   window.BharatClawSite = Object.freeze({
     workerBaseUrl: useCurrentOrigin ? window.location.origin : configuredWorkerBase || fallbackWorkerBase
@@ -20,9 +24,58 @@
     }
   });
 
+  initThemeToggle();
   initRevealMotion(prefersReducedMotion);
   initAgentTheater(prefersReducedMotion);
 })();
+
+function getStoredTheme() {
+  try {
+    const value = window.localStorage.getItem("bharatclaw-theme");
+    return value === "dark" || value === "light" ? value : "";
+  } catch {
+    return "";
+  }
+}
+
+function applyTheme(theme) {
+  const safeTheme = theme === "dark" ? "dark" : "light";
+  document.documentElement.dataset.theme = safeTheme;
+  document.body?.setAttribute("data-theme", safeTheme);
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) {
+    metaTheme.setAttribute("content", safeTheme === "dark" ? "#09070f" : "#f7f4ff");
+  }
+}
+
+function initThemeToggle() {
+  const navActions = document.querySelector(".nav-actions");
+  if (!navActions) return;
+
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "btn btn-secondary theme-toggle";
+  navActions.prepend(toggle);
+
+  const syncLabel = () => {
+    const currentTheme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+    toggle.textContent = currentTheme === "dark" ? "Light Mode" : "Dark Mode";
+    toggle.setAttribute("aria-label", currentTheme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+  };
+
+  toggle.addEventListener("click", () => {
+    const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    applyTheme(nextTheme);
+    try {
+      window.localStorage.setItem("bharatclaw-theme", nextTheme);
+    } catch {
+      // ignore storage failures
+    }
+    syncLabel();
+  });
+
+  syncLabel();
+}
 
 function initRevealMotion(prefersReducedMotion) {
   const nodes = Array.from(document.querySelectorAll("[data-reveal]"));

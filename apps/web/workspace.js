@@ -240,6 +240,24 @@ function renderInsightsPanel(data) {
     `);
   }
 
+  const priorityQueue = Array.isArray(data?.insights?.priorityQueue) ? data.insights.priorityQueue : [];
+  if (priorityQueue.length) {
+    insightRows.push(`
+      <div class="card">
+        <h3>Priority Rescue Queue</h3>
+        <ul class="feature-list">
+          ${priorityQueue
+            .slice(0, 3)
+            .map(
+              (item) =>
+                `<li><strong>${esc(item.customerName || item.customerPhone || "Lead")}</strong>: ${esc(item.reason || "Needs a quick owner decision.")}</li>`
+            )
+            .join("")}
+        </ul>
+      </div>
+    `);
+  }
+
   return insightRows.join("");
 }
 
@@ -262,17 +280,21 @@ function renderWorkspace(data) {
     metricCard("Follow-up Pending", data?.stats?.followupPending ?? 0)
   ].join("");
 
-  setupEl.innerHTML = [
+  const setupRows = [
     detailRow("Owner Connected", data.ownerConnected ? "Yes" : "No"),
     detailRow("Owner Name", data?.owner?.name || selectedTenant?.ownerName || "-"),
-    detailRow("Owner Chat", data?.owner?.phone || "-"),
     detailRow(
       "Owner Paired At",
       data.pairedAt ? formatDateTime(data.pairedAt) : selectedTenant?.pairedAt ? formatDateTime(selectedTenant.pairedAt) : "-"
     ),
-    detailRow("Pairing Code", selectedTenant?.pairingCode || selectedTenant?.ownerPairCode || "-"),
-    detailRow("Lead Link", data.leadEntryUrl || "-")
-  ].join("");
+    detailRow("Channel Mode", data?.profile?.channelMode || "Shared Telegram inbox")
+  ];
+
+  if (!data.ownerConnected) {
+    setupRows.push(detailRow("Pairing Code", selectedTenant?.pairingCode || selectedTenant?.ownerPairCode || "-"));
+  }
+
+  setupEl.innerHTML = setupRows.join("");
 
   profileEl.innerHTML = renderProfilePanel(data);
   insightsEl.innerHTML = renderInsightsPanel(data);

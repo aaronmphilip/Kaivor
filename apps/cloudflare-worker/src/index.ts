@@ -21,6 +21,7 @@ interface Env {
   FREE_MODE?: string;
   PUBLIC_SIGNUP_ENABLED?: string;
   AI_AGENT_ENABLED?: string;
+  AI_AGENT_MODE?: string;
   AI_AGENT_API_KEY?: string;
   AI_AGENT_MODEL?: string;
   AI_AGENT_API_URL?: string;
@@ -54,6 +55,18 @@ type AiCopilotOutput = {
   leadTemperature: "hot" | "warm" | "cold";
   intentLabel: string;
   followupHint: string;
+};
+
+type AiAgentMode = "mock" | "remote";
+
+type PriorityQueueItem = {
+  customerName: string;
+  customerPhone: string;
+  status: string;
+  score: number;
+  reason: string;
+  nextMove: string;
+  updatedAt: string;
 };
 
 const jsonHeaders = { "content-type": "application/json" };
@@ -191,6 +204,82 @@ function workspaceProfileFromMetadata(metadata: Record<string, unknown>) {
   };
 }
 
+function hoursSince(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return null;
+  return Math.max(0, (Date.now() - timestamp) / 3_600_000);
+}
+
+function inferIntentLabel(requirement: string | null | undefined, latestInboundText: string | null | undefined): string {
+  const text = `${txt(requirement, 180)} ${txt(latestInboundText, 180)}`.toLowerCase();
+  if (!text) return "General inquiry";
+  if (/(price|pricing|cost|fees|budget|quote|rate)/i.test(text)) return "Pricing request";
+  if (/(book|booking|appointment|schedule|slot|visit|trial|demo)/i.test(text)) return "Booking intent";
+  if (/(repair|issue|problem|broken|not working|support|service)/i.test(text)) return "Service issue";
+  if (/(consult|consultation|treatment|admission|course|membership)/i.test(text)) return "Qualified interest";
+  return "General inquiry";
+}
+
+function shouldEscalateToOwner(requirement: string | null | undefined, latestInboundText: string | null | undefined): boolean {
+  const text = `${txt(requirement, 220)} ${txt(latestInboundText, 220)}`.toLowerCase();
+  return /(urgent|asap|today|tomorrow|now|immediately|price|pricing|cost|quote|speak|call|owner|manager|custom|discount|availability)/i.test(
+    text
+  );
+}
+
+function buildPriorityQueue(leads: WorkspaceLeadRow[]): PriorityQueueItem[] {
+  return leads
+    .filter((lead) => lead.status !== "CLOSED")
+    .map((lead) => {
+      const latestText = txt(lead.requirement, 220);
+      const hoursFromInbound = hoursSince(lead.last_inbound_at);
+      const hoursFromOutbound = hoursSince(lead.last_outbound_at);
+      const hoursFromUpdate = hoursSince(lead.updated_at) ?? 0;
+      const ownerUrgent = shouldEscalateToOwner(lead.requirement, lead.requirement);
+      const staleWithoutReply =
+        hoursFromInbound !== null &&
+        (hoursFromOutbound === null || (lead.last_inbound_at || "") >= (lead.last_outbound_at || "")) &&
+        hoursFromInbound >= 1;
+
+      let score = 18;
+      if (lead.status === "OWNER_TAKEOVER") score += 30;
+      if (lead.status === "FOLLOWUP_PENDING") score += 22;
+      if (lead.status === "IN_PROGRESS") score += 12;
+      if (ownerUrgent) score += 25;
+      if (staleWithoutReply) score += 18;
+      if (hoursFromUpdate >= 24) score += 14;
+      else if (hoursFromUpdate <= 2) score += 8;
+      if (!latestText) score -= 6;
+
+      let reason = "Lead needs a human check-in.";
+      let nextMove = `Send a direct reply to ${lead.customer_phone}.`;
+
+      if (ownerUrgent) {
+        reason = "The lead sounds urgent, pricing-sensitive, or trust-sensitive.";
+        nextMove = `Use owner takeover for ${lead.customer_phone} and confirm the next step personally.`;
+      } else if (staleWithoutReply) {
+        reason = "The latest inbound message may not have received a strong human follow-up.";
+        nextMove = `Send a rescue follow-up to ${lead.customer_phone} before the lead cools.`;
+      } else if (lead.status === "FOLLOWUP_PENDING") {
+        reason = "This lead is already in the recovery lane and could still be won.";
+        nextMove = `Review the pending follow-up and restart the conversation with context.`;
+      }
+
+      return {
+        customerName: txt(lead.customer_name, 80) || "Unknown lead",
+        customerPhone: lead.customer_phone,
+        status: lead.status,
+        score,
+        reason,
+        nextMove,
+        updatedAt: lead.updated_at
+      };
+    })
+    .sort((a, b) => (b.score !== a.score ? b.score - a.score : b.updatedAt.localeCompare(a.updatedAt)))
+    .slice(0, 5);
+}
+
 function buildWorkspaceInsights(input: {
   ownerConnected: boolean;
   totalLeads: number;
@@ -199,6 +288,7 @@ function buildWorkspaceInsights(input: {
   profile: ReturnType<typeof workspaceProfileFromMetadata>;
   leads: WorkspaceLeadRow[];
 }) {
+  const priorityQueue = buildPriorityQueue(input.leads);
   const languageTotals = input.leads.reduce(
     (acc, lead) => {
       if (lead.preferred_language === "hi") acc.hi += 1;
@@ -230,6 +320,11 @@ function buildWorkspaceInsights(input: {
   }
   if (input.openLeads > 0) {
     recommendedActions.push("Use owner takeover for high-intent leads that need pricing, availability, or trust-building.");
+  }
+  if (priorityQueue.length) {
+    recommendedActions.push(
+      `Start with ${priorityQueue[0]?.customerName || "the top lead"} because it currently has the strongest rescue or conversion signal.`
+    );
   }
   if (!recommendedActions.length) {
     recommendedActions.push("Keep routing customer conversations into BharatClaw and watch the owner console for fresh intent.");
@@ -267,7 +362,8 @@ function buildWorkspaceInsights(input: {
       : input.totalLeads
         ? "No follow-ups are pending right now."
         : "Follow-ups will appear automatically after leads start replying.",
-    topLanguage
+    topLanguage,
+    priorityQueue
   };
 }
 
@@ -275,11 +371,18 @@ function capitalize(input: string): string {
   return input ? input.charAt(0).toUpperCase() + input.slice(1) : "";
 }
 
+function aiAgentMode(env: Env, metadata: Record<string, unknown>): AiAgentMode {
+  const metadataMode = txt(metadata.aiAgentMode, 20).toLowerCase();
+  if (metadataMode === "remote") return "remote";
+  const envMode = txt(env.AI_AGENT_MODE, 20).toLowerCase();
+  return envMode === "remote" ? "remote" : "mock";
+}
+
 function aiAgentEnabled(env: Env, metadata: Record<string, unknown>): boolean {
-  if (!isTrue(env.AI_AGENT_ENABLED, false)) return false;
+  if (!isTrue(env.AI_AGENT_ENABLED, true)) return false;
   const mode = txt(metadata.aiAgentMode, 20).toLowerCase();
   if (mode === "off" || mode === "disabled") return false;
-  return Boolean(txt(env.AI_AGENT_API_KEY, 240) && txt(env.AI_AGENT_MODEL, 120));
+  return true;
 }
 
 function aiAgentApiUrl(env: Env): string {
@@ -325,6 +428,84 @@ function normalizeAiCopilotOutput(input: unknown): AiCopilotOutput | null {
     leadTemperature,
     intentLabel,
     followupHint
+  };
+}
+
+function buildMockAiCopilot(
+  input: {
+    customerName: string | null;
+    requirement: string | null;
+    preferredLanguage: string | null;
+    latestInboundText: string;
+    mode: "customer_reply" | "owner_draft" | "workspace_digest";
+    businessName?: string;
+    ownerName?: string;
+    workspaceStats?: { totalLeads: number; openLeads: number; followupPending: number };
+    defaultReply?: string;
+  },
+  business: ReturnType<typeof aiBusinessContext>
+): AiCopilotOutput {
+  const latestInboundText = txt(input.latestInboundText, 240);
+  const language = input.preferredLanguage === "hi" ? "hi" : "en";
+  const intentLabel = inferIntentLabel(input.requirement, latestInboundText);
+  const ownerShouldTakeover = shouldEscalateToOwner(input.requirement, latestInboundText);
+  const leadTemperature: "hot" | "warm" | "cold" = ownerShouldTakeover
+    ? "hot"
+    : txt(input.requirement || latestInboundText, 24)
+      ? "warm"
+      : "cold";
+
+  if (input.mode === "workspace_digest") {
+    const totalLeads = Number(input.workspaceStats?.totalLeads ?? 0);
+    const openLeads = Number(input.workspaceStats?.openLeads ?? 0);
+    const followupPending = Number(input.workspaceStats?.followupPending ?? 0);
+    return {
+      reply: "Workspace digest ready.",
+      ownerSummary:
+        totalLeads === 0
+          ? "No leads have landed yet, so the fastest path is getting the lead link into more traffic sources."
+          : followupPending > 0
+            ? "The main risk right now is follow-up drift. Focus on leads that are waiting for a human-quality nudge."
+            : openLeads > 0
+              ? "Open leads are active. Prioritize replies that confirm price, timing, or next steps before intent cools."
+              : "The workspace looks stable. Keep feeding traffic into the bot and monitor for new high-intent chats.",
+      ownerShouldTakeover: followupPending > 0,
+      leadTemperature: totalLeads > 0 ? "warm" : "cold",
+      intentLabel: totalLeads > 0 ? "Workspace review" : "Pre-launch workspace",
+      followupHint:
+        totalLeads === 0
+          ? "Share the lead link in your bio, pinned message, and QR placements to start collecting signals."
+          : followupPending > 0
+            ? "Use the owner console or Telegram commands to rescue the oldest pending leads first."
+            : "Keep the owner loop fast for any leads asking about price, availability, or custom scope."
+    };
+  }
+
+  const customerName = txt(input.customerName, 80) || "there";
+  const defaultReply = txt(input.defaultReply, 420);
+  const reply =
+    defaultReply ||
+    (input.mode === "owner_draft"
+      ? language === "hi"
+        ? `Namaste ${customerName}, aapka message mil gaya hai. Main details dekh kar aapko next step ke saath jaldi reply karta hoon.`
+        : `Thanks ${customerName}, I have reviewed your message. I will get back to you shortly with the next step.`
+      : language === "hi"
+        ? `Namaste ${customerName}, aapka message mil gaya hai. Main aapki help karne ke liye yahan hoon.`
+        : `Thanks ${customerName}, I have your message and I am here to help.`);
+
+  const ownerSummary = ownerShouldTakeover
+    ? `${customerName} looks high-intent for ${business.businessName}. The message suggests urgency, pricing sensitivity, or a need for human reassurance.`
+    : `${customerName} is active and qualified enough to keep moving. The conversation can stay guided, but a quick owner reply would still strengthen trust.`;
+
+  return {
+    reply,
+    ownerSummary,
+    ownerShouldTakeover,
+    leadTemperature,
+    intentLabel,
+    followupHint: ownerShouldTakeover
+      ? `Reply personally with a clear next step for ${customerName}, especially around timing, pricing, or availability.`
+      : "Keep the chat moving toward one concrete next step instead of a generic acknowledgment."
   };
 }
 
@@ -904,15 +1085,19 @@ async function callAiCopilot(
     businessName?: string;
     ownerName?: string;
     workspaceStats?: { totalLeads: number; openLeads: number; followupPending: number };
+    defaultReply?: string;
+    replyKey?: string;
   }
 ): Promise<AiCopilotOutput | null> {
   if (!aiAgentEnabled(env, input.metadata)) return null;
 
+  const business = aiBusinessContext(input.metadata);
+  const fallback = buildMockAiCopilot(input, business);
+  if (aiAgentMode(env, input.metadata) !== "remote") return fallback;
+
   const apiKey = txt(env.AI_AGENT_API_KEY, 240);
   const model = txt(env.AI_AGENT_MODEL, 120);
-  if (!apiKey || !model) return null;
-
-  const business = aiBusinessContext(input.metadata);
+  if (!apiKey || !model) return fallback;
   const transcript = input.transcript
     .map((row) => `${row.direction === "INBOUND" ? "Lead" : "BharatClaw"} (${row.created_at}): ${txt(row.body, 280)}`)
     .join("\n");
@@ -942,6 +1127,10 @@ async function callAiCopilot(
       preferredLanguage: input.preferredLanguage || "en",
       latestInboundText: input.latestInboundText
     },
+    replyGuide: {
+      replyKey: input.replyKey || null,
+      defaultReply: input.defaultReply || null
+    },
     workspaceStats: input.workspaceStats ?? null,
     transcript
   };
@@ -963,18 +1152,18 @@ async function callAiCopilot(
     })
   }).catch(() => null);
 
-  if (!response || !response.ok) return null;
+  if (!response || !response.ok) return fallback;
 
   const payload = (await response.json().catch(() => null)) as
     | { choices?: Array<{ message?: { content?: string | null } }> }
     | null;
   const rawContent = txt(payload?.choices?.[0]?.message?.content, 8000);
-  if (!rawContent) return null;
+  if (!rawContent) return fallback;
 
   try {
-    return normalizeAiCopilotOutput(JSON.parse(rawContent));
+    return normalizeAiCopilotOutput(JSON.parse(rawContent)) ?? fallback;
   } catch {
-    return null;
+    return fallback;
   }
 }
 
@@ -1416,6 +1605,7 @@ function buildOwnerWelcomeMessage(input: {
     "Owner commands:",
     "/status  system health",
     "/leads  recent leads",
+    "/priority  top rescue queue",
     "/copilot  AI workspace advice",
     "/link  resend lead link",
     "/workspace  open owner console",
@@ -1451,6 +1641,22 @@ function buildLeadDigest(
     })
     .join("\n\n")
     .slice(0, 3400);
+}
+
+function buildPriorityDigest(priorityQueue: PriorityQueueItem[]): string {
+  if (!priorityQueue.length) {
+    return "No urgent rescue queue right now. New leads and follow-up candidates will appear here automatically.";
+  }
+
+  return priorityQueue
+    .map(
+      (lead, index) =>
+        `${index + 1}. ${lead.customerName} | ${lead.customerPhone}\nScore: ${lead.score} | Status: ${formatLeadStatus(
+          lead.status
+        )}\nWhy now: ${lead.reason}\nNext move: ${lead.nextMove}`
+    )
+    .join("\n\n")
+    .slice(0, 3600);
 }
 
 function buildAiLeadBrief(leadPhone: string, ai: AiCopilotOutput): string {
@@ -1683,6 +1889,26 @@ async function handleOwnerMessage(
     return;
   }
 
+  if (normalized === "/priority" || normalized === "priority") {
+    const leads = await env.DB.prepare(
+      `SELECT customer_name,customer_phone,requirement,status,preferred_language,last_inbound_at,last_outbound_at,updated_at,created_at
+       FROM leads
+       WHERE tenant_id=?
+       ORDER BY updated_at DESC
+       LIMIT 16`
+    )
+      .bind(input.tenantId)
+      .all<WorkspaceLeadRow>();
+    const priorityQueue = buildPriorityQueue(leads.results ?? []);
+    await sendTelegram(
+      input.botToken,
+      input.ownerChatId,
+      `Priority queue for ${input.businessName}\n\n${buildPriorityDigest(priorityQueue)}`,
+      ownerActionMarkup(leadUrl, ownerWorkspaceUrl)
+    );
+    return;
+  }
+
   if (normalized === "/copilot" || normalized === "copilot") {
     const total = await env.DB.prepare("SELECT COUNT(*) AS count FROM leads WHERE tenant_id=?")
       .bind(input.tenantId)
@@ -1744,7 +1970,7 @@ async function handleOwnerMessage(
           `Total leads: ${Number(total?.count ?? 0)}`,
           `Open leads: ${Number(open?.count ?? 0)}`,
           `Waiting follow-up: ${Number(followup?.count ?? 0)}`,
-          "Enable AI_AGENT_* env vars to unlock AI reply drafts and workspace copilot advice."
+          "AI copilot is turned off for this workspace."
         ].join("\n");
 
     await sendTelegram(input.botToken, input.ownerChatId, body, ownerActionMarkup(leadUrl, ownerWorkspaceUrl));
@@ -1817,7 +2043,7 @@ async function handleOwnerMessage(
       await sendTelegram(
         input.botToken,
         input.ownerChatId,
-        "AI draft is not available yet. Configure AI_AGENT_ENABLED, AI_AGENT_API_KEY, AI_AGENT_MODEL, and optionally AI_AGENT_API_URL.",
+        "AI drafting is turned off for this workspace right now.",
         ownerActionMarkup(leadUrl, ownerWorkspaceUrl)
       );
       return;
@@ -2280,7 +2506,26 @@ async function processTenantMessage(
     return;
   }
 
-  const aiEligible = Boolean(config) && (transition.replyKey === "ACK" || transition.shouldNotifyOwner);
+  const defaultReply =
+    transition.shouldReply && config
+      ? buildAutoReply({
+          transition,
+          customerName: transition.customerName ?? (nextName ?? undefined),
+          language: replyLanguage,
+          config: {
+            tenantId,
+            autoReplyEnabled: Boolean(config.auto_reply_enabled),
+            greetingTemplate: config.greeting_template,
+            followup30mTemplate: config.followup_30m_template,
+            followup24hTemplateName: config.followup_24h_template_name,
+            takeoverCooldownMinutes: Number(config.takeover_cooldown_minutes),
+            metadata,
+            updatedAt: new Date(config.updated_at)
+          }
+        })
+      : "";
+
+  const aiEligible = Boolean(config) && (transition.shouldReply || transition.shouldNotifyOwner);
   const transcript = aiEligible ? await loadLeadTranscript(env, lead.id) : [];
   const aiCopilot = aiEligible
     ? await callAiCopilot(env, {
@@ -2290,28 +2535,15 @@ async function processTenantMessage(
         preferredLanguage: nextLanguage,
         latestInboundText: txt(msg.text, 280),
         transcript,
-        mode: transition.replyKey === "ACK" ? "customer_reply" : "owner_draft",
-        businessName: txt(metadata.businessName, 120) || tenantId
+        mode: transition.shouldReply ? "customer_reply" : "owner_draft",
+        businessName: txt(metadata.businessName, 120) || tenantId,
+        defaultReply,
+        replyKey: transition.replyKey
       })
     : null;
 
   if (transition.shouldReply && config) {
-    const defaultReply = buildAutoReply({
-      transition,
-      customerName: transition.customerName ?? (nextName ?? undefined),
-      language: replyLanguage,
-      config: {
-        tenantId,
-        autoReplyEnabled: Boolean(config.auto_reply_enabled),
-        greetingTemplate: config.greeting_template,
-        followup30mTemplate: config.followup_30m_template,
-        followup24hTemplateName: config.followup_24h_template_name,
-        takeoverCooldownMinutes: Number(config.takeover_cooldown_minutes),
-        metadata,
-        updatedAt: new Date(config.updated_at)
-      }
-    });
-    const reply = transition.replyKey === "ACK" && aiCopilot?.reply ? txt(aiCopilot.reply, 420) : defaultReply;
+    const reply = aiCopilot?.reply ? txt(aiCopilot.reply, 420) : defaultReply;
     const ext = await sendTelegram(botToken, lead.customer_phone, reply, telegramReplyOptionsForKey(transition.replyKey));
     await env.DB.prepare(
       "INSERT OR IGNORE INTO messages (id,tenant_id,lead_id,direction,message_type,body,external_message_id,idempotency_key,created_at) VALUES (?,?,?,'OUTBOUND','TEXT',?,?,?,?)"
@@ -2352,9 +2584,6 @@ async function processTenantMessage(
         now()
       )
       .run();
-    const owners = await env.DB.prepare("SELECT * FROM owner_contacts WHERE tenant_id=? AND is_primary=1 ORDER BY created_at")
-      .bind(tenantId)
-      .all<{ phone: string; email?: string | null }>();
     const updated = await env.DB.prepare("SELECT * FROM leads WHERE id=?")
       .bind(lead.id)
       .first<{ customer_name: string | null; customer_phone: string; requirement: string | null; preferred_language: "en" | "hi" | null }>();
