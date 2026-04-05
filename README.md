@@ -18,7 +18,11 @@ Core promise: **Never miss a lead again.**
 - Follow-up jobs (+30 min, +24h)
 - Owner notification to Telegram
 - Owner pairing code verification via `@bharatclawbot`
+- AI copilot layer for reply drafts, workspace advice, and takeover recommendations
 - Manual takeover (`#takeover <chat_id>`)
+- Manual owner reply (`#reply <chat_id> <message>`)
+- AI owner draft command (`#ai <chat_id>`)
+- Workspace copilot command (`/copilot`)
 - Interruption handling (`/start` restart, language switch mid-flow, low-signal re-prompts)
 - Config APIs and tenant API keys
 - Free mode + public self-serve trial signup (`POST /public/free-trial`)
@@ -42,6 +46,30 @@ Core promise: **Never miss a lead again.**
 - Wrangler config: `wrangler.toml`
 - D1 schema: `sql/d1_init.sql`
 - Local dev secrets template: `.dev.vars.example`
+
+## How the Telegram AI agent works
+
+1. Every Telegram message enters the Cloudflare Worker and is attached to the right tenant, lead, and conversation state.
+2. The premium state machine still handles deterministic capture steps first, so greeting, language, name, and requirement collection stay reliable.
+3. Once a lead is captured or a higher-context message arrives, BharatClaw can call an optional OpenAI-compatible endpoint with:
+   - workspace metadata
+   - business context
+   - recent transcript
+   - latest inbound message
+4. The AI copilot returns strict JSON with:
+   - `reply`
+   - `ownerSummary`
+   - `ownerShouldTakeover`
+   - `leadTemperature`
+   - `intentLabel`
+   - `followupHint`
+5. BharatClaw then uses that output safely:
+   - customer-facing AI replies only replace the post-capture acknowledgment layer
+   - owner alerts include AI summaries when useful
+   - hot or trust-sensitive leads trigger owner takeover recommendations
+6. Owners stay in control from Telegram with `/copilot`, `#ai`, `#reply`, `#takeover`, and `#resume`.
+
+This keeps the system grounded: structured logic for reliability, AI for better context, and owner control for judgment calls.
 
 ## Files for Vercel landing site
 
@@ -80,6 +108,16 @@ npx wrangler secret put TELEGRAM_WEBHOOK_SECRET
 npx wrangler secret put OWNER_CONNECT_BOT_TOKEN
 npx wrangler secret put OWNER_CONNECT_BOT_SECRET
 ```
+Optional AI copilot secrets/vars:
+```bash
+npx wrangler secret put AI_AGENT_API_KEY
+```
+Set these as vars or secrets depending on your deployment style:
+- `AI_AGENT_ENABLED=true`
+- `AI_AGENT_MODEL=<your-openai-compatible-model-id>`
+- `AI_AGENT_API_URL=https://api.openai.com/v1/chat/completions`
+- `AI_AGENT_SYSTEM_PROMPT=<optional business-specific guardrails>`
+
 Optional var in `wrangler.toml`:
 - `FREE_MODE` (`true` keeps automation always on)
 - `PUBLIC_SIGNUP_ENABLED` (`true` allows public onboarding endpoint)
@@ -136,6 +174,7 @@ curl -X POST "https://api.telegram.org/bot<OWNER_CONNECT_BOT_TOKEN>/setWebhook" 
   - lead saved
   - owner alert sent
   - follow-up jobs created
+  - if AI is enabled, owner alert includes richer lead context and later `#ai <chat_id>` returns a draft
 
 12. Test takeover
 ```bash
@@ -186,3 +225,4 @@ npm run dev:cf
 
 - Existing Node API/worker implementation is still in repo (`apps/api`, `apps/worker`) if you need non-Cloudflare hosting.
 - For fast free MVP: Cloudflare worker handles bot backend, Vercel handles marketing + onboarding pages.
+- The website in `apps/web` now includes animated storytelling around the Telegram agent, BharatClaw vision, and AI copilot workflow.

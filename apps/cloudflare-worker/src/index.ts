@@ -20,6 +20,11 @@ interface Env {
   LANDING_CTA_URL?: string;
   FREE_MODE?: string;
   PUBLIC_SIGNUP_ENABLED?: string;
+  AI_AGENT_ENABLED?: string;
+  AI_AGENT_API_KEY?: string;
+  AI_AGENT_MODEL?: string;
+  AI_AGENT_API_URL?: string;
+  AI_AGENT_SYSTEM_PROMPT?: string;
 }
 
 type Ctx = { waitUntil(p: Promise<unknown>): void };
@@ -34,6 +39,21 @@ type WorkspaceLeadRow = {
   last_outbound_at: string | null;
   updated_at: string;
   created_at: string;
+};
+
+type TranscriptRow = {
+  direction: string;
+  body: string;
+  created_at: string;
+};
+
+type AiCopilotOutput = {
+  reply: string;
+  ownerSummary: string;
+  ownerShouldTakeover: boolean;
+  leadTemperature: "hot" | "warm" | "cold";
+  intentLabel: string;
+  followupHint: string;
 };
 
 const jsonHeaders = { "content-type": "application/json" };
@@ -248,6 +268,63 @@ function buildWorkspaceInsights(input: {
         ? "No follow-ups are pending right now."
         : "Follow-ups will appear automatically after leads start replying.",
     topLanguage
+  };
+}
+
+function capitalize(input: string): string {
+  return input ? input.charAt(0).toUpperCase() + input.slice(1) : "";
+}
+
+function aiAgentEnabled(env: Env, metadata: Record<string, unknown>): boolean {
+  if (!isTrue(env.AI_AGENT_ENABLED, false)) return false;
+  const mode = txt(metadata.aiAgentMode, 20).toLowerCase();
+  if (mode === "off" || mode === "disabled") return false;
+  return Boolean(txt(env.AI_AGENT_API_KEY, 240) && txt(env.AI_AGENT_MODEL, 120));
+}
+
+function aiAgentApiUrl(env: Env): string {
+  return txt(env.AI_AGENT_API_URL, 320) || "https://api.openai.com/v1/chat/completions";
+}
+
+function aiBusinessContext(metadata: Record<string, unknown>) {
+  const profile = workspaceProfileFromMetadata(metadata);
+  const focusLabels = profile.launchFocus.map((item) => item.label).join(", ");
+
+  return {
+    businessName: txt(metadata.businessName, 120) || "the business",
+    industry: profile.industry || "General business",
+    teamSize: profile.teamSize || "Not specified",
+    channelMode: profile.channelMode,
+    focusLabels: focusLabels || "Lead capture, follow-up recovery, owner handoff",
+    offerSummary: txt(metadata.offerSummary ?? metadata.businessDescription, 240) || "Capture inbound leads, qualify them, and guide them toward the owner.",
+    faqSummary: txt(metadata.faqSummary, 280) || "If pricing, availability, or custom scope is uncertain, the owner should step in.",
+    brandVoice: txt(metadata.brandVoice, 120) || "confident, warm, concise, helpful",
+    ownerGoal: txt(metadata.ownerGoal, 180) || "convert serious inbound leads without sounding robotic"
+  };
+}
+
+function normalizeAiCopilotOutput(input: unknown): AiCopilotOutput | null {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return null;
+  const row = input as Record<string, unknown>;
+  const leadTemperatureRaw = txt(row.leadTemperature, 20).toLowerCase();
+  const leadTemperature: "hot" | "warm" | "cold" =
+    leadTemperatureRaw === "hot" || leadTemperatureRaw === "cold" ? (leadTemperatureRaw as "hot" | "cold") : "warm";
+  const reply = txt(row.reply, 420);
+  const ownerSummary = txt(row.ownerSummary, 320);
+  const intentLabel = txt(row.intentLabel, 80) || "General inquiry";
+  const followupHint = txt(row.followupHint, 160) || "Keep the conversation moving toward a clear next step.";
+  const ownerShouldTakeover =
+    row.ownerShouldTakeover === true || txt(row.ownerShouldTakeover, 10).toLowerCase() === "true";
+
+  if (!reply && !ownerSummary) return null;
+
+  return {
+    reply: reply || "Thanks for the message. I have shared it with the team and we will guide you on the next step shortly.",
+    ownerSummary: ownerSummary || "AI copilot did not produce a detailed owner brief, but the lead looks active.",
+    ownerShouldTakeover,
+    leadTemperature,
+    intentLabel,
+    followupHint
   };
 }
 
@@ -800,6 +877,107 @@ async function sendTelegram(botToken: string, chatId: string, text: string, extr
   return String(payload.result?.message_id ?? "unknown");
 }
 
+async function loadLeadTranscript(env: Env, leadId: string, limit = 8): Promise<TranscriptRow[]> {
+  const rows = await env.DB.prepare(
+    `SELECT direction,body,created_at
+     FROM messages
+     WHERE lead_id=?
+     ORDER BY created_at DESC
+     LIMIT ?`
+  )
+    .bind(leadId, limit)
+    .all<TranscriptRow>();
+
+  return [...(rows.results ?? [])].reverse();
+}
+
+async function callAiCopilot(
+  env: Env,
+  input: {
+    metadata: Record<string, unknown>;
+    customerName: string | null;
+    requirement: string | null;
+    preferredLanguage: string | null;
+    latestInboundText: string;
+    transcript: TranscriptRow[];
+    mode: "customer_reply" | "owner_draft" | "workspace_digest";
+    businessName?: string;
+    ownerName?: string;
+    workspaceStats?: { totalLeads: number; openLeads: number; followupPending: number };
+  }
+): Promise<AiCopilotOutput | null> {
+  if (!aiAgentEnabled(env, input.metadata)) return null;
+
+  const apiKey = txt(env.AI_AGENT_API_KEY, 240);
+  const model = txt(env.AI_AGENT_MODEL, 120);
+  if (!apiKey || !model) return null;
+
+  const business = aiBusinessContext(input.metadata);
+  const transcript = input.transcript
+    .map((row) => `${row.direction === "INBOUND" ? "Lead" : "BharatClaw"} (${row.created_at}): ${txt(row.body, 280)}`)
+    .join("\n");
+
+  const systemPrompt = [
+    "You are BharatClaw Copilot, a high-conviction conversational sales assistant for Indian businesses.",
+    "Your job is to help qualify leads, keep replies concise, sound human, and know when the owner should take over.",
+    "Never mention being an AI, a model, or an assistant.",
+    "Avoid hallucinating prices, promises, timings, or policies.",
+    "If the business context is missing a fact, stay helpful and move the lead toward a clear next step.",
+    "Return strict JSON with keys: reply, ownerSummary, ownerShouldTakeover, leadTemperature, intentLabel, followupHint.",
+    "leadTemperature must be one of: hot, warm, cold.",
+    "ownerShouldTakeover should be true only when the lead is high-intent, pricing-sensitive, urgent, or trust-sensitive.",
+    txt(env.AI_AGENT_SYSTEM_PROMPT, 600)
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const userPayload = {
+    mode: input.mode,
+    businessName: input.businessName || business.businessName,
+    ownerName: input.ownerName || null,
+    businessContext: business,
+    lead: {
+      customerName: input.customerName,
+      requirement: input.requirement,
+      preferredLanguage: input.preferredLanguage || "en",
+      latestInboundText: input.latestInboundText
+    },
+    workspaceStats: input.workspaceStats ?? null,
+    transcript
+  };
+
+  const response = await fetch(aiAgentApiUrl(env), {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.35,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: JSON.stringify(userPayload) }
+      ]
+    })
+  }).catch(() => null);
+
+  if (!response || !response.ok) return null;
+
+  const payload = (await response.json().catch(() => null)) as
+    | { choices?: Array<{ message?: { content?: string | null } }> }
+    | null;
+  const rawContent = txt(payload?.choices?.[0]?.message?.content, 8000);
+  if (!rawContent) return null;
+
+  try {
+    return normalizeAiCopilotOutput(JSON.parse(rawContent));
+  } catch {
+    return null;
+  }
+}
+
 function html(body: string, status = 200) {
   return new Response(body, {
     status,
@@ -1238,10 +1416,13 @@ function buildOwnerWelcomeMessage(input: {
     "Owner commands:",
     "/status  system health",
     "/leads  recent leads",
+    "/copilot  AI workspace advice",
     "/link  resend lead link",
     "/workspace  open owner console",
     "#takeover <chat_id>  pause bot for a lead",
-    "#resume <chat_id>  resume bot replies"
+    "#resume <chat_id>  resume bot replies",
+    "#reply <chat_id> <message>  send a manual reply",
+    "#ai <chat_id>  get an AI reply draft"
   ]
     .filter(Boolean)
     .join("\n");
@@ -1270,6 +1451,103 @@ function buildLeadDigest(
     })
     .join("\n\n")
     .slice(0, 3400);
+}
+
+function buildAiLeadBrief(leadPhone: string, ai: AiCopilotOutput): string {
+  return [
+    `AI brief for ${leadPhone}`,
+    `Intent: ${ai.intentLabel}`,
+    `Temperature: ${capitalize(ai.leadTemperature)}`,
+    `Owner takeover: ${ai.ownerShouldTakeover ? "Recommended" : "Not required yet"}`,
+    `Why: ${ai.ownerSummary}`,
+    `Next move: ${ai.followupHint}`,
+    "",
+    "Suggested reply:",
+    ai.reply
+  ].join("\n");
+}
+
+function buildOwnerLeadSummary(input: {
+  businessName: string;
+  customerName: string;
+  customerPhone: string;
+  requirement: string;
+  preferredLanguage: string | null;
+  ai?: AiCopilotOutput | null;
+}) {
+  const lines = [
+    `New lead for ${input.businessName || "your business"}.`,
+    `Name: ${input.customerName || "Not provided"}`,
+    `Chat: ${input.customerPhone}`,
+    `Requirement: ${input.requirement || "Not provided"}`,
+    `Language: ${input.preferredLanguage === "hi" ? "Hindi" : "English"}`,
+    `Time: ${now()}`
+  ];
+
+  if (input.ai) {
+    lines.push(`Intent: ${input.ai.intentLabel}`);
+    lines.push(`Temperature: ${capitalize(input.ai.leadTemperature)}`);
+    lines.push(`AI brief: ${input.ai.ownerSummary}`);
+    if (input.ai.ownerShouldTakeover) {
+      lines.push("AI signal: Owner takeover is recommended.");
+    }
+  }
+
+  lines.push("", "Reply here with:", "/leads to see recent leads", `#takeover ${input.customerPhone} to pause the bot for this lead`);
+  return lines.join("\n");
+}
+
+async function notifyOwners(
+  env: Env,
+  input: {
+    tenantId: string;
+    leadId: string;
+    botToken: string;
+    metadata: Record<string, unknown>;
+    body: string;
+  }
+): Promise<void> {
+  const owners = await env.DB.prepare("SELECT * FROM owner_contacts WHERE tenant_id=? AND is_primary=1 ORDER BY created_at")
+    .bind(input.tenantId)
+    .all<{ phone: string; email?: string | null }>();
+  const leadUrl = leadEntryUrlFromMetadata(env, input.metadata);
+  const ownerWorkspaceUrl = workspaceUrlFromMetadata(env, input.tenantId, input.metadata);
+
+  for (const owner of owners.results ?? []) {
+    try {
+      const notificationId = crypto.randomUUID();
+      await sendTelegram(input.botToken, owner.phone, input.body, ownerActionMarkup(leadUrl, ownerWorkspaceUrl));
+      await env.DB.prepare(
+        "INSERT INTO notifications (id,tenant_id,lead_id,channel,status,payload,error,created_at) VALUES (?,?,?,?,?,?,?,?)"
+      )
+        .bind(
+          notificationId,
+          input.tenantId,
+          input.leadId,
+          "TELEGRAM",
+          "SENT",
+          JSON.stringify({ ownerPhone: owner.phone, body: input.body }),
+          null,
+          now()
+        )
+        .run();
+    } catch {
+      await env.DB.prepare(
+        "INSERT INTO notifications (id,tenant_id,lead_id,channel,status,payload,error,created_at) VALUES (?,?,?,?,?,?,?,?)"
+      )
+        .bind(
+          crypto.randomUUID(),
+          input.tenantId,
+          input.leadId,
+          "TELEGRAM",
+          "FAILED",
+          JSON.stringify({ ownerPhone: owner.phone, body: input.body }),
+          "Telegram send failed",
+          now()
+        )
+        .run();
+    }
+  }
 }
 
 async function handleOwnerMessage(
@@ -1402,6 +1680,150 @@ async function handleOwnerMessage(
       `Recent leads for ${input.businessName}\n\n${buildLeadDigest(leads.results ?? [])}`,
       ownerActionMarkup(leadUrl, ownerWorkspaceUrl)
     );
+    return;
+  }
+
+  if (normalized === "/copilot" || normalized === "copilot") {
+    const total = await env.DB.prepare("SELECT COUNT(*) AS count FROM leads WHERE tenant_id=?")
+      .bind(input.tenantId)
+      .first<{ count: number }>();
+    const open = await env.DB.prepare("SELECT COUNT(*) AS count FROM leads WHERE tenant_id=? AND status!='CLOSED'")
+      .bind(input.tenantId)
+      .first<{ count: number }>();
+    const followup = await env.DB.prepare("SELECT COUNT(*) AS count FROM leads WHERE tenant_id=? AND status='FOLLOWUP_PENDING'")
+      .bind(input.tenantId)
+      .first<{ count: number }>();
+    const recentLeads = await env.DB.prepare(
+      `SELECT customer_name,customer_phone,requirement,status,preferred_language,updated_at
+       FROM leads
+       WHERE tenant_id=?
+       ORDER BY updated_at DESC
+       LIMIT 5`
+    )
+      .bind(input.tenantId)
+      .all<{
+        customer_name: string | null;
+        customer_phone: string;
+        requirement: string | null;
+        status: string;
+        preferred_language: string | null;
+        updated_at: string;
+      }>();
+    const ai = await callAiCopilot(env, {
+      metadata: input.metadata,
+      customerName: null,
+      requirement: null,
+      preferredLanguage: null,
+      latestInboundText: "Owner requested workspace copilot advice.",
+      transcript: (recentLeads.results ?? []).map((lead) => ({
+        direction: "INBOUND",
+        body: `${txt(lead.customer_name, 80) || "Unknown"} | ${txt(lead.requirement, 120) || "Requirement pending"} | ${formatLeadStatus(lead.status)} | ${lead.preferred_language === "hi" ? "Hindi" : "English"}`,
+        created_at: lead.updated_at
+      })),
+      mode: "workspace_digest",
+      businessName: input.businessName,
+      ownerName: input.ownerName,
+      workspaceStats: {
+        totalLeads: Number(total?.count ?? 0),
+        openLeads: Number(open?.count ?? 0),
+        followupPending: Number(followup?.count ?? 0)
+      }
+    });
+
+    const body = ai
+      ? [
+          `${input.businessName} copilot`,
+          `Intent mix: ${ai.intentLabel}`,
+          `Lead temperature: ${capitalize(ai.leadTemperature)}`,
+          `Takeover signal: ${ai.ownerShouldTakeover ? "Watch high-intent leads closely" : "Automation can keep handling routine replies"}`,
+          `Copilot note: ${ai.ownerSummary}`,
+          `Recommended move: ${ai.followupHint}`
+        ].join("\n")
+      : [
+          `${input.businessName} copilot`,
+          `Total leads: ${Number(total?.count ?? 0)}`,
+          `Open leads: ${Number(open?.count ?? 0)}`,
+          `Waiting follow-up: ${Number(followup?.count ?? 0)}`,
+          "Enable AI_AGENT_* env vars to unlock AI reply drafts and workspace copilot advice."
+        ].join("\n");
+
+    await sendTelegram(input.botToken, input.ownerChatId, body, ownerActionMarkup(leadUrl, ownerWorkspaceUrl));
+    return;
+  }
+
+  const replyMatch = /^#reply\s+(\d{5,20})\s+([\s\S]{2,320})$/i.exec(input.text.trim());
+  if (replyMatch) {
+    const [, chatId, rawReply] = replyMatch;
+    const lead = await env.DB.prepare("SELECT id FROM leads WHERE tenant_id=? AND customer_phone=?")
+      .bind(input.tenantId, chatId)
+      .first<{ id: string }>();
+    if (!lead) {
+      await sendTelegram(input.botToken, input.ownerChatId, "Lead not found for that chat id.");
+      return;
+    }
+
+    const message = txt(rawReply, 320);
+    const externalId = await sendTelegram(input.botToken, chatId, message);
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO messages (id,tenant_id,lead_id,direction,message_type,body,external_message_id,idempotency_key,created_at) VALUES (?,?,?,'OUTBOUND','TEXT',?,?,?,?)"
+    )
+      .bind(crypto.randomUUID(), input.tenantId, lead.id, message, externalId, `owner-reply:${chatId}:${Date.now()}`, now())
+      .run();
+    await env.DB.prepare("UPDATE leads SET last_outbound_at=?,updated_at=? WHERE id=?")
+      .bind(now(), now(), lead.id)
+      .run();
+    await env.DB.prepare(
+      "INSERT INTO audit_events (id,tenant_id,lead_id,actor,action,metadata,created_at) VALUES (?,?,?,?,?,?,?)"
+    )
+      .bind(
+        crypto.randomUUID(),
+        input.tenantId,
+        lead.id,
+        "OWNER",
+        "OWNER_SENT_MANUAL_REPLY",
+        JSON.stringify({ ownerChatId: input.ownerChatId, targetChatId: chatId, body: message }),
+        now()
+      )
+      .run();
+    await sendTelegram(input.botToken, input.ownerChatId, `Manual reply sent to ${chatId}.`, ownerActionMarkup(leadUrl, ownerWorkspaceUrl));
+    return;
+  }
+
+  if (/^#ai\s+\d{5,20}$/i.test(input.text)) {
+    const chatId = input.text.trim().split(/\s+/)[1] ?? "";
+    const lead = await env.DB.prepare(
+      "SELECT id,customer_name,requirement,preferred_language FROM leads WHERE tenant_id=? AND customer_phone=?"
+    )
+      .bind(input.tenantId, chatId)
+      .first<{ id: string; customer_name: string | null; requirement: string | null; preferred_language: string | null }>();
+    if (!lead) {
+      await sendTelegram(input.botToken, input.ownerChatId, "Lead not found for that chat id.");
+      return;
+    }
+
+    const transcript = await loadLeadTranscript(env, lead.id);
+    const ai = await callAiCopilot(env, {
+      metadata: input.metadata,
+      customerName: lead.customer_name,
+      requirement: lead.requirement,
+      preferredLanguage: lead.preferred_language,
+      latestInboundText: transcript.length ? txt(transcript[transcript.length - 1]?.body, 220) : "",
+      transcript,
+      mode: "owner_draft",
+      businessName: input.businessName,
+      ownerName: input.ownerName
+    });
+    if (!ai) {
+      await sendTelegram(
+        input.botToken,
+        input.ownerChatId,
+        "AI draft is not available yet. Configure AI_AGENT_ENABLED, AI_AGENT_API_KEY, AI_AGENT_MODEL, and optionally AI_AGENT_API_URL.",
+        ownerActionMarkup(leadUrl, ownerWorkspaceUrl)
+      );
+      return;
+    }
+
+    await sendTelegram(input.botToken, input.ownerChatId, buildAiLeadBrief(chatId, ai), ownerActionMarkup(leadUrl, ownerWorkspaceUrl));
     return;
   }
 
@@ -1858,8 +2280,23 @@ async function processTenantMessage(
     return;
   }
 
+  const aiEligible = Boolean(config) && (transition.replyKey === "ACK" || transition.shouldNotifyOwner);
+  const transcript = aiEligible ? await loadLeadTranscript(env, lead.id) : [];
+  const aiCopilot = aiEligible
+    ? await callAiCopilot(env, {
+        metadata,
+        customerName: nextName,
+        requirement: nextRequirement,
+        preferredLanguage: nextLanguage,
+        latestInboundText: txt(msg.text, 280),
+        transcript,
+        mode: transition.replyKey === "ACK" ? "customer_reply" : "owner_draft",
+        businessName: txt(metadata.businessName, 120) || tenantId
+      })
+    : null;
+
   if (transition.shouldReply && config) {
-    const reply = buildAutoReply({
+    const defaultReply = buildAutoReply({
       transition,
       customerName: transition.customerName ?? (nextName ?? undefined),
       language: replyLanguage,
@@ -1874,6 +2311,7 @@ async function processTenantMessage(
         updatedAt: new Date(config.updated_at)
       }
     });
+    const reply = transition.replyKey === "ACK" && aiCopilot?.reply ? txt(aiCopilot.reply, 420) : defaultReply;
     const ext = await sendTelegram(botToken, lead.customer_phone, reply, telegramReplyOptionsForKey(transition.replyKey));
     await env.DB.prepare(
       "INSERT OR IGNORE INTO messages (id,tenant_id,lead_id,direction,message_type,body,external_message_id,idempotency_key,created_at) VALUES (?,?,?,'OUTBOUND','TEXT',?,?,?,?)"
@@ -1921,53 +2359,55 @@ async function processTenantMessage(
       .bind(lead.id)
       .first<{ customer_name: string | null; customer_phone: string; requirement: string | null; preferred_language: "en" | "hi" | null }>();
     const metadataBusinessName = txt(metadata.businessName, 120);
-    const summary = [
-      `New lead for ${metadataBusinessName || "your business"}.`,
-      `Name: ${updated?.customer_name ?? "Not provided"}`,
-      `Chat: ${updated?.customer_phone ?? lead.customer_phone}`,
-      `Requirement: ${updated?.requirement ?? "Not provided"}`,
-      `Language: ${updated?.preferred_language === "hi" ? "Hindi" : "English"}`,
-      `Time: ${now()}`,
-      "",
-      "Reply here with:",
-      "/leads to see recent leads",
-      `#takeover ${updated?.customer_phone ?? lead.customer_phone} to pause the bot for this lead`
-    ].join("\n");
-    for (const owner of owners.results ?? []) {
-      try {
-        const notificationId = crypto.randomUUID();
-        await sendTelegram(botToken, owner.phone, summary);
-        await env.DB.prepare(
-          "INSERT INTO notifications (id,tenant_id,lead_id,channel,status,payload,error,created_at) VALUES (?,?,?,?,?,?,?,?)"
-        )
-          .bind(
-            notificationId,
-            tenantId,
-            lead.id,
-            "TELEGRAM",
-            "SENT",
-            JSON.stringify({ ownerPhone: owner.phone, body: summary }),
-            null,
-            now()
-          )
-          .run();
-      } catch {
-        await env.DB.prepare(
-          "INSERT INTO notifications (id,tenant_id,lead_id,channel,status,payload,error,created_at) VALUES (?,?,?,?,?,?,?,?)"
-        )
-          .bind(
-            crypto.randomUUID(),
-            tenantId,
-            lead.id,
-            "TELEGRAM",
-            "FAILED",
-            JSON.stringify({ ownerPhone: owner.phone, body: summary }),
-            "Telegram send failed",
-            now()
-          )
-          .run();
-      }
-    }
+    const summary = buildOwnerLeadSummary({
+      businessName: metadataBusinessName || "your business",
+      customerName: updated?.customer_name ?? "Not provided",
+      customerPhone: updated?.customer_phone ?? lead.customer_phone,
+      requirement: updated?.requirement ?? "Not provided",
+      preferredLanguage: updated?.preferred_language ?? "en",
+      ai: aiCopilot
+    });
+    await notifyOwners(env, {
+      tenantId,
+      leadId: lead.id,
+      botToken,
+      metadata,
+      body: summary
+    });
+  } else if (transition.replyKey === "ACK" && aiCopilot?.ownerShouldTakeover) {
+    await env.DB.prepare(
+      "INSERT INTO audit_events (id,tenant_id,lead_id,actor,action,metadata,created_at) VALUES (?,?,?,?,?,?,?)"
+    )
+      .bind(
+        crypto.randomUUID(),
+        tenantId,
+        lead.id,
+        "SYSTEM",
+        "AI_TAKEOVER_RECOMMENDED",
+        JSON.stringify({
+          customerName: nextName,
+          requirement: nextRequirement,
+          intentLabel: aiCopilot.intentLabel,
+          leadTemperature: aiCopilot.leadTemperature
+        }),
+        now()
+      )
+      .run();
+    await notifyOwners(env, {
+      tenantId,
+      leadId: lead.id,
+      botToken,
+      metadata,
+      body: [
+        `Hot lead activity for ${txt(metadata.businessName, 120) || "your business"}.`,
+        `Chat: ${lead.customer_phone}`,
+        `Intent: ${aiCopilot.intentLabel}`,
+        `Temperature: ${capitalize(aiCopilot.leadTemperature)}`,
+        `AI brief: ${aiCopilot.ownerSummary}`,
+        "",
+        `Suggested move: #takeover ${lead.customer_phone}`
+      ].join("\n")
+    });
   }
 
   await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,?,?)")

@@ -54,12 +54,12 @@
     </nav>
 
     <section class="section">
-      <article class="panel panel-glow page-hero">
+      <article class="panel panel-glow page-hero" data-reveal>
         <p class="eyebrow">Platform Overview</p>
         <h1>One workspace for the parts of chat-based selling that usually fall apart.</h1>
         <p class="lead wide-lead">
           BharatClaw is built around the operational jobs most teams struggle to do consistently: instant reply,
-          qualification, follow-up discipline, owner notification, and the moment when automation needs to step aside.
+          qualification, AI-assisted follow-up, owner notification, and the moment when automation needs to step aside.
         </p>
         <div class="actions">
           <a class="btn btn-primary" href="/start">Launch a Workspace</a>
@@ -68,7 +68,56 @@
       </article>
     </section>
 
-    <section class="section">
+    <section class="section" data-reveal>
+      <div class="waitlist-grid vision-grid">
+        <article class="panel panel-contrast vision-panel">
+          <p class="eyebrow">Telegram Agent Stack</p>
+          <h2>The bot is now backed by a layered response system.</h2>
+          <div class="flow-grid">
+            <div class="flow-step">
+              <span>01</span>
+              <strong>Inbound webhook</strong>
+              <p>Every Telegram message lands in the worker and attaches to the right lead and conversation state.</p>
+            </div>
+            <div class="flow-step">
+              <span>02</span>
+              <strong>State plus transcript memory</strong>
+              <p>BharatClaw saves the lead profile, transcript, and timing context before any advanced reply logic kicks in.</p>
+            </div>
+            <div class="flow-step">
+              <span>03</span>
+              <strong>AI copilot decision layer</strong>
+              <p>An optional OpenAI-compatible call drafts replies, summarizes intent, and flags when the owner should take over.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel vision-panel">
+          <p class="eyebrow">Owner Command Layer</p>
+          <h2>The owner never loses control of the conversation.</h2>
+          <div class="command-board">
+            <div class="command-item">
+              <code>/copilot</code>
+              <p>Get a workspace digest with AI guidance on load, follow-up pressure, and lead quality.</p>
+            </div>
+            <div class="command-item">
+              <code>#ai &lt;chat_id&gt;</code>
+              <p>Request an AI-crafted reply draft plus a short lead brief before sending anything.</p>
+            </div>
+            <div class="command-item">
+              <code>#reply &lt;chat_id&gt; ...</code>
+              <p>Send a manual owner response directly from Telegram and store it in the lead history.</p>
+            </div>
+            <div class="command-item">
+              <code>#takeover &lt;chat_id&gt;</code>
+              <p>Pause automation when the conversation becomes urgent, pricing-sensitive, or trust-heavy.</p>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" data-reveal>
       <div class="section-headline">
         <div>
           <p class="eyebrow">Core Layers</p>
@@ -85,6 +134,10 @@
           <p>BharatClaw remembers where the lead is in the flow so qualification stays structured and recoverable.</p>
         </article>
         <article class="card">
+          <h3>AI Copilot Layer</h3>
+          <p>AI replies happen with transcript context, business context, and owner override paths already in place.</p>
+        </article>
+        <article class="card">
           <h3>Owner Control</h3>
           <p>Owners get alerts, recent lead visibility, and takeover commands for high-context conversations.</p>
         </article>
@@ -95,7 +148,7 @@
       </div>
     </section>
 
-    <section class="section">
+    <section class="section" data-reveal>
       <div class="waitlist-grid">
         <article class="panel">
           <p class="eyebrow">Live Now</p>
@@ -104,7 +157,7 @@
             <li>Telegram webhook ingestion and structured auto-replies.</li>
             <li>Owner pairing, owner console access, and manual takeover controls.</li>
             <li>Lead storage, follow-up queueing, and lightweight account access.</li>
-            <li>Launch profiles that frame each workspace around real business use cases.</li>
+            <li>Launch profiles and AI reply drafts that frame each workspace around real business use cases.</li>
           </ul>
         </article>
 
@@ -121,7 +174,7 @@
       </div>
     </section>
 
-    <section class="section">
+    <section class="section" data-reveal>
       <div class="section-headline">
         <div>
           <p class="eyebrow">Why It Matters</p>
@@ -142,6 +195,27 @@
           <p>Teams can see which leads are still active and which ones need another touch.</p>
         </article>
       </div>
+    </section>
+
+    <section class="section" data-reveal>
+      <article class="panel">
+        <p class="eyebrow">Why This Can Grow Big</p>
+        <h2>The architecture is ready for a larger SaaS motion than one bot flow.</h2>
+        <div class="cards cards-3">
+          <article class="card">
+            <h3>Reusable intelligence</h3>
+            <p>The same lead memory and AI layer can support quotes, bookings, consults, and recovery workflows.</p>
+          </article>
+          <article class="card">
+            <h3>Channel expansion</h3>
+            <p>Telegram is the launch surface, but the workspace language already supports broader chat entry points.</p>
+          </article>
+          <article class="card">
+            <h3>Operator trust</h3>
+            <p>Owners stay inside the loop, which makes advanced automation more believable and easier to adopt.</p>
+          </article>
+        </div>
+      </article>
     </section>
 
     <footer class="page-footer">
