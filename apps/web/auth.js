@@ -1,5 +1,15 @@
-const WORKER_BASE_URL = "https://bharatclaw-telegram.bharatclaw.workers.dev";
+const WORKER_BASE_URL =
+  window.BharatClawSite?.workerBaseUrl || "https://bharatclaw-telegram.bharatclaw.workers.dev";
 const TOKEN_KEY = "bharatclaw_token";
+
+function esc(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
 
 function getToken() {
   return window.localStorage.getItem(TOKEN_KEY) || "";
@@ -55,7 +65,7 @@ async function refreshSessionState() {
   try {
     const data = await api("/public/auth/me", null, token);
     setSessionState(`
-      <strong>Signed in as ${data.user.email}</strong>
+      <strong>Signed in as ${esc(data.user.email)}</strong>
       <span>${Array.isArray(data.tenants) ? data.tenants.length : 0} remembered setup(s).</span>
       <button id="logout-btn" class="btn btn-secondary" type="button">Log Out</button>
     `);
@@ -87,6 +97,7 @@ async function handleAuthSubmit(event, path, errorId) {
   const payload = Object.fromEntries(new FormData(form).entries());
 
   if (submitBtn) {
+    submitBtn.dataset.idleLabel = submitBtn.dataset.idleLabel || submitBtn.textContent || "Submit";
     submitBtn.disabled = true;
     submitBtn.textContent = "Working...";
   }
@@ -102,7 +113,8 @@ async function handleAuthSubmit(event, path, errorId) {
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = path.includes("signup") ? "Create Account" : "Sign In";
+      submitBtn.textContent =
+        submitBtn.dataset.idleLabel || (path.includes("signup") ? "Create Account" : "Sign In");
     }
   }
 }

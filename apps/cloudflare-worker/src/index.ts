@@ -24,6 +24,18 @@ interface Env {
 
 type Ctx = { waitUntil(p: Promise<unknown>): void };
 
+type WorkspaceLeadRow = {
+  customer_name: string | null;
+  customer_phone: string;
+  requirement: string | null;
+  status: string;
+  preferred_language: string | null;
+  last_inbound_at: string | null;
+  last_outbound_at: string | null;
+  updated_at: string;
+  created_at: string;
+};
+
 const jsonHeaders = { "content-type": "application/json" };
 const publicCorsHeaders = {
   "access-control-allow-origin": "*",
@@ -43,6 +55,36 @@ const DEFAULT_FOLLOWUP_30M_EN = "Hey, just checking in. Are you still looking fo
 const DEFAULT_FOLLOWUP_30M_HI = "Hey, quick check. Kya aapko abhi bhi help chahiye? Reply kar dijiye.";
 const FOLLOWUP_24H_EN = "Hey, quick follow-up. Are you still looking for this? Reply and we will help.";
 const FOLLOWUP_24H_HI = "Namaste, ek quick follow-up. Kya aapko abhi bhi help chahiye? Reply kar dijiye.";
+const launchFocusCatalog = {
+  lead_capture: {
+    label: "Lead capture",
+    summary: "Reply instantly, collect contact intent, and keep every new conversation inside one funnel.",
+    availabilityLabel: "Live now"
+  },
+  followup_recovery: {
+    label: "Follow-up recovery",
+    summary: "Bring quiet conversations back with timed nudges and owner visibility.",
+    availabilityLabel: "Live now"
+  },
+  owner_handoff: {
+    label: "Owner handoff",
+    summary: "Pause the bot and bring a human into the chat when the lead needs judgment or pricing.",
+    availabilityLabel: "Live now"
+  },
+  quote_requests: {
+    label: "Quote requests",
+    summary: "Shape the workspace around scope capture for pricing-heavy conversations.",
+    availabilityLabel: "Configured focus"
+  },
+  appointment_requests: {
+    label: "Appointment requests",
+    summary: "Orient intake around date, timing, and availability-driven conversations.",
+    availabilityLabel: "Configured focus"
+  }
+} as const;
+const defaultLaunchFocusKeys = ["lead_capture", "followup_recovery", "owner_handoff"] as const;
+
+type LaunchFocusKey = keyof typeof launchFocusCatalog;
 
 const sha256 = async (raw: string) => {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
@@ -81,6 +123,132 @@ function parseJsonObject(raw: string | null | undefined): Record<string, unknown
   } catch {
     return {};
   }
+}
+
+function normalizeLaunchFocusKey(input: unknown): string {
+  return txt(input, 60)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function sanitizeLaunchFocusKeys(input: unknown): LaunchFocusKey[] {
+  const rawValues = Array.isArray(input)
+    ? input
+    : typeof input === "string"
+      ? input.split(",")
+      : [];
+  const output: LaunchFocusKey[] = [];
+  const seen = new Set<LaunchFocusKey>();
+
+  for (const rawValue of rawValues) {
+    const normalized = normalizeLaunchFocusKey(rawValue);
+    if (!normalized || !(normalized in launchFocusCatalog)) continue;
+    const key = normalized as LaunchFocusKey;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    output.push(key);
+  }
+
+  return output.length ? output.slice(0, 4) : [...defaultLaunchFocusKeys];
+}
+
+function workspaceProfileFromMetadata(metadata: Record<string, unknown>) {
+  const launchFocusKeys = sanitizeLaunchFocusKeys(
+    metadata.launchFocusKeys ?? metadata.launchFocus ?? metadata.useCases ?? metadata.focusAreas
+  );
+
+  return {
+    industry: txt(metadata.industry, 80) || null,
+    teamSize: txt(metadata.teamSize, 40) || null,
+    sharedBotMode: Boolean(metadata.sharedBotMode),
+    channelMode: Boolean(metadata.sharedBotMode) ? "Shared Telegram inbox" : "Dedicated Telegram bot",
+    launchFocusKeys,
+    launchFocus: launchFocusKeys.map((key) => ({
+      key,
+      ...launchFocusCatalog[key]
+    }))
+  };
+}
+
+function buildWorkspaceInsights(input: {
+  ownerConnected: boolean;
+  totalLeads: number;
+  openLeads: number;
+  followupPending: number;
+  profile: ReturnType<typeof workspaceProfileFromMetadata>;
+  leads: WorkspaceLeadRow[];
+}) {
+  const languageTotals = input.leads.reduce(
+    (acc, lead) => {
+      if (lead.preferred_language === "hi") acc.hi += 1;
+      else if (lead.preferred_language === "en") acc.en += 1;
+      return acc;
+    },
+    { en: 0, hi: 0 }
+  );
+
+  const readinessScore = Math.min(
+    100,
+    (input.ownerConnected ? 45 : 18) +
+      Math.min(18, input.profile.launchFocusKeys.length * 6) +
+      (input.profile.industry ? 8 : 0) +
+      (input.profile.teamSize ? 7 : 0) +
+      (input.totalLeads > 0 ? 12 : 0) +
+      (input.totalLeads > 3 ? 10 : 0)
+  );
+
+  const recommendedActions: string[] = [];
+  if (!input.ownerConnected) {
+    recommendedActions.push("Pair the owner chat so BharatClaw can send alerts, handoffs, and live status updates.");
+  }
+  if (!input.totalLeads) {
+    recommendedActions.push("Share the lead link in bios, QR cards, pinned messages, and profile links to start filling the funnel.");
+  }
+  if (input.followupPending > 0) {
+    recommendedActions.push("Review the pending follow-ups and jump into warm conversations before intent cools down.");
+  }
+  if (input.openLeads > 0) {
+    recommendedActions.push("Use owner takeover for high-intent leads that need pricing, availability, or trust-building.");
+  }
+  if (!recommendedActions.length) {
+    recommendedActions.push("Keep routing customer conversations into BharatClaw and watch the owner console for fresh intent.");
+  }
+
+  let launchStage = "Workspace created and ready for traffic";
+  if (!input.ownerConnected) {
+    launchStage = "Waiting for owner pairing";
+  } else if (input.totalLeads === 0) {
+    launchStage = "Live and waiting for the first lead";
+  } else if (input.totalLeads < 10) {
+    launchStage = "Collecting early conversion data";
+  } else {
+    launchStage = "Running an active intake engine";
+  }
+
+  let topLanguage = "No language signal yet";
+  if (languageTotals.hi > languageTotals.en) topLanguage = "Hindi-heavy conversations";
+  else if (languageTotals.en > languageTotals.hi) topLanguage = "English-heavy conversations";
+  else if (languageTotals.en || languageTotals.hi) topLanguage = "Balanced English and Hindi mix";
+
+  return {
+    launchStage,
+    readinessScore,
+    nextAction: recommendedActions[0],
+    recommendedActions,
+    coverageLabel: input.ownerConnected
+      ? "Automation and owner alerts are armed."
+      : "Automation is prepared, but owner alerts are still waiting for pairing.",
+    leadPulse: input.totalLeads
+      ? `${input.totalLeads} lead${input.totalLeads === 1 ? "" : "s"} captured, ${input.openLeads} active right now.`
+      : "No captured leads yet. Your first lead will appear here as soon as the workspace starts getting traffic.",
+    followupLabel: input.followupPending
+      ? `${input.followupPending} follow-up${input.followupPending === 1 ? "" : "s"} waiting in the queue.`
+      : input.totalLeads
+        ? "No follow-ups are pending right now."
+        : "Follow-ups will appear automatically after leads start replying.",
+    topLanguage
+  };
 }
 
 async function ensureWaitlistTable(env: Env): Promise<void> {
@@ -205,6 +373,7 @@ function summarizeTenantAccess(
   const pairCode = txt(input.metadata.ownerPairCode, 20).toUpperCase();
   const ownerConsole = workspaceUrlFromMetadata(env, input.tenantId, input.metadata);
   const ownerConnected = !input.ownerPhone.startsWith("pending:");
+  const profile = workspaceProfileFromMetadata(input.metadata);
   return {
     tenantId: input.tenantId,
     businessName: input.businessName,
@@ -220,7 +389,8 @@ function summarizeTenantAccess(
     workspaceUrl: ownerConsole,
     ownerConnectBot: ownerConnectBotUsername(env),
     ownerConnectBotUrl: ownerConnectBotUrl(env),
-    ownerConnectUrl: ownerConnected || !pairCode ? null : ownerConnectStartUrl(env, pairCode)
+    ownerConnectUrl: ownerConnected || !pairCode ? null : ownerConnectStartUrl(env, pairCode),
+    profile
   };
 }
 
@@ -244,6 +414,7 @@ async function listAuthenticatedTenants(
     ownerConnectBot: string;
     ownerConnectBotUrl: string;
     ownerConnectUrl: string | null;
+    profile: ReturnType<typeof workspaceProfileFromMetadata>;
   }>
 > {
   const rows = await env.DB.prepare(
@@ -1300,6 +1471,9 @@ async function createTenantRecord(
     telegramBotToken?: string | null;
     sharedBotMode?: boolean;
     ownerEmail?: string | null;
+    industry?: string | null;
+    teamSize?: string | null;
+    launchFocusKeys?: string[];
     trialDays?: number;
     forceActive?: boolean;
   }
@@ -1313,6 +1487,7 @@ async function createTenantRecord(
   const leadJoinCode = await generateUniqueLeadJoinCode(env);
   const ownerAccessToken = generateOwnerAccessToken();
   const ownerPhone = txt(input.ownerChatId ?? "", 64) || `pending:${tenantId}`;
+  const launchFocusKeys = sanitizeLaunchFocusKeys(input.launchFocusKeys);
   const trialDays = Math.max(1, Math.min(3650, Number(input.trialDays ?? 3650)));
   const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60_000).toISOString();
   try {
@@ -1340,14 +1515,21 @@ async function createTenantRecord(
         JSON.stringify(
           (() => {
             const metadata: Record<string, unknown> = {
-            businessName: input.name,
-            webhookSecret,
-            ownerPairCode,
-            leadJoinCode,
-            ownerAccessToken,
-            ownerPairStatus: ownerPhone.startsWith("pending:") ? "PENDING" : "PAIRED",
-            sharedBotMode: Boolean(input.sharedBotMode)
-          };
+              businessName: input.name,
+              webhookSecret,
+              ownerPairCode,
+              leadJoinCode,
+              ownerAccessToken,
+              ownerPairStatus: ownerPhone.startsWith("pending:") ? "PENDING" : "PAIRED",
+              sharedBotMode: Boolean(input.sharedBotMode),
+              launchFocusKeys
+            };
+            if (input.industry) {
+              metadata.industry = input.industry;
+            }
+            if (input.teamSize) {
+              metadata.teamSize = input.teamSize;
+            }
             if (input.telegramBotToken) {
               metadata.telegramBotToken = input.telegramBotToken;
             }
@@ -1379,7 +1561,7 @@ async function createTenantRecord(
         null,
         "SYSTEM",
         "WORKSPACE_CREATED",
-        JSON.stringify({ sharedBotMode: Boolean(input.sharedBotMode), leadJoinCode }),
+        JSON.stringify({ sharedBotMode: Boolean(input.sharedBotMode), leadJoinCode, launchFocusKeys }),
         now()
       )
       .run();
@@ -1942,6 +2124,7 @@ export default {
       if (!tenantId || !token) return jPublic({ error: "Unauthorized" }, 401);
       const access = await loadWorkspaceAccess(env, tenantId, token);
       if (!access) return jPublic({ error: "Unauthorized" }, 401);
+      const profile = workspaceProfileFromMetadata(access.metadata);
 
       const owner = await env.DB.prepare(
         "SELECT name,phone,email FROM owner_contacts WHERE tenant_id=? AND is_primary=1 ORDER BY created_at LIMIT 1"
@@ -1965,23 +2148,18 @@ export default {
          LIMIT 20`
       )
         .bind(tenantId)
-        .all<{
-          customer_name: string | null;
-          customer_phone: string;
-          requirement: string | null;
-          status: string;
-          preferred_language: string | null;
-          last_inbound_at: string | null;
-          last_outbound_at: string | null;
-          updated_at: string;
-          created_at: string;
-        }>();
+        .all<WorkspaceLeadRow>();
+      const leadRows = recentLeads.results ?? [];
+      const totalLeads = Number(total?.count ?? 0);
+      const openLeads = Number(open?.count ?? 0);
+      const followupPending = Number(followup?.count ?? 0);
+      const ownerConnected = Boolean(owner && !owner.phone.startsWith("pending:"));
 
       return jPublic({
         ok: true,
         tenantId,
         businessName: access.tenantName,
-        ownerConnected: Boolean(owner && !owner.phone.startsWith("pending:")),
+        ownerConnected,
         owner: owner
           ? {
               name: owner.name,
@@ -1992,12 +2170,21 @@ export default {
         leadEntryUrl: leadEntryUrlFromMetadata(env, access.metadata),
         workspaceUrl: workspaceUrlFromMetadata(env, tenantId, access.metadata),
         pairedAt: txt(access.metadata.ownerPairedAt, 80) || null,
+        profile,
+        insights: buildWorkspaceInsights({
+          ownerConnected,
+          totalLeads,
+          openLeads,
+          followupPending,
+          profile,
+          leads: leadRows
+        }),
         stats: {
-          totalLeads: Number(total?.count ?? 0),
-          openLeads: Number(open?.count ?? 0),
-          followupPending: Number(followup?.count ?? 0)
+          totalLeads,
+          openLeads,
+          followupPending
         },
-        leads: (recentLeads.results ?? []).map((lead) => ({
+        leads: leadRows.map((lead) => ({
           name: lead.customer_name,
           phone: lead.customer_phone,
           requirement: lead.requirement,
@@ -2057,6 +2244,9 @@ export default {
       const ownerChatId = txt(body.ownerChatId, 64);
       const telegramBotToken = txt(body.telegramBotToken, 200);
       const ownerEmail = sessionUser?.email || (body.ownerEmail ? normalizeEmail(body.ownerEmail) : "");
+      const industry = txt(body.industry, 80) || null;
+      const teamSize = txt(body.teamSize, 40) || null;
+      const launchFocusKeys = sanitizeLaunchFocusKeys(body.launchFocusKeys ?? body.launchFocus ?? body.useCases);
 
       if (!name || !ownerName) {
         return jPublic(
@@ -2138,6 +2328,9 @@ export default {
             telegramBotToken: telegramBotToken || null,
             sharedBotMode,
             ownerEmail: ownerEmail || null,
+            industry,
+            teamSize,
+            launchFocusKeys,
             trialDays: 3650,
             forceActive: true
           });
@@ -2180,6 +2373,9 @@ export default {
           ok: true,
           free: true,
           tenantId: created.tenantId,
+          businessName: name,
+          ownerName,
+          ownerEmail: ownerEmail || null,
           tenantApiKey: created.tenantApiKey,
           trialEndsAt: created.trialEndsAt,
           webhookSecret: created.webhookSecret,
@@ -2197,6 +2393,12 @@ export default {
           ownerConnectBot: ownerConnectBotUsername(env),
           ownerConnectBotUrl: ownerConnectBotUrl(env),
           ownerConnectUrl: created.ownerConnected ? null : ownerConnectStartUrl(env, created.ownerPairCode),
+          profile: workspaceProfileFromMetadata({
+            sharedBotMode: created.sharedBotMode,
+            industry,
+            teamSize,
+            launchFocusKeys
+          }),
           statusUrl: `${url.origin}/public/start/${created.tenantId}/status`,
           nextStep: created.ownerConnected
             ? "BharatClaw is paired. Share your lead link and start receiving leads."

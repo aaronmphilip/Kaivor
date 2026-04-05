@@ -1,4 +1,5 @@
-const WORKER_BASE_URL = "https://bharatclaw-telegram.bharatclaw.workers.dev";
+const WORKER_BASE_URL =
+  window.BharatClawSite?.workerBaseUrl || "https://bharatclaw-telegram.bharatclaw.workers.dev";
 
 async function submitWaitlist(event) {
   event.preventDefault();
@@ -24,6 +25,7 @@ async function submitWaitlist(event) {
   }
 
   if (submitBtn) {
+    submitBtn.dataset.idleLabel = submitBtn.dataset.idleLabel || submitBtn.textContent || "Join Rollout List";
     submitBtn.disabled = true;
     submitBtn.textContent = "Joining...";
   }
@@ -47,7 +49,7 @@ async function submitWaitlist(event) {
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = "Join Waitlist";
+      submitBtn.textContent = submitBtn.dataset.idleLabel || "Join Rollout List";
     }
   }
 }

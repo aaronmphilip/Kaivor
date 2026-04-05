@@ -1,4 +1,5 @@
-const WORKER_BASE_URL = "https://bharatclaw-telegram.bharatclaw.workers.dev";
+const WORKER_BASE_URL =
+  window.BharatClawSite?.workerBaseUrl || "https://bharatclaw-telegram.bharatclaw.workers.dev";
 const TOKEN_KEY = "bharatclaw_token";
 
 let currentUser = null;
@@ -20,6 +21,22 @@ function getToken() {
 
 function clearToken() {
   window.localStorage.removeItem(TOKEN_KEY);
+}
+
+function formatDateTime(value) {
+  if (!value) return "-";
+  try {
+    return new Intl.DateTimeFormat("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short"
+    }).format(new Date(value));
+  } catch {
+    return String(value);
+  }
+}
+
+function focusItems(profile) {
+  return Array.isArray(profile?.launchFocus) ? profile.launchFocus : [];
 }
 
 async function api(path, options = {}) {
@@ -77,7 +94,7 @@ function renderLead(lead) {
       <div class="lead-meta">
         <span>Chat: ${esc(lead.phone || "-")}</span>
         <span>Language: ${esc(lead.language || "English")}</span>
-        <span>Updated: ${esc(lead.updatedAt || "-")}</span>
+        <span>Updated: ${esc(formatDateTime(lead.updatedAt))}</span>
       </div>
     </article>
   `;
@@ -102,7 +119,7 @@ function renderAccountState() {
   if (!currentUser) {
     el.innerHTML = `
       <strong>Direct access mode.</strong>
-      <span>Open a direct owner console link, or sign in to load remembered BharatClaw setups.</span>
+      <span>Open a direct owner console link, or sign in to load remembered BharatClaw workspaces.</span>
       <a class="btn btn-secondary" href="/auth">Sign In</a>
     `;
     return;
@@ -110,7 +127,7 @@ function renderAccountState() {
 
   el.innerHTML = `
     <strong>Signed in as ${esc(currentUser.email)}</strong>
-    <span>${rememberedTenants.length} remembered setup(s).</span>
+    <span>${rememberedTenants.length} remembered workspace(s).</span>
     <button id="workspace-logout" class="btn btn-secondary" type="button">Log Out</button>
   `;
   document.getElementById("workspace-logout")?.addEventListener("click", async () => {
@@ -136,20 +153,30 @@ function renderTenantSwitcher() {
   el.innerHTML = `
     <div class="section-headline">
       <div>
-        <p class="eyebrow">Remembered Setups</p>
-        <h2>Choose a setup</h2>
+        <p class="eyebrow">Remembered Workspaces</p>
+        <h2>Choose a workspace</h2>
       </div>
     </div>
     <div class="cards">
       ${rememberedTenants
-        .map(
-          (tenant) => `
+        .map((tenant) => {
+          const focus = focusItems(tenant.profile)
+            .slice(0, 3)
+            .map((item) => item.label)
+            .join(", ");
+
+          return `
             <article class="card remembered-card ${selectedTenant?.tenantId === tenant.tenantId ? "selected-card" : ""}">
-              <h3>${esc(tenant.businessName || "BharatClaw Setup")}</h3>
+              <h3>${esc(tenant.businessName || "BharatClaw Workspace")}</h3>
               <p>${tenant.ownerConnected ? "Owner paired and live." : "Owner not paired yet."}</p>
+              <div class="meta-tags">
+                ${tenant.profile?.industry ? `<span class="pill">${esc(tenant.profile.industry)}</span>` : ""}
+                ${tenant.profile?.teamSize ? `<span class="pill">${esc(tenant.profile.teamSize)}</span>` : ""}
+              </div>
               <div class="remembered-meta">
                 <span>Status: ${esc(tenant.ownerPairStatus || "PENDING")}</span>
                 <span>Pair code: ${esc(tenant.pairingCode || tenant.ownerPairCode || "-")}</span>
+                ${focus ? `<span>Focus: ${esc(focus)}</span>` : ""}
               </div>
               <div class="result-actions">
                 <button class="btn btn-primary select-tenant-btn" type="button" data-tenant-id="${esc(tenant.tenantId)}">Open</button>
@@ -157,8 +184,8 @@ function renderTenantSwitcher() {
                 <button class="btn btn-secondary disconnect-tenant-btn" type="button" data-tenant-id="${esc(tenant.tenantId)}">Disconnect</button>
               </div>
             </article>
-          `
-        )
+          `;
+        })
         .join("")}
     </div>
   `;
@@ -178,11 +205,51 @@ function renderTenantSwitcher() {
   });
 }
 
+function renderProfilePanel(data) {
+  const focus = focusItems(data.profile)
+    .map((item) => item.label)
+    .join(", ");
+
+  return [
+    detailRow("Industry", data?.profile?.industry || "General business"),
+    detailRow("Team Size", data?.profile?.teamSize || "Not set"),
+    detailRow("Channel Mode", data?.profile?.channelMode || "Shared Telegram inbox"),
+    detailRow("Launch Focus", focus || "Lead capture, follow-up recovery, owner handoff")
+  ].join("");
+}
+
+function renderInsightsPanel(data) {
+  const insightRows = [
+    detailRow("Launch Stage", data?.insights?.launchStage || "-"),
+    detailRow("Readiness Score", `${data?.insights?.readinessScore ?? 0}/100`),
+    detailRow("Conversation Mix", data?.insights?.topLanguage || "-"),
+    detailRow("Lead Pulse", data?.insights?.leadPulse || "-"),
+    detailRow("Coverage", data?.insights?.coverageLabel || "-"),
+    detailRow("Next Action", data?.insights?.nextAction || "-")
+  ];
+
+  const recommended = Array.isArray(data?.insights?.recommendedActions) ? data.insights.recommendedActions : [];
+  if (recommended.length) {
+    insightRows.push(`
+      <div class="card">
+        <h3>Recommended next actions</h3>
+        <ul class="feature-list">
+          ${recommended.map((item) => `<li>${esc(item)}</li>`).join("")}
+        </ul>
+      </div>
+    `);
+  }
+
+  return insightRows.join("");
+}
+
 function renderWorkspace(data) {
   const errorEl = document.getElementById("workspace-error");
   const titleEl = document.getElementById("workspace-name");
   const metricsEl = document.getElementById("workspace-metrics");
   const setupEl = document.getElementById("workspace-setup");
+  const profileEl = document.getElementById("workspace-profile");
+  const insightsEl = document.getElementById("workspace-insights");
   const leadsEl = document.getElementById("workspace-leads");
   const actionsEl = document.getElementById("workspace-actions");
 
@@ -199,10 +266,16 @@ function renderWorkspace(data) {
     detailRow("Owner Connected", data.ownerConnected ? "Yes" : "No"),
     detailRow("Owner Name", data?.owner?.name || selectedTenant?.ownerName || "-"),
     detailRow("Owner Chat", data?.owner?.phone || "-"),
-    detailRow("Owner Paired At", data.pairedAt || selectedTenant?.pairedAt || "-"),
+    detailRow(
+      "Owner Paired At",
+      data.pairedAt ? formatDateTime(data.pairedAt) : selectedTenant?.pairedAt ? formatDateTime(selectedTenant.pairedAt) : "-"
+    ),
     detailRow("Pairing Code", selectedTenant?.pairingCode || selectedTenant?.ownerPairCode || "-"),
     detailRow("Lead Link", data.leadEntryUrl || "-")
   ].join("");
+
+  profileEl.innerHTML = renderProfilePanel(data);
+  insightsEl.innerHTML = renderInsightsPanel(data);
 
   actionsEl.innerHTML = [
     actionButton("Open Lead Link", data.leadEntryUrl, "primary"),
@@ -325,7 +398,7 @@ async function boot() {
   const errorEl = document.getElementById("workspace-error");
   titleEl.textContent = "Owner console unavailable";
   errorEl.textContent = hasAuth
-    ? "No remembered setup found yet. Create one from Start with BharatClaw."
+    ? "No remembered workspace found yet. Create one from Start."
     : "Sign in or open a direct owner console link to load BharatClaw.";
 }
 

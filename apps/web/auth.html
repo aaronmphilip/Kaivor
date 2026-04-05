@@ -3,32 +3,62 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BharatClaw | Sign In</title>
+  <title>BharatClaw Account | Remembered Workspaces and Owner Access</title>
   <meta
     name="description"
-    content="Create your BharatClaw account or sign in to manage remembered setups, pairing, and the owner console."
+    content="Create a BharatClaw account or sign in to manage remembered workspaces, owner pairing, and owner console access."
   />
+  <meta name="robots" content="index,follow" />
+  <meta name="theme-color" content="#f6f1e8" />
+  <link rel="canonical" href="https://bharatclawapp.vercel.app/auth" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="BharatClaw Account | Remembered Workspaces and Owner Access" />
+  <meta
+    property="og:description"
+    content="Lightweight account access for operators who want BharatClaw to remember workspaces, pairing state, and console links."
+  />
+  <meta property="og:url" content="https://bharatclawapp.vercel.app/auth" />
+  <meta property="og:image" content="https://bharatclawapp.vercel.app/og-card.svg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="BharatClaw Account" />
+  <meta
+    name="twitter:description"
+    content="Sign in to keep your BharatClaw setup and owner access synced across sessions."
+  />
+  <meta name="twitter:image" content="https://bharatclawapp.vercel.app/og-card.svg" />
+  <meta name="bharatclaw-worker-base" content="https://bharatclaw-telegram.bharatclaw.workers.dev" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="/site.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
-<body>
-  <div class="container">
+<body data-page="auth">
+  <div class="container page-shell">
     <nav class="nav">
-      <div class="brand">BharatClaw</div>
+      <div class="brand-block">
+        <a class="brand" href="/">BharatClaw</a>
+        <span class="brand-note">Chat Revenue OS</span>
+      </div>
+      <div class="nav-links">
+        <a class="nav-link" href="/" data-nav="overview">Overview</a>
+        <a class="nav-link" href="/platform" data-nav="platform">Platform</a>
+        <a class="nav-link" href="/solutions" data-nav="solutions">Solutions</a>
+        <a class="nav-link" href="/pricing" data-nav="pricing">Pricing</a>
+      </div>
       <div class="nav-actions">
         <a class="btn btn-secondary" href="/start">Start</a>
-        <a class="btn btn-secondary" href="/">Back to Home</a>
+        <a class="btn btn-primary" href="/workspace">Owner Console</a>
       </div>
     </nav>
 
     <section class="section">
       <article class="panel panel-glow">
         <p class="eyebrow">Account Access</p>
-        <h1>Sign up or sign in</h1>
+        <h1>Remember your workspace, pairing state, and owner console.</h1>
         <p class="lead hero-copy">
-          Use an account if you want BharatClaw to remember your setup, pairing state, and owner console access across sessions.
+          BharatClaw auth is intentionally lightweight. It exists so you do not have to rebuild the same workspace setup or hunt for the same owner access link every time you return.
         </p>
         <div id="auth-session-state" class="account-banner"></div>
       </article>
@@ -40,7 +70,7 @@
         <form id="signup-form" class="form-wrap">
           <label>
             Your Name
-            <input required name="name" placeholder="Aaron" />
+            <input required name="name" placeholder="Aarav" />
           </label>
           <label>
             Email
@@ -72,9 +102,16 @@
       </article>
     </section>
 
-    <p class="foot">Auth is lightweight on purpose. The goal is remembered setup, not bloated account complexity.</p>
+    <footer class="page-footer">
+      <span>Auth is meant to remove friction, not add account overhead.</span>
+      <div class="nav-links">
+        <a class="nav-link" href="/start">Start</a>
+        <a class="nav-link" href="/workspace">Owner Console</a>
+      </div>
+    </footer>
   </div>
 
+  <script src="/site.js"></script>
   <script src="/auth.js"></script>
 </body>
 </html>

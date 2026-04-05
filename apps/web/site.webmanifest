@@ -1,0 +1,16 @@
+{
+  "name": "BharatClaw",
+  "short_name": "BharatClaw",
+  "description": "Chat-first lead management SaaS for Indian businesses.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f1e8",
+  "theme_color": "#135d66",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
