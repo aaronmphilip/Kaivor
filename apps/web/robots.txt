@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://bharatclawapp.vercel.app/sitemap.xml

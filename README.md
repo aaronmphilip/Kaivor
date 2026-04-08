@@ -1,230 +1,155 @@
-# BharatClaw MVP (Telegram + Cloudflare Free Path)
+# BharatDroid
 
-This repo now supports a free-friendly deployment path for MVP validation:
+An AI agent that runs on your Android phone and is controlled via Telegram.
 
-- Telegram Bot API for inbound/outbound messaging
-- Cloudflare Workers for API
-- Cloudflare D1 for storage
-- Cloudflare Cron trigger for follow-ups
+Tell it what to do in plain English or Hindi. It controls your apps for you.
 
-Core promise: **Never miss a lead again.**
-
-## What is implemented
-
-- Vercel-ready premium landing pages (`/` and `/get-started`)
-- Telegram webhook ingestion (`POST /webhooks/telegram/:tenantId`)
-- Premium auto-reply flow: greet -> language selection -> name -> requirement
-- Lead capture and storage
-- Follow-up jobs (+30 min, +24h)
-- Owner notification to Telegram
-- Owner pairing code verification via `@bharatclawbot`
-- Always-on AI layer with a free local sandbox mode plus optional remote model mode
-- Manual takeover (`#takeover <chat_id>`)
-- Manual owner reply (`#reply <chat_id> <message>`)
-- AI owner draft command (`#ai <chat_id>`)
-- Workspace copilot command (`/copilot`)
-- Priority rescue queue command (`/priority`)
-- Interruption handling (`/start` restart, language switch mid-flow, low-signal re-prompts)
-- Config APIs and tenant API keys
-- Free mode + public self-serve trial signup (`POST /public/free-trial`)
-
-## Endpoints
-
-- `GET /` (premium landing page)
-- `POST /public/free-trial` (public free onboarding, no master key)
-- `GET /public/free-trial/:tenantId/status` (owner-connect status check)
-- `GET /health`
-- `POST /webhooks/owner-connect` (pairing code verification for `@bharatclawbot`)
-- `POST /webhooks/telegram/:tenantId`
-- `POST /admin/tenants`
-- `POST /admin/tenants/:tenantId/config`
-- `POST /internal/takeover`
-- `POST /internal/run-followups` (manual run; master key)
-
-## Files for Cloudflare deploy
-
-- Worker runtime: `apps/cloudflare-worker/src/index.ts`
-- Wrangler config: `wrangler.toml`
-- D1 schema: `sql/d1_init.sql`
-- Local dev secrets template: `.dev.vars.example`
-
-## How the Telegram AI agent works
-
-1. Every Telegram message enters the Cloudflare Worker and is attached to the right tenant, lead, and conversation state.
-2. The premium state machine still handles deterministic capture steps first, so greeting, language, name, and requirement collection stay reliable.
-3. BharatClaw routes replies through its AI layer. In free testing mode, that layer uses a local heuristic sandbox. In remote mode, it can call an OpenAI-compatible endpoint with:
-   - workspace metadata
-   - business context
-   - recent transcript
-   - latest inbound message
-4. The AI copilot returns strict JSON with:
-   - `reply`
-   - `ownerSummary`
-   - `ownerShouldTakeover`
-   - `leadTemperature`
-   - `intentLabel`
-   - `followupHint`
-5. BharatClaw then uses that output safely:
-   - customer-facing AI replies only replace the post-capture acknowledgment layer
-   - owner alerts include AI summaries when useful
-   - hot or trust-sensitive leads trigger owner takeover recommendations
-6. Owners stay in control from Telegram with `/copilot`, `#ai`, `#reply`, `#takeover`, and `#resume`.
-
-This keeps the system grounded: structured logic for reliability, AI for better context, and owner control for judgment calls.
-
-## Files for Vercel landing site
-
-- Static landing pages: `apps/web/index.html`, `apps/web/get-started.html`
-- Static assets: `apps/web/styles.css`, `apps/web/get-started.js`
-- Vercel routing config: `vercel.json`
-
-## Step-by-step setup (free MVP path)
-
-1. Create BharatClaw bot (platform-level, one time)
-- Open Telegram -> `@BotFather`
-- Run `/newbot`
-- Use username `bharatclawbot` (or your variant)
-- Copy bot token
-
-2. Create Cloudflare Worker + D1
-- Install Wrangler: `npm i -g wrangler` (or use `npx wrangler`)
-- Login: `npx wrangler login`
-- Create D1 DB: `npx wrangler d1 create bharatclaw`
-- Copy `database_id` from output into `wrangler.toml`
-
-3. Apply D1 schema
-```bash
-npm run cf:migrate:remote
+```
+You: "Order biryani from Swiggy under ₹200"
+Bot: Searched Swiggy for biryani. Found Behrouz Chicken Biryani ₹189. Add to cart?
+You: YES
+Bot: Order placed. OTP: 8421. Arriving in 35 mins.
 ```
 
-If you already had an older DB and are upgrading, run this one-time migration:
-```bash
-npx wrangler d1 execute bharatclaw --remote --command "ALTER TABLE leads ADD COLUMN preferred_language TEXT;"
+No server. No cloud. Runs entirely on your phone.
+
+---
+
+## How It Works
+
+```
+Your Telegram message
+        ↓
+Claude AI understands the task
+        ↓
+Picks the right Skill (Swiggy, Zepto, YouTube...)
+        ↓
+Accessibility Service controls the app on your phone
+        ↓
+Reports back on Telegram
 ```
 
-4. Configure secrets
-```bash
-npx wrangler secret put MASTER_API_KEY
-npx wrangler secret put TELEGRAM_WEBHOOK_SECRET
-npx wrangler secret put OWNER_CONNECT_BOT_TOKEN
-npx wrangler secret put OWNER_CONNECT_BOT_SECRET
-```
-Optional remote AI secrets/vars:
-```bash
-npx wrangler secret put AI_AGENT_API_KEY
-```
-Set these as vars or secrets depending on your deployment style:
-- `AI_AGENT_ENABLED=true`
-- `AI_AGENT_MODE=mock` for free testing or `AI_AGENT_MODE=remote` for paid external model usage
-- `AI_AGENT_MODEL=<your-openai-compatible-model-id>`
-- `AI_AGENT_API_URL=https://api.openai.com/v1/chat/completions`
-- `AI_AGENT_SYSTEM_PROMPT=<optional business-specific guardrails>`
+Your phone IS the agent. Nothing leaves your device except the text of your messages (sent to Claude API for understanding).
 
-Optional var in `wrangler.toml`:
-- `FREE_MODE` (`true` keeps automation always on)
-- `PUBLIC_SIGNUP_ENABLED` (`true` allows public onboarding endpoint)
-- `LANDING_CTA_URL` (where Start Free Trial should go, currently Vercel `/get-started`)
-- `OWNER_CONNECT_BOT_USERNAME` (default: `bharatclawbot`)
-Optional for billing:
-```bash
-npx wrangler secret put POLAR_WEBHOOK_SECRET
-npx wrangler secret put POLAR_ACCESS_TOKEN
-npx wrangler secret put POLAR_PRODUCT_ID
-```
+---
 
-5. Deploy worker
-```bash
-npm run deploy:cf
-```
+## Setup (5 minutes)
 
-6. Set owner-connect bot webhook once
-```bash
-curl -X POST "https://api.telegram.org/bot<OWNER_CONNECT_BOT_TOKEN>/setWebhook" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url":"https://<WORKER_DOMAIN>/webhooks/owner-connect",
-    "secret_token":"<OWNER_CONNECT_BOT_SECRET>"
-  }'
-```
+### What you need
+- An Android phone (Android 8.0+) with the apps you want to control installed
+- A Telegram account
+- A Claude API key (get one at console.anthropic.com)
+- A Telegram Bot Token (create one via @BotFather)
 
-7. Publish landing/onboarding page on Vercel
-- Your CTA should point to `https://bharatclawapp.vercel.app/get-started`.
+### Steps
 
-8. Customer onboarding (no-code path)
-- Open `/get-started`.
-- Fill: business name, owner name, optional owner email.
-- Click **Create Free Workspace**.
-- Backend will automatically:
-  - create tenant + API key
-  - generate owner pairing code
-  - generate lead entry link
+**1. Create your Telegram bot**
+- Open Telegram → message @BotFather → `/newbot`
+- Copy the bot token it gives you
 
-9. Owner connect (pairing code)
-- Open `https://t.me/bharatclawbot`.
-- Send pairing code shown on onboarding.
-- Owner alerts are now active.
-- Until pairing is complete, tenant bot automation is blocked.
+**2. Get your Telegram Chat ID**
+- Message @userinfobot on Telegram
+- Copy your numeric ID
 
-10. Share lead entry link
-- Share `leadEntryUrl` with customers.
-- Customer starts chat from that link and flow begins.
+**3. Get your Claude API key**
+- Go to console.anthropic.com → API Keys → Create key
+- Copy the key (starts with `sk-ant-`)
 
-11. Smoke test
-- Send to bot: `Hi` -> `English` (or `Hindi`) -> `Aman` -> `Need AC repair`
-- Verify:
-  - bot replies each step
-  - lead saved
-  - owner alert sent
-  - follow-up jobs created
-  - if AI is enabled, owner alert includes richer lead context and later `#ai <chat_id>` returns a draft
+**4. Install BharatDroid**
+- Download the APK from Releases or build from source (see below)
+- Install it on your Android phone
 
-12. Test takeover
-```bash
-curl -X POST "https://<WORKER_DOMAIN>/internal/takeover" \
-  -H "Content-Type: application/json" \
-  -H "x-master-api-key: <MASTER_API_KEY>" \
-  -d '{
-    "tenantId":"<TENANT_ID>",
-    "command":"#takeover <CUSTOMER_CHAT_ID>"
-  }'
-```
+**5. Configure**
+- Open BharatDroid
+- Paste your Bot Token, Claude API Key, and Chat ID
+- Tap "Enable Accessibility Service" → find BharatDroid in the list → toggle it on
+- Go back → tap "Start Agent"
 
-## Manual admin onboarding (optional fallback)
+**6. Test it**
+- Open Telegram → open your bot
+- Send: `/start`
+- Send: "Search YouTube for AR Rahman"
+
+---
+
+## Building from Source
+
+Requirements: Android Studio Hedgehog or later, JDK 17
 
 ```bash
-curl -X POST "https://<WORKER_DOMAIN>/admin/tenants" \
-  -H "Content-Type: application/json" \
-  -H "x-master-api-key: <MASTER_API_KEY>" \
-  -d '{
-    "name":"Demo Business",
-    "slug":"demo-business",
-    "ownerName":"Owner",
-    "ownerChatId":"<YOUR_TELEGRAM_CHAT_ID>",
-    "telegramBotToken":"<BOT_TOKEN>",
-    "trialDays":7
-  }'
+git clone https://github.com/bharatdroid/bharatdroid
+cd bharatdroid/android
+./gradlew assembleDebug
+# APK: app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## Local Worker dev
+---
 
-1. Copy `.dev.vars.example` to `.dev.vars`
-2. Fill values
-3. Run:
-```bash
-npm run dev:cf
-```
+## Available Commands
 
-## Deploy Vercel site
+| Command | What it does |
+|---------|-------------|
+| `/start` | Welcome message + instructions |
+| `/skills` | List all loaded skills |
+| `/status` | Agent health check |
+| `/clear` | Clear conversation memory |
 
-1. Connect this GitHub repo to Vercel project.
-2. Keep root directory as repo root.
-3. Deploy with `vercel.json` routing (already included).
-4. Your public pages:
-- `/`
-- `/get-started`
+Everything else is natural language — just tell it what you want.
 
-## Notes
+---
 
-- Existing Node API/worker implementation is still in repo (`apps/api`, `apps/worker`) if you need non-Cloudflare hosting.
-- For fast free MVP: Cloudflare worker handles bot backend, Vercel handles marketing + onboarding pages.
-- The website in `apps/web` now includes animated storytelling around the Telegram agent, BharatClaw vision, and AI copilot workflow.
+## Built-in Skills
+
+| Skill | What it does |
+|-------|-------------|
+| `swiggy` | Search and order food from Swiggy |
+| `zepto` | Order groceries from Zepto |
+| `youtube` | Search and play YouTube videos |
+
+More skills → see [SKILL_SPEC.md](./SKILL_SPEC.md) to build your own or browse community skills.
+
+---
+
+## Skill Safety
+
+BharatDroid skills run in a sandbox. Each skill declares exactly what permissions it needs — the runner enforces this at runtime.
+
+**Community skills** (from the community, not BharatDroid team):
+- You see a warning with the skill name, author, and permissions before it runs
+- You must approve by replying YES
+- They can't do anything they didn't declare
+
+**PAYMENT permission** = you confirm on every single execution, not just the first time.
+
+Skills cannot:
+- Make network calls (no data exfiltration)
+- Access files on your device
+- Use permissions they didn't declare
+- Open apps not in their `allowedPackages` list
+
+---
+
+## Privacy
+
+- Your commands are sent to Claude API (Anthropic) for understanding
+- App control happens entirely on your device
+- No data is stored on any server
+- No analytics, no tracking
+- Your Claude API key and Bot Token are stored in Android SharedPreferences (local only)
+
+---
+
+## Contributing a Skill
+
+See [SKILL_SPEC.md](./SKILL_SPEC.md) — full spec, permission reference, and submission guide.
+
+---
+
+## Roadmap
+
+- [ ] In-app skill browser (install community skills without APK rebuild)
+- [ ] WhatsApp interface (when Business API access is available)
+- [ ] Scheduled tasks ("Every morning at 8am, order milk from Zepto if stock is low")
+- [ ] Voice commands via phone mic
+- [ ] Multi-device support (control phone from desktop)
+- [ ] Skill signing + verification

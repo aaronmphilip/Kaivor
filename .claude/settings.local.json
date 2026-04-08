@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:www.kdnuggets.com)",
+      "Bash(grep -v '^$')",
+      "WebFetch(domain:www.zomato.com)",
+      "WebFetch(domain:contents.irctc.co.in)"
+    ]
+  }
+}
