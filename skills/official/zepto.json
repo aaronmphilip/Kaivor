@@ -1,0 +1,11 @@
+{
+  "id": "zepto",
+  "name": "Zepto Grocery Order",
+  "version": "1.0.0",
+  "description": "Order groceries from Zepto (10-minute delivery)",
+  "author": "bharatdroid-team",
+  "trusted": true,
+  "permissions": ["OPEN_APP", "READ_SCREEN", "TAP", "TYPE", "SCROLL", "PAYMENT"],
+  "allowedPackages": ["com.zepto.app"],
+  "exampleParamsHint": "{\"item\": \"milk 1 litre\", \"quantity\": 2}"
+}

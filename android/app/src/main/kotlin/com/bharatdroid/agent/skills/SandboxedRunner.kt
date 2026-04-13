@@ -5,40 +5,81 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.accessibility.AccessibilityNodeInfo
 import com.bharatdroid.agent.AgentAccessibilityService
+import com.bharatdroid.agent.ScreenElement
 import kotlinx.coroutines.delay
-
-// ─────────────────────────────────────────────
-// SANDBOXED RUNNER
-//
-// This is what skills actually call. Every method
-// checks permissions before doing anything.
-// A skill cannot bypass this — it has no direct
-// access to the accessibility service or Android APIs.
-// ─────────────────────────────────────────────
 
 class SandboxedRunner(
     private val manifest: SkillManifest,
     private val service: AgentAccessibilityService,
     private val context: Context,
 ) {
-    // ── App Control ──────────────────────────
+    fun getScreenSize(): Pair<Int, Int> {
+        val metrics = context.resources.displayMetrics
+        return Pair(metrics.widthPixels, metrics.heightPixels)
+    }
 
     fun openApp(packageName: String) {
         requirePermission(Permission.OPEN_APP)
-        require(packageName in manifest.allowedPackages) {
-            "Skill '${manifest.id}' tried to open '$packageName' which is not in its allowedPackages."
+        if (manifest.allowedPackages.isNotEmpty()) {
+            require(packageName in manifest.allowedPackages) {
+                "Skill '${manifest.id}' tried to open '$packageName' which is not in its allowedPackages."
+            }
         }
+
         val intent = context.packageManager.getLaunchIntentForPackage(packageName)
-            ?: throw SecurityException("Cannot find app: $packageName")
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (intent == null) {
+            try {
+                val storeIntent = Intent(
+                    Intent.ACTION_VIEW,
+                    android.net.Uri.parse("market://details?id=$packageName"),
+                )
+                storeIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(storeIntent)
+            } catch (_: Exception) {
+            }
+            throw IllegalStateException("$packageName is not installed. Opening Play Store to install it.")
+        }
+
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         context.startActivity(intent)
     }
-
-    // ── Screen Reading ────────────────────────
 
     fun readScreen(): String {
         requirePermission(Permission.READ_SCREEN)
         return service.getScreenText()
+    }
+
+    fun getClickableElements(): List<ScreenElement> {
+        requirePermission(Permission.READ_SCREEN)
+        return service.getClickableElements()
+    }
+
+    suspend fun tapByIndex(index: Int): Boolean {
+        requirePermission(Permission.TAP)
+        val elements = service.getClickableElements()
+        if (index !in elements.indices) return false
+        val element = elements[index]
+        return service.tapAtPoint(element.centerX.toFloat(), element.centerY.toFloat())
+    }
+
+    suspend fun clearFocusedField(): Boolean {
+        requirePermission(Permission.TYPE)
+        val focused = service.findFocusedInput() ?: return false
+        val args = Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, "")
+        }
+        if (focused.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)) return true
+        focused.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+        focused.performAction(AccessibilityNodeInfo.ACTION_SELECT)
+        return false
+    }
+
+    suspend fun goBackToRoot(maxSteps: Int = 3) {
+        requirePermission(Permission.NAVIGATE_BACK)
+        repeat(maxSteps) {
+            service.goBack()
+            delay(400)
+        }
     }
 
     fun findByText(text: String): AccessibilityNodeInfo? {
@@ -56,52 +97,259 @@ class SandboxedRunner(
         return service.getScreenText().contains(text, ignoreCase = true)
     }
 
-    // ── Interaction ───────────────────────────
+    fun findClickable(text: String): AccessibilityNodeInfo? {
+        requirePermission(Permission.READ_SCREEN)
+        return service.findClickableByText(text)
+    }
+
+    fun findByDescription(desc: String): AccessibilityNodeInfo? {
+        requirePermission(Permission.READ_SCREEN)
+        return service.findByContentDescription(desc)
+    }
+
+    fun findBestInputField(vararg preferredKeywords: String): AccessibilityNodeInfo? {
+        requirePermission(Permission.READ_SCREEN)
+        val keywords = preferredKeywords.mapNotNull { keyword ->
+            keyword.trim().takeIf { it.isNotBlank() }
+        }
+        return service.findBestTextInput(keywords)
+    }
 
     fun tap(node: AccessibilityNodeInfo): Boolean {
         requirePermission(Permission.TAP)
-        return node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+
+        if (node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+            return true
+        }
+
+        var parent = node.parent
+        var depth = 0
+        while (parent != null && depth < 8) {
+            if (parent.isClickable && parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                return true
+            }
+            parent = parent.parent
+            depth++
+        }
+
+        return false
     }
 
     fun tapByText(text: String): Boolean {
         requirePermission(Permission.TAP)
-        val node = service.findNodeByText(text) ?: return false
+        val node = service.findClickableByText(text) ?: return false
         return node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+    }
+
+    suspend fun tapAtNode(node: AccessibilityNodeInfo): Boolean {
+        requirePermission(Permission.TAP)
+        val (x, y) = service.getNodeCenter(node)
+        return service.tapAtPoint(x, y)
+    }
+
+    suspend fun tapAtPoint(x: Float, y: Float): Boolean {
+        requirePermission(Permission.TAP)
+        return service.tapAtPoint(x, y)
+    }
+
+    suspend fun gestureTapByText(text: String): Boolean {
+        requirePermission(Permission.TAP)
+        val node = service.findNodeByText(text) ?: return false
+        val (x, y) = service.getNodeCenter(node)
+        return service.tapAtPoint(x, y)
     }
 
     fun typeText(node: AccessibilityNodeInfo, text: String): Boolean {
         requirePermission(Permission.TYPE)
-        val args = Bundle()
-        args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+        val args = Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+        }
         return node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
     }
 
     fun typeInFieldWithHint(hint: String, text: String): Boolean {
         requirePermission(Permission.TYPE)
-        val node = service.findNodeByText(hint) ?: return false
-        val args = Bundle()
-        args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
-        return node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+
+        val node = service.findBestTextInput(listOf(hint))
+            ?: service.findNodeByText(hint)
+
+        if (node != null) {
+            node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+            node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+            val args = Bundle().apply {
+                putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+            }
+            if (node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)) return true
+        }
+
+        val focused = service.findFocusedInput()
+        if (focused != null) {
+            val args = Bundle().apply {
+                putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+            }
+            if (focused.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)) return true
+        }
+
+        return false
+    }
+
+    fun typeInFocused(text: String): Boolean {
+        requirePermission(Permission.TYPE)
+        val focused = service.findFocusedInput() ?: return false
+        val args = Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+        }
+        return focused.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+    }
+
+    suspend fun focusBestInputField(vararg preferredKeywords: String): Boolean {
+        requirePermission(Permission.TAP)
+        val node = findBestInputField(*preferredKeywords) ?: return false
+        return tapAtNode(node)
+    }
+
+    suspend fun typeInBestField(text: String, vararg preferredKeywords: String): Boolean {
+        requirePermission(Permission.TYPE)
+
+        if (typeInFocused(text)) return true
+
+        val node = findBestInputField(*preferredKeywords) ?: return false
+        node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+        if (node.isClickable) {
+            node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        }
+        delay(120)
+
+        val focused = service.findFocusedInput() ?: node
+        val args = Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+        }
+        return focused.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+    }
+
+    fun pressEnter(): Boolean {
+        requirePermission(Permission.TAP)
+        if (service.pressEnterOnFocused()) return true
+
+        val submit = service.findBestActionButton(
+            listOf("search", "send", "done", "go", "ok", "enter"),
+        ) ?: return false
+
+        return if (submit.isClickable) {
+            submit.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        } else {
+            false
+        }
     }
 
     fun scrollDown(): Boolean {
         requirePermission(Permission.SCROLL)
         val root = service.rootInActiveWindow ?: return false
-        return root.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+        return findScrollableAndScroll(root, AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
     }
 
     fun scrollUp(): Boolean {
         requirePermission(Permission.SCROLL)
         val root = service.rootInActiveWindow ?: return false
-        return root.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
+        return findScrollableAndScroll(root, AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
+    }
+
+    suspend fun swipeUp(): Boolean {
+        requirePermission(Permission.SCROLL)
+        val metrics = context.resources.displayMetrics
+        val centerX = metrics.widthPixels / 2f
+        return service.swipe(centerX, metrics.heightPixels * 0.7f, centerX, metrics.heightPixels * 0.3f, 300)
+    }
+
+    suspend fun swipeDown(): Boolean {
+        requirePermission(Permission.SCROLL)
+        val metrics = context.resources.displayMetrics
+        val centerX = metrics.widthPixels / 2f
+        return service.swipe(centerX, metrics.heightPixels * 0.3f, centerX, metrics.heightPixels * 0.7f, 300)
+    }
+
+    suspend fun swipeLeft(): Boolean {
+        requirePermission(Permission.SCROLL)
+        return service.swipeLeft()
+    }
+
+    suspend fun swipeRight(): Boolean {
+        requirePermission(Permission.SCROLL)
+        return service.swipeRight()
+    }
+
+    suspend fun longPress(index: Int): Boolean {
+        requirePermission(Permission.TAP)
+        val elements = service.getClickableElements()
+        if (index !in elements.indices) return false
+        val element = elements[index]
+        return service.longPress(element.centerX.toFloat(), element.centerY.toFloat())
+    }
+
+    suspend fun longPressAt(x: Float, y: Float): Boolean {
+        requirePermission(Permission.TAP)
+        return service.longPress(x, y)
+    }
+
+    fun goHome() {
+        service.goHome()
+    }
+
+    fun toggle(index: Int): Boolean {
+        requirePermission(Permission.TAP)
+        val elements = service.getClickableElements()
+        if (index !in elements.indices) return false
+        val node = service.findClickableByText(elements[index].text)
+        return node?.performAction(AccessibilityNodeInfo.ACTION_CLICK) ?: false
     }
 
     fun pressBack() {
         requirePermission(Permission.NAVIGATE_BACK)
-        service.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK)
+        service.goBack()
     }
 
-    // ── Clipboard ─────────────────────────────
+    suspend fun dismissPopups(maxAttempts: Int = 3): Int {
+        requirePermission(Permission.TAP)
+        var dismissed = 0
+        val dismissTexts = listOf(
+            "Not now", "Maybe later", "Skip", "Got it", "OK", "No thanks",
+            "Dismiss", "Cancel", "Later", "Close", "CLOSE", "SKIP",
+            "NOT NOW", "MAYBE LATER", "NO THANKS", "GOT IT",
+            "Not interested", "No, thanks", "Deny", "DENY",
+            "Don't allow", "Don\u2019t allow", "Block", "BLOCK",
+            "I'll do it later", "Remind me later", "Allow",
+        )
+
+        for (attempt in 0 until maxAttempts) {
+            var found = false
+            for (text in dismissTexts) {
+                val node = service.findClickableByText(text)
+                if (node != null) {
+                    node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                    dismissed++
+                    found = true
+                    delay(300)
+                    break
+                }
+            }
+
+            if (!found) {
+                val closeNode = service.findByContentDescription("Close")
+                    ?: service.findByContentDescription("Dismiss")
+                    ?: service.findByContentDescription("Navigate up")
+
+                if (closeNode != null) {
+                    closeNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                    dismissed++
+                    delay(300)
+                } else {
+                    break
+                }
+            }
+        }
+
+        return dismissed
+    }
 
     fun setClipboard(text: String) {
         requirePermission(Permission.CLIPBOARD)
@@ -109,14 +357,12 @@ class SandboxedRunner(
         clipboard.setPrimaryClip(android.content.ClipData.newPlainText("BharatDroid", text))
     }
 
-    // ── Wait Helpers ─────────────────────────
-
     suspend fun waitForText(text: String, timeoutMs: Long = 8000): Boolean {
         requirePermission(Permission.READ_SCREEN)
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
             if (screenContains(text)) return true
-            delay(300)
+            delay(200)
         }
         return false
     }
@@ -125,18 +371,51 @@ class SandboxedRunner(
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
             if (service.getCurrentPackage() == packageName) return true
-            delay(300)
+            delay(150)
         }
         return false
     }
 
-    // ── Internal ──────────────────────────────
+    suspend fun waitForAny(vararg texts: String, timeoutMs: Long = 8000): String? {
+        requirePermission(Permission.READ_SCREEN)
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val screen = service.getScreenText()
+            for (text in texts) {
+                if (screen.contains(text, ignoreCase = true)) return text
+            }
+            delay(200)
+        }
+        return null
+    }
+
+    fun detectPasswordScreen(): String? {
+        requirePermission(Permission.READ_SCREEN)
+        val screen = service.getScreenText().lowercase()
+        val passwordIndicators = listOf(
+            "enter pin", "enter password", "enter upi pin", "upi pin",
+            "enter passcode", "enter your pin", "confirm pin",
+            "enter mpin", "enter otp", "enter the otp",
+            "verification code", "security code",
+        )
+        return passwordIndicators.firstOrNull { indicator -> screen.contains(indicator) }
+    }
+
+    private fun findScrollableAndScroll(node: AccessibilityNodeInfo, action: Int): Boolean {
+        if (node.isScrollable) {
+            return node.performAction(action)
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            if (findScrollableAndScroll(child, action)) return true
+        }
+        return false
+    }
 
     private fun requirePermission(permission: Permission) {
         if (permission !in manifest.permissions) {
             throw SecurityException(
-                "Skill '${manifest.id}' attempted to use '$permission' without declaring it. " +
-                "This is a skill bug — report to the skill author."
+                "Skill '${manifest.id}' attempted to use '$permission' without declaring it.",
             )
         }
     }

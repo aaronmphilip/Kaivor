@@ -1,5 +1,7 @@
 package com.bharatdroid.agent.skills
 
+import com.bharatdroid.agent.ScreenAgent
+
 enum class Permission {
     READ_SCREEN,
     TAP,
@@ -36,6 +38,8 @@ data class SkillContext(
     val runner: SandboxedRunner,
     val chatId: Long,
     val userId: String,
+    /** AI-driven screen agent for smart action decisions. Null for community skills. */
+    val agent: ScreenAgent? = null,
 )
 
 sealed class SkillResult {

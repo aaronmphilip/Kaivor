@@ -1,11 +1,13 @@
 package com.bharatdroid.agent
 
+import android.graphics.Bitmap
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 
 // ─────────────────────────────────────────────
@@ -54,7 +56,8 @@ class TelegramPoller(
                         scope.launch {
                             try {
                                 val reply = onMessage(msg)
-                                sendMessage(msg.chatId, reply)
+                                // Empty reply means the handler already sent the response (e.g. as a photo)
+                                if (reply.isNotBlank()) sendMessage(msg.chatId, reply)
                             } catch (e: Exception) {
                                 sendMessage(msg.chatId, "Error: ${e.message}")
                             }
@@ -94,6 +97,43 @@ class TelegramPoller(
         withContext(Dispatchers.IO) {
             try { client.newCall(request).execute().close() }
             catch (e: IOException) { /* ignore */ }
+        }
+    }
+
+    // Send a screenshot as a photo with caption — the "proof" feature
+    suspend fun sendPhoto(chatId: Long, bitmap: Bitmap, caption: String = "") {
+        try {
+            // Hardware bitmaps can't be compressed directly — copy to software first
+            val soft = if (bitmap.config == Bitmap.Config.HARDWARE)
+                bitmap.copy(Bitmap.Config.ARGB_8888, false)
+            else bitmap
+
+            val out = ByteArrayOutputStream()
+            soft.compress(Bitmap.CompressFormat.JPEG, 85, out)
+            val bytes = out.toByteArray()
+
+            val body = MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("chat_id", chatId.toString())
+                .addFormDataPart("caption", caption.take(1024))
+                .addFormDataPart("photo", "result.jpg",
+                    bytes.toRequestBody("image/jpeg".toMediaType()))
+                .build()
+
+            val request = Request.Builder()
+                .url("$baseUrl/sendPhoto")
+                .post(body)
+                .build()
+
+            withContext(Dispatchers.IO) {
+                try { client.newCall(request).execute().close() }
+                catch (_: IOException) {
+                    // Photo failed — fall back to text
+                    sendMessage(chatId, caption)
+                }
+            }
+        } catch (_: Exception) {
+            sendMessage(chatId, caption)
         }
     }
 

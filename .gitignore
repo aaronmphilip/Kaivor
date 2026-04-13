@@ -1,18 +1,29 @@
+# Android build outputs
+*.iml
+.gradle/
+local.properties
+.idea/
+.DS_Store
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.keystore
+!debug.keystore
+
+# Environment / secrets
+.env
+.env.*
+.env*.local
+*.vars
+.dev.vars
+.wrangler/
+
+# Logs
+*.log
+
+# Node (if tooling is added later)
 node_modules/
 dist/
-.env
-.env.local
-.turbo/
-coverage/
-*.log
-.write-test
-apps/**/*.js
-packages/**/*.js
-tests/**/*.js
-vitest.config.js
-.wrangler/
-.dev.vars
-!apps/web/*.js
-
-.vercel
-.env*.local

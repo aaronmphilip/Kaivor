@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0D0D0D"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp">
+
+            <Button
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="←"
+                android:textSize="20sp"
+                android:backgroundTint="#1E1E1E"
+                android:textColor="#FFFFFF" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Settings"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:layout_marginStart="12dp" />
+        </LinearLayout>
+
+        <!-- ═══════════════════════════════ -->
+        <!--  AI PROVIDER                    -->
+        <!-- ═══════════════════════════════ -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AI Provider"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="32dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Choose the AI that powers your agent"
+            android:textColor="#888888"
+            android:textSize="12sp"
+            android:layout_marginTop="4dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp">
+
+            <Button
+                android:id="@+id/btnProvGemini"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="Gemini"
+                android:textSize="12sp"
+                android:backgroundTint="#1A73E8"
+                android:textColor="#FFFFFF"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/btnProvClaude"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="Claude"
+                android:textSize="12sp"
+                android:backgroundTint="#1E1E1E"
+                android:textColor="#AAAAAA"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/btnProvOpenAI"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="ChatGPT"
+                android:textSize="12sp"
+                android:backgroundTint="#1E1E1E"
+                android:textColor="#AAAAAA"
+                android:layout_marginStart="4dp" />
+        </LinearLayout>
+
+        <!-- ═══════════════════════════════ -->
+        <!--  API KEY                        -->
+        <!-- ═══════════════════════════════ -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="API Key"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="28dp" />
+
+        <TextView
+            android:id="@+id/tvKeyHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Get your free key at aistudio.google.com/apikey"
+            android:textColor="#888888"
+            android:textSize="12sp"
+            android:layout_marginTop="4dp" />
+
+        <EditText
+            android:id="@+id/etApiKey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Paste API key here"
+            android:inputType="textPassword"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555555"
+            android:background="@drawable/input_bg"
+            android:padding="14dp"
+            android:fontFamily="monospace"
+            android:textSize="13sp"
+            android:layout_marginTop="8dp" />
+
+        <!-- ═══════════════════════════════ -->
+        <!--  MODEL (optional)               -->
+        <!-- ═══════════════════════════════ -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Model (optional)"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="28dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Leave blank for default. Defaults:\nGemini: gemini-2.5-flash (free)\nClaude: claude-haiku-4-5 (paid)\nChatGPT: gpt-4o-mini (paid)"
+            android:textColor="#888888"
+            android:textSize="11sp"
+            android:lineSpacingMultiplier="1.3"
+            android:layout_marginTop="4dp" />
+
+        <EditText
+            android:id="@+id/etModel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="e.g. gemini-2.5-flash or gpt-4o"
+            android:inputType="text"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555555"
+            android:background="@drawable/input_bg"
+            android:padding="14dp"
+            android:fontFamily="monospace"
+            android:textSize="13sp"
+            android:layout_marginTop="8dp" />
+
+        <!-- ═══════════════════════════════ -->
+        <!--  PERMISSION MODE                -->
+        <!-- ═══════════════════════════════ -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Permission Mode"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="28dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ask Permission = confirms before acting\nJust Do It = executes immediately"
+            android:textColor="#888888"
+            android:textSize="12sp"
+            android:layout_marginTop="4dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp">
+
+            <Button
+                android:id="@+id/btnAskPerm"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="Ask Permission"
+                android:textSize="12sp"
+                android:backgroundTint="#00CC88"
+                android:textColor="#000000"
+                android:layout_marginEnd="6dp" />
+
+            <Button
+                android:id="@+id/btnJustDoIt"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="Just Do It"
+                android:textSize="12sp"
+                android:backgroundTint="#1E1E1E"
+                android:textColor="#AAAAAA"
+                android:layout_marginStart="6dp" />
+        </LinearLayout>
+
+        <!-- ═══════════════════════════════ -->
+        <!--  SAVE BUTTON                    -->
+        <!-- ═══════════════════════════════ -->
+        <Button
+            android:id="@+id/btnSave"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Save and Restart Agent"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:backgroundTint="#FF4500"
+            android:textColor="#FFFFFF"
+            android:layout_marginTop="36dp" />
+
+        <!-- ═══════════════════════════════ -->
+        <!--  DANGER ZONE                    -->
+        <!-- ═══════════════════════════════ -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#331111"
+            android:layout_marginTop="40dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Danger Zone"
+            android:textColor="#FF6B6B"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp" />
+
+        <Button
+            android:id="@+id/btnReset"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Reset App (Erase All Settings)"
+            android:textSize="13sp"
+            android:backgroundTint="#331111"
+            android:textColor="#FF6B6B"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="40dp" />
+
+    </LinearLayout>
+</ScrollView>

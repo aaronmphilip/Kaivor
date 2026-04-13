@@ -2,23 +2,13 @@ package com.bharatdroid.agent
 
 import android.content.Context
 import com.bharatdroid.agent.skills.*
-import kotlinx.coroutines.CompletableDeferred
-
-// ─────────────────────────────────────────────
-// SKILL RUNNER
-//
-// Registry + safety gate for all skills.
-// Enforces:
-//   1. Community skill warning (first run)
-//   2. PAYMENT permission = confirm every time
-//   3. Permission sandboxing via SandboxedRunner
-// ─────────────────────────────────────────────
 
 class SkillRunner(
     private val context: Context,
-    // Called when user confirmation is needed mid-execution.
-    // Sends the question via Telegram and waits for YES/NO reply.
+    private val askPermission: Boolean = true,
     private val requestConfirmation: suspend (chatId: Long, question: String) -> Boolean,
+    private val notifyUser: suspend (chatId: Long, message: String) -> Unit,
+    private val screenAgent: ScreenAgent? = null,
 ) {
     private val registry = mutableMapOf<String, Skill>()
 
@@ -48,14 +38,14 @@ class SkillRunner(
         val service = AgentAccessibilityService.instance
             ?: return SkillResult.Failure(
                 "Accessibility service is not running. " +
-                "Open BharatDroid app → tap 'Enable Agent' → grant permission."
+                "Open BharatDroid app and enable it in Settings."
             )
 
         // ── Safety Gate 1: Community skill warning ──
-        if (!skill.manifest.trusted) {
+        if (!skill.manifest.trusted && askPermission) {
             val allowed = requestConfirmation(
                 chatId,
-                "⚠️ *Community Skill — Not Officially Verified*\n\n" +
+                "*Community Skill — Not Officially Verified*\n\n" +
                 "*Name:* ${skill.manifest.name}\n" +
                 "*Author:* ${skill.manifest.author}\n" +
                 "*Permissions:* ${skill.manifest.permissions.joinToString(", ")}\n\n" +
@@ -64,37 +54,61 @@ class SkillRunner(
             if (!allowed) return SkillResult.Failure("Skill blocked — community skills require your approval.")
         }
 
-        // ── Safety Gate 2: PAYMENT always needs explicit confirmation ──
-        if (Permission.PAYMENT in skill.manifest.permissions) {
+        // ── Safety Gate 2: PAYMENT confirmation ──
+        if (Permission.PAYMENT in skill.manifest.permissions && askPermission) {
             val allowed = requestConfirmation(
                 chatId,
-                "💳 This action involves a *payment screen*.\n" +
+                "This action involves a *payment screen*.\n" +
                 "Skill: *${skill.manifest.name}*\n\n" +
                 "Reply *YES* to proceed or anything else to cancel."
             )
             if (!allowed) return SkillResult.Failure("Payment permission denied by user.")
         }
 
-        // ── Execute with sandboxed runner ──
+        // ── Execute ──
         val sandboxedRunner = SandboxedRunner(skill.manifest, service, context)
-        val skillContext = SkillContext(sandboxedRunner, chatId, userId)
+        val skillContext = SkillContext(
+            runner = sandboxedRunner,
+            chatId = chatId,
+            userId = userId,
+            agent = if (skill.manifest.trusted) screenAgent else null, // Only trusted skills get AI agent
+        )
 
         return try {
             val result = skill.execute(skillContext, params)
-            // If skill needs mid-execution confirmation, handle it
+
+            // Check for password screen after execution
+            val passwordScreen = sandboxedRunner.detectPasswordScreen()
+            if (passwordScreen != null) {
+                val screen = sandboxedRunner.readScreen()
+                notifyUser(chatId,
+                    "A *password/PIN screen* appeared: *$passwordScreen*\n\n" +
+                    "Screen:\n```\n${screen.take(300)}\n```\n\n" +
+                    "Enter the PIN on your phone, then reply *CONTINUE* to proceed."
+                )
+                val continued = requestConfirmation(chatId, "")
+                if (!continued) return SkillResult.Failure("User cancelled at password screen.")
+            }
+
+            // Handle NeedsConfirmation
             if (result is SkillResult.NeedsConfirmation) {
-                val confirmed = requestConfirmation(chatId, result.prompt)
-                if (confirmed) result.onConfirm() else result.onCancel
+                if (!askPermission) {
+                    result.onConfirm()
+                } else {
+                    val confirmed = requestConfirmation(chatId, result.prompt)
+                    if (confirmed) result.onConfirm() else result.onCancel
+                }
             } else {
                 result
             }
+        } catch (e: IllegalStateException) {
+            SkillResult.Failure(e.message ?: "App not available.")
         } catch (e: SecurityException) {
-            SkillResult.Failure("Skill permission error: ${e.message}")
+            SkillResult.Failure("Permission error: ${e.message}")
         } catch (e: Exception) {
-            SkillResult.Failure("Skill crashed: ${e.message}")
+            SkillResult.Failure("Skill error: ${e.message}")
         }
     }
 }
 
-// Extension so SkillManifest can expose an example for the AI prompt
 val SkillManifest.exampleParams: String get() = exampleParamsHint

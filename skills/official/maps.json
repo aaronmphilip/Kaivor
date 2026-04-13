@@ -1,0 +1,11 @@
+{
+  "id": "maps",
+  "name": "Google Maps Navigation",
+  "version": "1.0.0",
+  "description": "Navigate to a place, search nearby locations, get directions",
+  "author": "bharatdroid-team",
+  "trusted": true,
+  "permissions": ["OPEN_APP", "READ_SCREEN", "TAP", "TYPE"],
+  "allowedPackages": ["com.google.android.apps.maps"],
+  "exampleParamsHint": "{\"action\": \"navigate\", \"destination\": \"Connaught Place, Delhi\"}"
+}

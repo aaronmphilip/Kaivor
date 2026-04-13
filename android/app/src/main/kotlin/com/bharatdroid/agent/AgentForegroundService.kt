@@ -8,17 +8,6 @@ import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
-
-// ─────────────────────────────────────────────
-// FOREGROUND SERVICE
-//
-// Keeps the agent alive 24/7 in the background.
-// Android would kill a normal background service.
-// Foreground service shows a persistent notification
-// so the OS keeps it alive.
-// ─────────────────────────────────────────────
 
 class AgentForegroundService : LifecycleService() {
 
@@ -40,24 +29,40 @@ class AgentForegroundService : LifecycleService() {
 
         val prefs = getSharedPreferences("bharatdroid", MODE_PRIVATE)
         val botToken = prefs.getString("bot_token", null)
-        val claudeKey = prefs.getString("claude_key", null)
+        val aiKey = prefs.getString("ai_key", null)
+            ?: prefs.getString("claude_key", null) // Backwards compatible
         val chatId = prefs.getLong("chat_id", -1L)
 
-        if (botToken == null || claudeKey == null || chatId == -1L) {
+        if (botToken == null || aiKey == null || chatId == -1L) {
             stopSelf()
             return START_NOT_STICKY
         }
 
+        val askPerm = prefs.getBoolean("ask_permission", true)
+        val providerStr = prefs.getString("ai_provider", null) ?: ""
+        val aiModel = prefs.getString("ai_model", "") ?: ""
+
+        // Determine provider: saved preference > auto-detect from key
+        val aiProvider = try {
+            if (providerStr.isNotBlank()) AIProvider.valueOf(providerStr)
+            else AIBrain.detectProvider(aiKey)
+        } catch (_: Exception) {
+            AIBrain.detectProvider(aiKey)
+        }
+
         val config = AgentConfig(
             telegramBotToken = botToken,
-            claudeApiKey = claudeKey,
+            claudeApiKey = aiKey,
             authorizedChatIds = setOf(chatId),
+            askPermission = askPerm,
+            aiProvider = aiProvider,
+            aiModel = aiModel,
         )
 
         orchestrator = AgentOrchestrator(this, config)
         orchestrator.start()
 
-        return START_STICKY // Restart if killed
+        return START_STICKY
     }
 
     override fun onDestroy() {

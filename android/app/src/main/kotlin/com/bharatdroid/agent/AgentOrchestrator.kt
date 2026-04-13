@@ -1,35 +1,22 @@
 package com.bharatdroid.agent
 
 import android.content.Context
+import com.bharatdroid.agent.skills.RemoteSkill
 import com.bharatdroid.agent.skills.SkillResult
-import com.bharatdroid.agent.skills.builtin.SwigySkill
-import com.bharatdroid.agent.skills.builtin.YouTubeSkill
-import com.bharatdroid.agent.skills.builtin.ZeptoSkill
+import com.bharatdroid.agent.skills.SkillStore
+import com.bharatdroid.agent.skills.builtin.*
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-
-// ─────────────────────────────────────────────
-// AGENT ORCHESTRATOR
-//
-// Wires together:
-//   TelegramPoller → AIBrain → SkillRunner
-//
-// Also handles the YES/NO confirmation flow:
-// when a skill needs user confirmation, the
-// orchestrator pauses, asks via Telegram, and
-// waits for the next message.
-// ─────────────────────────────────────────────
 
 class AgentOrchestrator(
     private val context: Context,
     private val config: AgentConfig,
 ) {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    // Pending confirmation requests keyed by chatId
+    private val skillStore = SkillStore(context)
+    private val activityLog = ActivityLog(context)
     private val pendingConfirmations = mutableMapOf<Long, CompletableDeferred<Boolean>>()
 
     private lateinit var poller: TelegramPoller
@@ -37,25 +24,71 @@ class AgentOrchestrator(
     private lateinit var skillRunner: SkillRunner
 
     fun start() {
+        // Create the AI-driven screen agent
+        val screenAgent = ScreenAgent(
+            apiKey = config.claudeApiKey,
+            provider = config.aiProvider,
+            model = config.aiModel,
+        )
+
         skillRunner = SkillRunner(
             context = context,
+            askPermission = config.askPermission,
             requestConfirmation = { chatId, question ->
-                poller.sendMessage(chatId, question)
-                // Park a deferred — next message from this user resolves it
-                val deferred = CompletableDeferred<Boolean>()
-                pendingConfirmations[chatId] = deferred
-                deferred.await()
-            }
+                if (!config.askPermission) {
+                    true
+                } else {
+                    poller.sendMessage(chatId, question)
+                    val deferred = CompletableDeferred<Boolean>()
+                    pendingConfirmations[chatId] = deferred
+                    deferred.await()
+                }
+            },
+            notifyUser = { chatId, message ->
+                poller.sendMessage(chatId, message)
+            },
+            screenAgent = screenAgent,
         ).also { runner ->
+            // ── Official Skills (25 total) ──
             runner.register(SwigySkill())
+            runner.register(ZomatoSkill())
             runner.register(ZeptoSkill())
+            runner.register(BlinkitSkill())
             runner.register(YouTubeSkill())
-            // Community skills loaded from storage would go here
+            runner.register(InstagramSkill())
+            runner.register(PhonePeSkill())
+            runner.register(GPaySkill())
+            runner.register(PaytmSkill())
+            runner.register(CREDSkill())
+            runner.register(MapsSkill())
+            runner.register(OlaSkill())
+            runner.register(UberSkill())
+            runner.register(FlipkartSkill())
+            runner.register(AmazonSkill())
+            runner.register(WhatsAppSkill())
+            runner.register(ChromeSkill())
+            // ── Business & Productivity Skills ──
+            runner.register(ScreenReaderSkill())
+            runner.register(GmailSkill())
+            runner.register(FileManagerSkill())
+            runner.register(CalendarSkill())
+            runner.register(NotesSkill())
+            runner.register(SettingsSkill())
+            runner.register(ContactsSkill())
+            // ── General Agent (catch-all) ──
+            runner.register(GeneralSkill())
+
+            // Load community skills
+            skillStore.loadAll().forEach { remote ->
+                runner.register(RemoteSkill(remote))
+            }
         }
 
         brain = AIBrain(
-            claudeApiKey = config.claudeApiKey,
+            apiKey = config.claudeApiKey,
             availableSkills = skillRunner.getSkillInfoForAI(),
+            provider = config.aiProvider,
+            model = config.aiModel,
         )
 
         poller = TelegramPoller(
@@ -67,86 +100,265 @@ class AgentOrchestrator(
         poller.start()
     }
 
-    fun stop() {
-        poller.stop()
-    }
+    fun stop() { poller.stop() }
 
     private suspend fun handleMessage(msg: IncomingMessage): String {
-        // ── Handle built-in commands ──
-        when (msg.text.trim().lowercase()) {
-            "/start" -> return buildWelcomeMessage()
-            "/skills" -> return buildSkillsMessage()
-            "/status" -> return buildStatusMessage()
-            "/clear" -> {
+        val trimmed = msg.text.trim()
+
+        // ── Built-in commands ──
+        when {
+            trimmed.lowercase() == "/start" -> return buildWelcomeMessage()
+            trimmed.lowercase() == "/skills" -> return buildSkillsMessage()
+            trimmed.lowercase() == "/status" -> return buildStatusMessage()
+            trimmed.lowercase() == "/history" -> return activityLog.buildHistoryMessage()
+            trimmed.lowercase() == "/clear" -> {
                 brain.clearHistory(msg.chatId)
                 return "Memory cleared. Fresh start."
             }
+            trimmed.lowercase() == "/mode" -> return toggleMode(msg.chatId)
+            trimmed.lowercase().startsWith("/install ") -> {
+                val url = trimmed.substringAfter("/install ").trim()
+                return installSkill(url)
+            }
+            trimmed.lowercase().startsWith("/uninstall ") -> {
+                val skillId = trimmed.substringAfter("/uninstall ").trim()
+                return uninstallSkill(skillId)
+            }
         }
 
-        // ── Resolve pending confirmation if one is waiting ──
+        // ── Resolve pending confirmation ──
         pendingConfirmations.remove(msg.chatId)?.let { deferred ->
-            val confirmed = msg.text.trim().uppercase() == "YES"
+            val confirmed = trimmed.uppercase() in listOf("YES", "Y", "YEAH", "YEP", "OK", "SURE", "DO IT", "CONTINUE", "GO", "PROCEED")
             deferred.complete(confirmed)
             return if (confirmed) "Got it. Proceeding..." else "Cancelled."
         }
 
-        // ── Normal flow: AI → Skill ──
+        // ── Normal flow: AI -> Skill ──
         poller.sendTyping(msg.chatId)
+        val plan = brain.process(msg.chatId, trimmed)
 
-        val plan = brain.process(msg.chatId, msg.text)
-
-        return when (plan.type) {
-            PlanType.DIRECT_REPLY -> plan.directReply ?: "?"
-
-            PlanType.RUN_SKILL -> {
-                val result = skillRunner.execute(
-                    skillId = plan.skillId!!,
-                    params = plan.params,
-                    chatId = msg.chatId,
-                    userId = msg.username ?: msg.chatId.toString(),
-                )
-                when (result) {
-                    is SkillResult.Success -> result.message
-                    is SkillResult.Failure -> "Failed: ${result.reason}"
-                    is SkillResult.NeedsConfirmation -> result.prompt // handled by SkillRunner
-                }
+        val response = when (plan.type) {
+            PlanType.DIRECT_REPLY -> {
+                activityLog.log(trimmed, null, "success", plan.directReply?.take(100) ?: "")
+                plan.directReply ?: "?"
             }
 
-            PlanType.UNKNOWN -> plan.directReply ?: "I didn't understand that. Try again."
+            PlanType.RUN_SKILL -> {
+                executeSingleSkill(msg, trimmed, plan.skillId!!, plan.params)
+            }
+
+            PlanType.MULTI_STEP -> {
+                executeMultiStep(msg, trimmed, plan.steps)
+            }
+
+            PlanType.UNKNOWN -> {
+                activityLog.log(trimmed, null, "failure", "Unknown command")
+                plan.directReply ?: "I didn't understand that. Try again."
+            }
+        }
+
+        return response
+    }
+
+    private suspend fun executeSingleSkill(
+        msg: IncomingMessage,
+        userText: String,
+        skillId: String,
+        params: Map<String, Any>,
+    ): String {
+        val result = skillRunner.execute(
+            skillId = skillId,
+            params = params,
+            chatId = msg.chatId,
+            userId = msg.username ?: msg.chatId.toString(),
+        )
+        return when (result) {
+            is SkillResult.Success -> {
+                activityLog.log(userText, skillId, "success", result.message.take(100))
+                sendWithScreenshot(msg.chatId, result.message)
+            }
+            is SkillResult.Failure -> {
+                activityLog.log(userText, skillId, "failure", result.reason)
+                "❌ ${result.reason}"
+            }
+            is SkillResult.NeedsConfirmation -> result.prompt
+        }
+    }
+
+    private suspend fun executeMultiStep(
+        msg: IncomingMessage,
+        userText: String,
+        steps: List<SkillStep>,
+    ): String {
+        val totalSteps = steps.size
+        val results = mutableListOf<String>()
+
+        poller.sendMessage(msg.chatId, "🔄 Running $totalSteps steps...")
+
+        for ((index, step) in steps.withIndex()) {
+            val stepNum = index + 1
+            poller.sendMessage(msg.chatId, "⚡ Step $stepNum/$totalSteps: ${step.skillId}...")
+
+            val result = skillRunner.execute(
+                skillId = step.skillId,
+                params = step.params,
+                chatId = msg.chatId,
+                userId = msg.username ?: msg.chatId.toString(),
+            )
+
+            when (result) {
+                is SkillResult.Success -> {
+                    activityLog.log("$userText [step $stepNum]", step.skillId, "success", result.message.take(100))
+                    val stepMsg = "✅ Step $stepNum/${totalSteps}: ${result.message}"
+                    sendWithScreenshot(msg.chatId, stepMsg)
+                    results.add(stepMsg)
+                }
+                is SkillResult.Failure -> {
+                    activityLog.log("$userText [step $stepNum]", step.skillId, "failure", result.reason)
+                    results.add("❌ Step $stepNum (${step.skillId}): ${result.reason}")
+                }
+                is SkillResult.NeedsConfirmation -> {
+                    results.add("⏸️ Step $stepNum (${step.skillId}): ${result.prompt}")
+                    break
+                }
+            }
+        }
+
+        // Final summary (photos already sent per step)
+        return if (results.all { it.startsWith("✅") }) "" // all good, photos sent
+        else results.filter { !it.startsWith("✅") }.joinToString("\n\n") // only failures as text
+    }
+
+    // Take a screenshot and send as photo with caption.
+    // If screenshot unavailable (API < 30 or service issue), returns the message as text.
+    private suspend fun sendWithScreenshot(chatId: Long, message: String): String {
+        val service = AgentAccessibilityService.instance
+        if (service != null) {
+            try {
+                val bitmap = service.captureScreenshot()
+                if (bitmap != null) {
+                    poller.sendPhoto(chatId, bitmap, message)
+                    return "" // already sent as photo — caller sends nothing
+                }
+            } catch (_: Exception) { /* fall through to text */ }
+        }
+        return message // no screenshot — return as plain text
+    }
+
+    private fun toggleMode(chatId: Long): String {
+        val prefs = context.getSharedPreferences("bharatdroid", Context.MODE_PRIVATE)
+        val current = prefs.getBoolean("ask_permission", true)
+        val newMode = !current
+        prefs.edit().putBoolean("ask_permission", newMode).apply()
+
+        return if (newMode) {
+            "Mode: *Ask Permission*\nI'll confirm before doing anything."
+        } else {
+            "Mode: *Just Do It*\nNo questions asked. I'll execute immediately."
         }
     }
 
     private fun buildWelcomeMessage(): String = """
-*BharatDroid Agent* is running on this phone.
+*BharatDroid Agent* is live on this phone.
 
-I can control apps on your behalf. Just tell me what to do in plain English or Hindi.
+Tell me what to do — English or Hindi. I'll do it.
 
-Examples:
-• "Order biryani from Swiggy under ₹200"
-• "Get me 2 litres of milk from Zepto"
-• "Play Arijit Singh on YouTube"
-• "What's the weather in Mumbai?"
+*Food & Grocery:*
+- "Biryani from Swiggy under 200"
+- "Order milk from Blinkit"
+- "Pizza from Zomato"
 
-Type /skills to see all available skills.
+*Payments:*
+- "Recharge 9876543210 for 239 on PhonePe"
+- "Send 500 to mom@upi on GPay"
+
+*Cabs:*
+- "Book Ola to airport"
+- "Uber to Connaught Place"
+
+*Productivity:*
+- "Read my latest email"
+- "What's on my calendar today?"
+- "Create a note: buy groceries"
+- "Find contact Mom"
+- "Read what's on screen"
+
+*More:*
+- "Navigate to Gateway of India"
+- "Message mom on WhatsApp: coming home"
+- "Play Alan Walker Faded on YouTube"
+- "Earbuds under 1000 on Amazon"
+- "Open calculator and compute 25 * 4"
+
+*Commands:*
+/skills — list all skills
+/status — agent health check
+/history — recent activity
+/mode — toggle Ask Permission / Just Do It
+/clear — reset memory
+/install <url> — add community skill
     """.trimIndent()
+
+    private suspend fun installSkill(url: String): String {
+        if (url.isBlank()) return "Usage: /install <url to skill JSON>"
+        val result = skillStore.install(url)
+        return result.fold(
+            onSuccess = { manifest ->
+                skillRunner.register(RemoteSkill(manifest))
+                "Installed: *${manifest.name}* by `${manifest.author}`\n" +
+                "Permissions: ${manifest.permissions.joinToString(", ")}"
+            },
+            onFailure = { e -> "Install failed: ${e.message}" }
+        )
+    }
+
+    private fun uninstallSkill(skillId: String): String {
+        return if (skillStore.uninstall(skillId)) {
+            "Skill '$skillId' uninstalled. Restart agent to apply."
+        } else {
+            "No community skill '$skillId'.\nInstalled: ${skillStore.listInstalled().joinToString()}"
+        }
+    }
 
     private fun buildSkillsMessage(): String {
         val skills = skillRunner.listSkills()
         if (skills.isEmpty()) return "No skills loaded."
-        return "*Available Skills:*\n\n" + skills.joinToString("\n\n") { s ->
-            "*${s.name}* (${s.id})\n${s.description}\n" +
-            if (!s.trusted) "⚠️ Community skill — needs your approval to run." else "✓ Official skill"
+
+        val grouped = skills.groupBy { it.trusted }
+        val sb = StringBuilder("*Available Skills (${skills.size}):*\n\n")
+
+        grouped[true]?.let { official ->
+            official.forEach { s ->
+                sb.appendLine("*${s.name}* — ${s.description}")
+            }
         }
+
+        grouped[false]?.let { community ->
+            sb.appendLine("\n*Community Skills:*")
+            community.forEach { s ->
+                sb.appendLine("${s.name} by ${s.author} — ${s.description}")
+            }
+        }
+
+        return sb.toString().trimEnd()
     }
 
     private fun buildStatusMessage(): String {
         val serviceOk = AgentAccessibilityService.isConnected
+        val count = activityLog.todayCount()
+        val prefs = context.getSharedPreferences("bharatdroid", Context.MODE_PRIVATE)
+        val mode = if (prefs.getBoolean("ask_permission", true)) "Ask Permission" else "Just Do It"
+        val providerStr = prefs.getString("ai_provider", "GEMINI") ?: "GEMINI"
+        val modelStr = prefs.getString("ai_model", "") ?: ""
         return """
 *BharatDroid Status*
 
 Agent: Running
-Accessibility Service: ${if (serviceOk) "✓ Connected" else "✗ Not connected (open app to fix)"}
-Skills Loaded: ${skillRunner.listSkills().size}
+Accessibility: ${if (serviceOk) "Connected" else "Not connected"}
+Skills: ${skillRunner.listSkills().size} loaded
+Mode: $mode
+AI: $providerStr ${if (modelStr.isNotBlank()) "($modelStr)" else ""}
+Today: $count commands processed
         """.trimIndent()
     }
 }
@@ -155,4 +367,7 @@ data class AgentConfig(
     val telegramBotToken: String,
     val claudeApiKey: String,
     val authorizedChatIds: Set<Long>,
+    val askPermission: Boolean = true,
+    val aiProvider: AIProvider = AIProvider.GEMINI,
+    val aiModel: String = "",
 )

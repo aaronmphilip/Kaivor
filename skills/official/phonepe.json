@@ -1,0 +1,11 @@
+{
+  "id": "phonepe",
+  "name": "PhonePe",
+  "version": "1.0.0",
+  "description": "Check UPI balance, pay bills, mobile recharge via PhonePe",
+  "author": "bharatdroid-team",
+  "trusted": true,
+  "permissions": ["OPEN_APP", "READ_SCREEN", "TAP", "TYPE", "SCROLL", "PAYMENT"],
+  "allowedPackages": ["com.phonepe.app"],
+  "exampleParamsHint": "{\"action\": \"recharge\", \"mobile\": \"9876543210\", \"amount\": 239}"
+}
