@@ -34,6 +34,7 @@ class ScreenAgent(
     private val apiKey: String,
     private val provider: AIProvider,
     private val model: String = "",
+    private val userMemory: UserMemory? = null,
 ) {
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -85,13 +86,34 @@ class ScreenAgent(
         maxSteps: Int = 25,
     ): String {
         // Clear overlays before starting
-        dismissVoiceOverlay(runner)
-        dismissObstructingPopups(runner)
+        repeat(2) {
+            dismissVoiceOverlay(runner)
+            dismissObstructingPopups(runner)
+            delay(100)
+        }
+
+        // Build contextual goal:
+        // 1. Tell AI that app may be in a leftover state from previous use (very common issue)
+        // 2. Inject user's learned preferences so the AI behaves the way they want
+        val memoryContext = userMemory?.buildPromptContext() ?: ""
+        val contextualGoal = buildString {
+            append(goal)
+            appendLine()
+            appendLine()
+            appendLine("⚠️ APP STATE NOTE: The app may already be open from a previous task.")
+            appendLine("If the current screen shows unrelated content (old search, open chat, video playing, restaurant page, etc.),")
+            appendLine("navigate back to the app's home/main screen first — then start this task fresh.")
+            if (memoryContext.isNotBlank()) {
+                appendLine()
+                appendLine("📌 USER PREFERENCES (learned from past interactions — follow these):")
+                appendLine(memoryContext)
+            }
+        }
 
         // Generate a plan
         val initialScreen = try { runner.readScreen().take(900) } catch (_: Exception) { "" }
         val initialElements = runner.getClickableElements()
-        val plan = generatePlan(goal, initialScreen, describeElements(initialElements))
+        val plan = generatePlan(contextualGoal, initialScreen, describeElements(initialElements))
 
         val actionLog = mutableListOf<String>()
         var consecutiveBlockedOrMiss = 0
@@ -99,6 +121,9 @@ class ScreenAgent(
         for (step in 1..maxSteps) {
             delay(110)
             dismissVoiceOverlay(runner)
+            // Dismiss popups at every step — Zomato/Swiggy etc. throw popups mid-task
+            // (notifications, location, rate-us dialogs). Without this, the agent gets stuck.
+            dismissObstructingPopups(runner)
 
             val elements = runner.getClickableElements()
             val screenText = try { runner.readScreen().take(1200) } catch (_: Exception) { "" }
@@ -114,7 +139,7 @@ class ScreenAgent(
             } catch (_: Exception) { null }
 
             val action = decideNextAction(
-                goal = goal,
+                goal = contextualGoal,
                 plan = plan,
                 elements = elements,
                 screenText = screenText,
@@ -206,14 +231,39 @@ class ScreenAgent(
     private suspend fun dismissObstructingPopups(runner: SandboxedRunner) {
         try {
             val screen = runner.readScreen().lowercase()
+
+            // Comprehensive popup signal list covering Indian apps (Zomato, Swiggy, PhonePe etc.)
+            // and generic Android popups. If ANY of these appear on screen we try to dismiss.
             val popupSignals = listOf(
-                "not now", "maybe later", "skip", "got it", "no thanks",
-                "dismiss", "remind me later", "continue", "allow", "deny",
-                "update available", "rate this app", "new feature",
+                // Generic Android
+                "not now", "maybe later", "skip", "got it", "no thanks", "no, thanks",
+                "dismiss", "remind me later", "allow", "deny", "update available",
+                "rate this app", "new feature", "don't allow", "block",
+                // Notifications / location (VERY common in Zomato, Swiggy, PhonePe)
+                "enable notifications", "turn on notifications", "allow notifications",
+                "enable location", "allow location", "use my location", "set location",
+                "share location", "location permission",
+                // App store / update
+                "update now", "update app", "rate us", "rate app", "rate on play store",
+                "rate now", "review app", "leave a review",
+                // Food delivery specific
+                "claim offer", "view offer", "see offers", "grab offer",
+                "explore restaurants", "start ordering",
+                // Payment apps
+                "set upi pin", "complete your profile", "verify your number",
+                "complete kyc", "finish setup",
+                // Onboarding overlays
+                "get started", "explore", "take a tour", "show me around",
             )
+
             if (popupSignals.any { screen.contains(it) }) {
-                runner.dismissPopups(1)
-                delay(150)
+                // First try the standard dismiss list (buttons like "Skip", "Not now", etc.)
+                val dismissed = runner.dismissPopups(2)
+                if (dismissed == 0) {
+                    // Nothing matched — try pressing back to close the modal
+                    runner.pressBack()
+                }
+                delay(200)
             }
         } catch (_: Exception) { /* ignore */ }
     }

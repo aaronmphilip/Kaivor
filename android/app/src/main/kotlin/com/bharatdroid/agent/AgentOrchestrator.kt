@@ -17,6 +17,7 @@ class AgentOrchestrator(
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val skillStore = SkillStore(context)
     private val activityLog = ActivityLog(context)
+    private val userMemory = UserMemory(context)
     private val pendingConfirmations = mutableMapOf<Long, CompletableDeferred<Boolean>>()
 
     private lateinit var poller: TelegramPoller
@@ -24,11 +25,13 @@ class AgentOrchestrator(
     private lateinit var skillRunner: SkillRunner
 
     fun start() {
-        // Create the AI-driven screen agent
+        // Create the AI-driven screen agent — inject user memory so learned preferences
+        // are automatically applied to every executeGoal call, without touching skill files
         val screenAgent = ScreenAgent(
             apiKey = config.claudeApiKey,
             provider = config.aiProvider,
             model = config.aiModel,
+            userMemory = userMemory,
         )
 
         skillRunner = SkillRunner(
@@ -111,9 +114,22 @@ class AgentOrchestrator(
             trimmed.lowercase() == "/skills" -> return buildSkillsMessage()
             trimmed.lowercase() == "/status" -> return buildStatusMessage()
             trimmed.lowercase() == "/history" -> return activityLog.buildHistoryMessage()
+            trimmed.lowercase() == "/memory" -> return buildMemoryMessage()
+            trimmed.lowercase() == "/forget" -> {
+                userMemory.forgetAll()
+                return "🧹 All learned preferences cleared. Starting fresh."
+            }
+            trimmed.lowercase().startsWith("/forget ") -> {
+                val idx = trimmed.substringAfter("/forget ").trim().toIntOrNull()
+                return if (idx != null && userMemory.forget(idx)) {
+                    "Preference #$idx removed."
+                } else {
+                    "Usage: /forget <number> — see /memory for the list"
+                }
+            }
             trimmed.lowercase() == "/clear" -> {
                 brain.clearHistory(msg.chatId)
-                return "Memory cleared. Fresh start."
+                return "Conversation memory cleared. Fresh start."
             }
             trimmed.lowercase() == "/mode" -> return toggleMode(msg.chatId)
             trimmed.lowercase().startsWith("/install ") -> {
@@ -131,6 +147,16 @@ class AgentOrchestrator(
             val confirmed = trimmed.uppercase() in listOf("YES", "Y", "YEAH", "YEP", "OK", "SURE", "DO IT", "CONTINUE", "GO", "PROCEED")
             deferred.complete(confirmed)
             return if (confirmed) "Got it. Proceeding..." else "Cancelled."
+        }
+
+        // ── AI Learning: detect if user is teaching the agent ──
+        // e.g. "next time search before tapping" or "remember I don't want auto-send"
+        val preference = userMemory.extractPreference(trimmed)
+        if (preference != null && userMemory.learningEnabled) {
+            val saved = userMemory.remember(preference)
+            if (saved) {
+                return "📌 Got it! I'll remember:\n_\"$preference\"_\n\nThis will apply to future tasks. Use /memory to see all preferences, /forget to remove any."
+            }
         }
 
         // ── Normal flow: AI -> Skill ──
@@ -258,6 +284,16 @@ class AgentOrchestrator(
         }
     }
 
+    private fun buildMemoryMessage(): String {
+        val memories = userMemory.getAll()
+        if (memories.isEmpty()) {
+            return "📭 No preferences saved yet.\n\nTell me something like:\n_\"Next time, always search before tapping\"_\nor\n_\"Remember I want messages typed, not auto-sent\"_\n\nI'll learn and follow your preferences automatically."
+        }
+        val list = memories.mapIndexed { i, m -> "${i + 1}. $m" }.joinToString("\n")
+        val status = if (userMemory.learningEnabled) "✅ Learning: ON" else "❌ Learning: OFF (toggle in Settings)"
+        return "*Learned Preferences:*\n\n$list\n\n$status\n\nRemove one: /forget 1\nRemove all: /forget"
+    }
+
     private fun buildWelcomeMessage(): String = """
 *BharatClaw Agent* is live on this phone.
 
@@ -294,9 +330,13 @@ Tell me what to do — English or Hindi. I'll do it.
 /skills — list all skills
 /status — agent health check
 /history — recent activity
+/memory — see what I've learned about your preferences
+/forget — clear learned preferences
 /mode — toggle Ask Permission / Just Do It
-/clear — reset memory
+/clear — reset conversation memory
 /install <url> — add community skill
+
+💡 *Tip:* I learn from you! Say _"next time, do it like this..."_ and I'll remember.
     """.trimIndent()
 
     private suspend fun installSkill(url: String): String {

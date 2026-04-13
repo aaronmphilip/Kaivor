@@ -10,6 +10,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private var selectedProvider = AIProvider.GEMINI
     private var askPermission = true
+    private var learningEnabled = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,6 +22,8 @@ class SettingsActivity : AppCompatActivity() {
         val providerStr = prefs.getString("ai_provider", "GEMINI") ?: "GEMINI"
         selectedProvider = try { AIProvider.valueOf(providerStr) } catch (_: Exception) { AIProvider.GEMINI }
         askPermission = prefs.getBoolean("ask_permission", true)
+        learningEnabled = getSharedPreferences("bharatdroid_memory", MODE_PRIVATE)
+            .getBoolean("learning_enabled", true)
         val currentKey = prefs.getString("ai_key", "") ?: ""
         val currentModel = prefs.getString("ai_model", "") ?: ""
 
@@ -31,6 +34,7 @@ class SettingsActivity : AppCompatActivity() {
 
         setupProviderButtons()
         setupPermissionToggle()
+        setupLearningToggle()
 
         // Back
         findViewById<Button>(R.id.btnBack).setOnClickListener { finish() }
@@ -49,6 +53,10 @@ class SettingsActivity : AppCompatActivity() {
                 .putString("ai_model", modelField.text.toString().trim())
                 .putBoolean("ask_permission", askPermission)
                 .apply()
+
+            // Save learning preference to its own prefs file (same as UserMemory uses)
+            getSharedPreferences("bharatdroid_memory", MODE_PRIVATE)
+                .edit().putBoolean("learning_enabled", learningEnabled).apply()
 
             // Restart agent service
             stopService(Intent(this, AgentForegroundService::class.java))
@@ -145,5 +153,30 @@ class SettingsActivity : AppCompatActivity() {
         btnJust.setOnClickListener { selectMode(false) }
 
         selectMode(askPermission)
+    }
+
+    private fun setupLearningToggle() {
+        val btnOn = findViewById<Button>(R.id.btnLearnOn)
+        val btnOff = findViewById<Button>(R.id.btnLearnOff)
+
+        fun selectLearning(enabled: Boolean) {
+            learningEnabled = enabled
+            if (enabled) {
+                btnOn.setBackgroundColor(0xFF00CC88.toInt())
+                btnOn.setTextColor(0xFF000000.toInt())
+                btnOff.setBackgroundColor(0xFF1E1E1E.toInt())
+                btnOff.setTextColor(0xFFAAAAAA.toInt())
+            } else {
+                btnOff.setBackgroundColor(0xFF5500AA.toInt()) // purple = privacy mode
+                btnOff.setTextColor(0xFFFFFFFF.toInt())
+                btnOn.setBackgroundColor(0xFF1E1E1E.toInt())
+                btnOn.setTextColor(0xFFAAAAAA.toInt())
+            }
+        }
+
+        btnOn.setOnClickListener { selectLearning(true) }
+        btnOff.setOnClickListener { selectLearning(false) }
+
+        selectLearning(learningEnabled)
     }
 }
