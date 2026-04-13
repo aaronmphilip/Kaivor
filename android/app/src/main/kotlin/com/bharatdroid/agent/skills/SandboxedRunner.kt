@@ -2,6 +2,7 @@ package com.bharatdroid.agent.skills
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.accessibility.AccessibilityNodeInfo
 import com.bharatdroid.agent.AgentAccessibilityService
@@ -17,6 +18,9 @@ class SandboxedRunner(
         val metrics = context.resources.displayMetrics
         return Pair(metrics.widthPixels, metrics.heightPixels)
     }
+
+    /** Capture current screen as a bitmap (Android 11+ only). Used for vision AI. */
+    suspend fun captureScreenshot(): Bitmap? = service.captureScreenshot()
 
     fun openApp(packageName: String) {
         requirePermission(Permission.OPEN_APP)

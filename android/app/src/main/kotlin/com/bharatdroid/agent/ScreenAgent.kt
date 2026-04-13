@@ -1,5 +1,12 @@
 package com.bharatdroid.agent
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.Typeface
+import android.util.Base64
 import com.bharatdroid.agent.skills.SandboxedRunner
 import com.google.gson.Gson
 import com.google.gson.JsonParser
@@ -10,6 +17,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 
 /**
@@ -99,12 +107,19 @@ class ScreenAgent(
                 return "Screen is empty — make sure the target app is open."
             }
 
+            // Capture screenshot for vision-based decision making (Set-of-Mark)
+            // This lets the AI SEE the actual UI visually — distinguishes mic from search field
+            val screenshot: Bitmap? = try {
+                runner.captureScreenshot()
+            } catch (_: Exception) { null }
+
             val action = decideNextAction(
                 goal = goal,
                 plan = plan,
                 elements = elements,
                 screenText = screenText,
                 history = actionLog,
+                screenshot = screenshot,
             )
 
             val result = executeAction(runner, action, elements)
@@ -327,8 +342,14 @@ class ScreenAgent(
         elements: List<ScreenElement>,
         screenText: String,
         history: List<String>,
+        screenshot: Bitmap? = null,
     ): ScreenAction {
         val historyStr = if (history.isEmpty()) "none" else history.takeLast(10).joinToString(" → ")
+
+        // Annotate screenshot with numbered boxes if available (Set-of-Mark technique)
+        val annotated = if (screenshot != null) annotateScreenshot(screenshot, elements) else null
+
+        val usingVision = annotated != null && provider == AIProvider.GEMINI
 
         val prompt = buildString {
             appendLine("You control an Android phone. Decide the SINGLE best next action to make progress.")
@@ -342,27 +363,44 @@ class ScreenAgent(
             }
             appendLine("HISTORY: $historyStr")
             appendLine()
-            appendLine("SCREEN TEXT:")
-            appendLine(screenText.take(900))
-            appendLine()
-            appendLine("UI ELEMENTS (index, label, role, position, traits):")
-            appendLine(describeElements(elements).take(1000))
+
+            if (usingVision) {
+                appendLine("SCREENSHOT: You can see the annotated screenshot of the current screen.")
+                appendLine("Each UI element has a NUMBERED COLORED BOX drawn on it.")
+                appendLine("- GREEN boxes = text input / search fields (safe to type in)")
+                appendLine("- YELLOW boxes = search icons (tap to open search)")
+                appendLine("- ORANGE boxes = action buttons (send, buy, confirm)")
+                appendLine("- BLUE boxes = message input fields")
+                appendLine("- PURPLE boxes = list items / content rows")
+                appendLine("- TEAL boxes = toggle switches")
+                appendLine("- RED/unlabeled = voice/mic buttons — DO NOT tap these")
+                appendLine("Use the NUMBER in the box corner as the 'index' in your action.")
+                appendLine()
+                appendLine("LOOK AT THE SCREENSHOT CAREFULLY before deciding. You can see the actual icons,")
+                appendLine("button shapes, text, and layout. Use this visual understanding to pick correctly.")
+            } else {
+                appendLine("SCREEN TEXT:")
+                appendLine(screenText.take(900))
+                appendLine()
+                appendLine("UI ELEMENTS (index, label, role, position, traits):")
+                appendLine(describeElements(elements).take(1000))
+            }
             appendLine()
             appendLine("═══ UNIVERSAL UI RULES ═══")
-            appendLine("1. Understand what TYPE of screen you are on before acting:")
-            appendLine("   - Home/feed screen → navigate to search or the target section")
-            appendLine("   - Search screen → type in the search field, press enter")
-            appendLine("   - Results/list screen → scroll to find the target, then tap it")
-            appendLine("   - Detail screen → take the needed action (add to cart, send, like, etc)")
-            appendLine("   - Input/compose screen → fill fields, then submit")
-            appendLine("   - Settings screen → find and toggle the right switch")
-            appendLine("2. For search tasks: find the EDITABLE/TEXT-INPUT field (not icon), tap it, type, submit.")
-            appendLine("3. NEVER tap elements with role=voice. If voice mode appears, use action=back immediately.")
-            appendLine("4. After typing, use action=enter to submit. Don't retype what was already typed.")
-            appendLine("5. To select from a list: scroll until you see the target, then tap it. Don't guess.")
-            appendLine("6. If the same action failed twice in a row, try a different approach.")
-            appendLine("7. Return done only when you can CONFIRM on screen that the goal is complete.")
-            appendLine("8. Return fail only if truly stuck with no path forward.")
+            appendLine("1. Understand the SCREEN TYPE before acting:")
+            appendLine("   - Home/feed → navigate to search or target section")
+            appendLine("   - Search open → type in the text field (green box), not the mic (avoid red)")
+            appendLine("   - Results/list → scroll to find target, then tap it")
+            appendLine("   - Detail screen → take action (add to cart, send, like, follow, etc)")
+            appendLine("   - Compose/input → fill all fields then submit")
+            appendLine("   - Settings → find the toggle and switch it")
+            appendLine("2. For search: tap the TEXT INPUT field (green, wide, editable) — NEVER the mic icon.")
+            appendLine("3. If you see a voice/mic overlay ('Speak now', 'Listening'), use action=back.")
+            appendLine("4. After typing, use action=enter. Don't retype already-typed text.")
+            appendLine("5. For lists: scroll until you SEE the target item, then tap it.")
+            appendLine("6. If the same element failed twice, try a different approach (scroll, back, or another element).")
+            appendLine("7. Return done only when you CONFIRM on screen the goal is complete.")
+            appendLine("8. Return fail only if truly stuck with zero path forward.")
             appendLine()
             appendLine("ACTIONS:")
             appendLine("""{"action":"tap","index":N}           {"action":"type","index":N,"text":"X"}""")
@@ -373,10 +411,11 @@ class ScreenAgent(
             appendLine("""{"action":"enter"}                   {"action":"wait"}""")
             appendLine("""{"action":"done","summary":"X"}      {"action":"fail","summary":"X"}""")
             appendLine()
-            append("Reply with ONE JSON object. No markdown, no explanation.")
+            append("Reply with ONE JSON object only. No markdown, no explanation.")
         }
 
-        val response = callAI(prompt) ?: return ScreenAction("fail", summary = "AI no response")
+        val response = callAIWithVision(prompt, annotated) ?: callAI(prompt)
+            ?: return ScreenAction("fail", summary = "AI no response")
         return parseAction(response)
     }
 
@@ -564,6 +603,71 @@ class ScreenAgent(
         return if (depth > 0) text.substring(start) + "}".repeat(depth) else null
     }
 
+    // ─── Set-of-Mark Vision ──────────────────────────────────────────────────
+
+    /**
+     * Annotate a screenshot with numbered colored boxes on each element.
+     * This is the core technique used by AppAgent (Tencent) and UFO (Microsoft).
+     * The AI sees the ACTUAL VISUAL UI — it can distinguish mic icon vs search field,
+     * see button shapes, icon graphics, and layout — not just text labels.
+     */
+    private fun annotateScreenshot(bitmap: Bitmap, elements: List<ScreenElement>): Bitmap {
+        val soft = if (bitmap.config == Bitmap.Config.HARDWARE)
+            bitmap.copy(Bitmap.Config.ARGB_8888, false) else bitmap
+        val annotated = soft.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(annotated)
+
+        val boxPaint = Paint().apply { style = Paint.Style.STROKE; strokeWidth = 4f; isAntiAlias = true }
+        val bgPaint = Paint().apply { style = Paint.Style.FILL; isAntiAlias = true }
+        val textPaint = Paint().apply {
+            color = Color.WHITE; textSize = 26f; typeface = Typeface.DEFAULT_BOLD; isAntiAlias = true
+        }
+
+        // Distinct colors for different element types — makes it easy for AI to read
+        val roleColors = mapOf(
+            "search-input"   to Color.rgb(0, 200, 100),   // green — safe to type here
+            "message-input"  to Color.rgb(0, 180, 255),   // blue — message field
+            "send-button"    to Color.rgb(255, 140, 0),   // orange — action buttons
+            "voice"          to Color.rgb(200, 0, 0),     // red — NEVER tap
+            "search-icon"    to Color.rgb(255, 220, 0),   // yellow — tap to open search
+            "list-item"      to Color.rgb(180, 100, 255), // purple — content rows
+            "toggle-switch"  to Color.rgb(0, 200, 200),   // teal — toggles
+        )
+        val defaultColor = Color.rgb(100, 160, 255) // light blue for everything else
+
+        elements.forEachIndexed { i, el ->
+            val role = elementRole(el)
+            if (role == "voice") return@forEachIndexed // skip drawing voice elements — don't highlight them
+
+            val color = roleColors[role] ?: defaultColor
+            boxPaint.color = color
+            bgPaint.color = color
+
+            val halfW = (el.width / 2).coerceAtLeast(20)
+            val halfH = (el.height / 2).coerceAtLeast(20)
+            val left   = (el.centerX - halfW).toFloat().coerceAtLeast(0f)
+            val top    = (el.centerY - halfH).toFloat().coerceAtLeast(0f)
+            val right  = (el.centerX + halfW).toFloat().coerceAtMost(annotated.width.toFloat())
+            val bottom = (el.centerY + halfH).toFloat().coerceAtMost(annotated.height.toFloat())
+
+            canvas.drawRect(left, top, right, bottom, boxPaint)
+
+            // Number badge in top-left corner of the box
+            val badgeSize = 34f
+            canvas.drawRect(left, top, left + badgeSize, top + badgeSize, bgPaint)
+            canvas.drawText("$i", left + 5f, top + 25f, textPaint)
+        }
+        return annotated
+    }
+
+    private fun bitmapToBase64(bitmap: Bitmap): String {
+        val out = ByteArrayOutputStream()
+        val soft = if (bitmap.config == Bitmap.Config.HARDWARE)
+            bitmap.copy(Bitmap.Config.ARGB_8888, false) else bitmap
+        soft.compress(Bitmap.CompressFormat.JPEG, 82, out)
+        return Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
+    }
+
     // ─── AI Calls ────────────────────────────────────────────────────────────
 
     private suspend fun callAI(prompt: String): String? = when (provider) {
@@ -572,12 +676,69 @@ class ScreenAgent(
         AIProvider.OPENAI -> callOpenAI(prompt)
     }
 
+    /**
+     * Vision-enhanced AI call — sends annotated screenshot + text prompt.
+     * Only Gemini supports vision in our current setup (free tier).
+     * Falls back to text-only if screenshot not available.
+     */
+    private suspend fun callAIWithVision(prompt: String, annotatedBitmap: Bitmap?): String? {
+        if (annotatedBitmap == null || provider != AIProvider.GEMINI) return callAI(prompt)
+        return callGeminiVision(prompt, annotatedBitmap)
+    }
+
     private suspend fun callGemini(prompt: String): String? {
         val modelName = model.ifBlank { AIBrain.detectFastestModel(apiKey) }
         val body = gson.toJson(mapOf(
             "contents" to listOf(mapOf(
                 "role" to "user",
                 "parts" to listOf(mapOf("text" to prompt)),
+            )),
+            "generationConfig" to mapOf(
+                "temperature" to 0.0,
+                "responseMimeType" to "application/json",
+                "thinkingConfig" to mapOf("thinkingBudget" to 0),
+            ),
+        ))
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/$modelName:generateContent?key=$apiKey"
+        return try {
+            withContext(Dispatchers.IO) {
+                client.newCall(
+                    Request.Builder().url(url)
+                        .addHeader("content-type", "application/json")
+                        .post(body.toRequestBody("application/json".toMediaType()))
+                        .build()
+                ).execute().use { resp ->
+                    val raw = resp.body?.string() ?: return@withContext null
+                    val json = JsonParser.parseString(raw).asJsonObject
+                    if (json.has("error")) return@withContext null
+                    json.getAsJsonArray("candidates")
+                        ?.get(0)?.asJsonObject
+                        ?.getAsJsonObject("content")
+                        ?.getAsJsonArray("parts")
+                        ?.get(0)?.asJsonObject
+                        ?.get("text")?.asString?.trim()
+                }
+            }
+        } catch (_: Exception) { null }
+    }
+
+    /**
+     * Gemini vision call — sends the annotated screenshot + prompt.
+     * Gemini sees the ACTUAL screen visually with numbered boxes on each element.
+     * This is how AppAgent/UFO distinguish mic icon from search field — they LOOK at it.
+     */
+    private suspend fun callGeminiVision(prompt: String, bitmap: Bitmap): String? {
+        val modelName = model.ifBlank { AIBrain.detectFastestModel(apiKey) }
+        val imageBase64 = bitmapToBase64(bitmap)
+        val body = gson.toJson(mapOf(
+            "contents" to listOf(mapOf(
+                "parts" to listOf(
+                    mapOf("text" to prompt),
+                    mapOf("inline_data" to mapOf(
+                        "mime_type" to "image/jpeg",
+                        "data" to imageBase64,
+                    )),
+                ),
             )),
             "generationConfig" to mapOf(
                 "temperature" to 0.0,

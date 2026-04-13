@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "note": "Android build tasks — not web servers. Run via Android Studio or terminal.",
+      "name": "build-debug",
+      "runtimeExecutable": "./android/gradlew",
+      "runtimeArgs": ["-p", "android", "assembleDebug"],
+      "port": null
+    },
+    {
+      "name": "install-debug",
+      "runtimeExecutable": "./android/gradlew",
+      "runtimeArgs": ["-p", "android", "installDebug"],
+      "port": null
+    }
+  ]
+}
