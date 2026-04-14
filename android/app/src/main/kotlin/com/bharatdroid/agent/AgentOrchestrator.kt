@@ -18,6 +18,7 @@ class AgentOrchestrator(
     private val skillStore = SkillStore(context)
     private val activityLog = ActivityLog(context)
     private val userMemory = UserMemory(context)
+    private val appKnowledge = AppKnowledgeBase(context)
     private val pendingConfirmations = mutableMapOf<Long, CompletableDeferred<Boolean>>()
 
     private lateinit var poller: TelegramPoller
@@ -32,6 +33,7 @@ class AgentOrchestrator(
             provider = config.aiProvider,
             model = config.aiModel,
             userMemory = userMemory,
+            appKnowledge = appKnowledge,
         )
 
         skillRunner = SkillRunner(
@@ -118,6 +120,16 @@ class AgentOrchestrator(
             trimmed.lowercase() == "/forget" -> {
                 userMemory.forgetAll()
                 return "🧹 All learned preferences cleared. Starting fresh."
+            }
+            trimmed.lowercase() == "/knowledge" -> return appKnowledge.buildSummaryMessage()
+            trimmed.lowercase() == "/knowledge clear" -> {
+                appKnowledge.clearAll()
+                return "🧹 App knowledge cleared. I'll re-learn as you use me."
+            }
+            trimmed.lowercase().startsWith("/knowledge clear ") -> {
+                val pkg = trimmed.substringAfter("/knowledge clear ").trim()
+                appKnowledge.clearApp(pkg)
+                return "Cleared knowledge for $pkg."
             }
             trimmed.lowercase().startsWith("/forget ") -> {
                 val idx = trimmed.substringAfter("/forget ").trim().toIntOrNull()
@@ -332,11 +344,14 @@ Tell me what to do — English or Hindi. I'll do it.
 /history — recent activity
 /memory — see what I've learned about your preferences
 /forget — clear learned preferences
+/knowledge — see what I've learned about each app's layout
 /mode — toggle Ask Permission / Just Do It
 /clear — reset conversation memory
 /install <url> — add community skill
 
-💡 *Tip:* I learn from you! Say _"next time, do it like this..."_ and I'll remember.
+💡 *Tips:*
+- I learn from you! Say _"next time, do it like this..."_ and I'll remember.
+- I also learn app layouts automatically — each task makes me faster on that app.
     """.trimIndent()
 
     private suspend fun installSkill(url: String): String {
@@ -390,6 +405,8 @@ Tell me what to do — English or Hindi. I'll do it.
         val mode = if (prefs.getBoolean("ask_permission", true)) "Ask Permission" else "Just Do It"
         val providerStr = prefs.getString("ai_provider", "GEMINI") ?: "GEMINI"
         val modelStr = prefs.getString("ai_model", "") ?: ""
+        val knownApps = appKnowledge.getAppList().size
+        val memCount = userMemory.getAll().size
         return """
 *BharatDroid Status*
 
@@ -399,6 +416,7 @@ Skills: ${skillRunner.listSkills().size} loaded
 Mode: $mode
 AI: $providerStr ${if (modelStr.isNotBlank()) "($modelStr)" else ""}
 Today: $count commands processed
+Apps learned: $knownApps  |  Preferences: $memCount
         """.trimIndent()
     }
 }

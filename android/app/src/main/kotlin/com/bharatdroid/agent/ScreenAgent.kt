@@ -35,6 +35,7 @@ class ScreenAgent(
     private val provider: AIProvider,
     private val model: String = "",
     private val userMemory: UserMemory? = null,
+    private val appKnowledge: AppKnowledgeBase? = null,
 ) {
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -85,27 +86,60 @@ class ScreenAgent(
         goal: String,
         maxSteps: Int = 25,
     ): String {
-        // Clear overlays before starting
+        val result = executeGoalInternal(runner, goal, maxSteps, isRetry = false)
+
+        // Auto-retry once on failure — with extra context about what went wrong
+        // This handles transient failures (slow network, popup that appeared briefly)
+        if (result.startsWith("Could not complete") || result.startsWith("Stuck after") || result.startsWith("Reached step limit")) {
+            delay(1000)
+            return executeGoalInternal(runner, goal, maxSteps, isRetry = true, previousFailure = result)
+        }
+        return result
+    }
+
+    private suspend fun executeGoalInternal(
+        runner: SandboxedRunner,
+        goal: String,
+        maxSteps: Int,
+        isRetry: Boolean = false,
+        previousFailure: String = "",
+    ): String {
+        // ── Phase 1: Reset app to clean home state ────────────────────────────
+        // Fixes #1 failure cause: app was left mid-task from previous use
+        // (Zomato on restaurant, YouTube on video, WhatsApp in a chat)
+        val currentPkg = runner.getCurrentPackage()
+        if (currentPkg.isNotBlank()) {
+            runner.resetToAppHome(currentPkg)
+            delay(200)
+        }
+
+        // ── Phase 2: Dismiss any overlays ────────────────────────────────────
         repeat(2) {
             dismissVoiceOverlay(runner)
             dismissObstructingPopups(runner)
             delay(100)
         }
 
-        // Build contextual goal:
-        // 1. Tell AI that app may be in a leftover state from previous use (very common issue)
-        // 2. Inject user's learned preferences so the AI behaves the way they want
+        // ── Phase 3: Build contextual goal ───────────────────────────────────
+        // Inject: user preferences, per-app knowledge, retry context
         val memoryContext = userMemory?.buildPromptContext() ?: ""
+        val appKnowledgeContext = appKnowledge?.getPromptContext(currentPkg) ?: ""
+
         val contextualGoal = buildString {
             append(goal)
             appendLine()
-            appendLine()
-            appendLine("⚠️ APP STATE NOTE: The app may already be open from a previous task.")
-            appendLine("If the current screen shows unrelated content (old search, open chat, video playing, restaurant page, etc.),")
-            appendLine("navigate back to the app's home/main screen first — then start this task fresh.")
+            if (isRetry && previousFailure.isNotBlank()) {
+                appendLine()
+                appendLine("⚠️ RETRY: Previous attempt failed: \"${previousFailure.take(120)}\"")
+                appendLine("Try a DIFFERENT approach this time. The previous strategy did not work.")
+            }
+            if (appKnowledgeContext.isNotBlank()) {
+                appendLine()
+                appendLine(appKnowledgeContext)
+            }
             if (memoryContext.isNotBlank()) {
                 appendLine()
-                appendLine("📌 USER PREFERENCES (learned from past interactions — follow these):")
+                appendLine("📌 USER PREFERENCES:")
                 appendLine(memoryContext)
             }
         }
@@ -184,7 +218,14 @@ class ScreenAgent(
             val result = executeAction(runner, action, elements)
 
             when (result) {
-                "DONE" -> return action.summary.ifBlank { "Done." }
+                "DONE" -> {
+                    val outcome = action.summary.ifBlank { "Done." }
+                    // Save successful pattern to app knowledge base (AppAgent technique)
+                    if (currentPkg.isNotBlank() && !isRetry) {
+                        appKnowledge?.saveSuccess(currentPkg, goal, outcome, actionLog)
+                    }
+                    return outcome
+                }
                 "FAIL" -> return "Could not complete: ${action.summary.ifBlank { "Stuck with no safe next step." }}"
                 else -> {
                     if (result.contains("BLOCKED") || result.contains("MISS") || result.contains("SKIP")) {
@@ -318,29 +359,31 @@ class ScreenAgent(
                 val el = elements[idx]
                 val role = elementRole(el)
 
-                // Block voice/audio elements universally
                 if (role == "voice") {
                     return "tap[$idx] BLOCKED — voice/mic element, skipping"
                 }
 
                 val ok = runner.tapAtPoint(el.centerX.toFloat(), el.centerY.toFloat())
-                delay(300)
+                // Adaptive wait: polls until screen changes — handles slow Indian 4G gracefully
+                // Faster on fast networks, never fires early on slow ones (replaces fixed delay)
+                runner.waitForScreenChange(timeoutMs = 3000)
                 val label = bestLabel(el).take(30).ifBlank { role }
                 val idxLabel = if (idx == action.index) "$idx" else "${action.index}→$idx"
                 "tap[$idxLabel] '$label' → ${if (ok) "OK" else "MISS"}"
             }
 
             "type" -> {
-                // Find the best input field — prefer the one at the given index, fall back to best editable
+                // Tap the target field first
                 val typeIdx = findBestInputIndex(elements, action.index)
                 if (typeIdx in elements.indices) {
                     val el = elements[typeIdx]
                     runner.tapAtPoint(el.centerX.toFloat(), el.centerY.toFloat())
                     delay(150)
                 }
-                val ok = runner.typeInFocused(action.text)
-                    || runner.typeInBestField(action.text, "search", "find", "message", "to", "query")
-                delay(180)
+                // Use typeReliably: tries standard typing → verifies → clipboard fallback
+                // Fixes silent typing failures on older Xiaomi/Realme/Samsung budget phones
+                val ok = runner.typeReliably(action.text)
+                delay(150)
                 val idxLabel = if (typeIdx in elements.indices) "$typeIdx" else "auto"
                 "type[$idxLabel] '${action.text.take(30)}' → ${if (ok) "OK" else "MISS"}"
             }
