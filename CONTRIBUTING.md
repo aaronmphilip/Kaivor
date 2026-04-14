@@ -8,7 +8,7 @@ BharatDroid is built for India and the world. Whether you fix a bug, add a new s
 
 ## 🐛 Reporting Bugs
 
-1. Check [existing issues](https://github.com/aaronmphilip/BharatClaw/issues) first
+1. Check [existing issues](https://github.com/aaronmphilip/BharatDroid/issues) first
 2. Open a new issue with:
    - What you said to the bot
    - What it did vs what you expected
@@ -118,8 +118,8 @@ register(MyAppSkill())
 
 ```bash
 # Clone
-git clone https://github.com/aaronmphilip/BharatClaw.git
-cd BharatClaw
+git clone https://github.com/aaronmphilip/BharatDroid.git
+cd BharatDroid
 
 # Open in Android Studio (Hedgehog or later)
 # File → Open → select the `android/` folder

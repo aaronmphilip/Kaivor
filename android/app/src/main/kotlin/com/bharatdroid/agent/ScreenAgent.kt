@@ -118,6 +118,12 @@ class ScreenAgent(
         val actionLog = mutableListOf<String>()
         var consecutiveBlockedOrMiss = 0
 
+        // ── OpenClaw-style stuck detection (AppAgent/DroidClaw research) ─────────
+        // Rolling window of screen state hashes — if unchanged for 3 steps, inject recovery hint
+        val recentScreenHashes = ArrayDeque<Int>(5)
+        var lastTappedIdx = -1
+        var repeatTapCount = 0
+
         for (step in 1..maxSteps) {
             delay(110)
             dismissVoiceOverlay(runner)
@@ -132,8 +138,27 @@ class ScreenAgent(
                 return "Screen is empty — make sure the target app is open."
             }
 
+            // Hash current screen state — text + element count + positions
+            val screenHash = (screenText.take(400) + elements.size + elements.sumOf { it.centerY }).hashCode()
+            recentScreenHashes.addLast(screenHash)
+            if (recentScreenHashes.size > 4) recentScreenHashes.removeFirst()
+
+            // Build stuck recovery hint (injected into AI prompt when agent is looping)
+            val isScreenFrozen = recentScreenHashes.size >= 3 &&
+                recentScreenHashes.takeLast(3).all { it == screenHash }
+            val isRepeatTapping = repeatTapCount >= 3 && lastTappedIdx >= 0
+            val stuckHint = buildString {
+                if (isScreenFrozen) {
+                    appendLine("🚨 STUCK: Screen has NOT changed for 3+ steps. Current approach is failing.")
+                    appendLine("TRY SOMETHING DIFFERENT: press back, scroll a new direction, tap a different element, or use dismiss.")
+                }
+                if (isRepeatTapping) {
+                    appendLine("🚨 REPEAT TAP: Element #$lastTappedIdx has been tapped $repeatTapCount times with no result. STOP tapping it.")
+                    appendLine("Choose a DIFFERENT element or a completely different action.")
+                }
+            }.trim()
+
             // Capture screenshot for vision-based decision making (Set-of-Mark)
-            // This lets the AI SEE the actual UI visually — distinguishes mic from search field
             val screenshot: Bitmap? = try {
                 runner.captureScreenshot()
             } catch (_: Exception) { null }
@@ -145,7 +170,16 @@ class ScreenAgent(
                 screenText = screenText,
                 history = actionLog,
                 screenshot = screenshot,
+                stuckHint = stuckHint,
             )
+
+            // Track tap repetition — if AI keeps tapping same element, flag it next step
+            if (action.action == "tap") {
+                if (action.index == lastTappedIdx) repeatTapCount++
+                else { lastTappedIdx = action.index; repeatTapCount = 1 }
+            } else if (action.action !in listOf("wait", "dismiss")) {
+                repeatTapCount = 0 // reset on any real action
+            }
 
             val result = executeAction(runner, action, elements)
 
@@ -153,7 +187,6 @@ class ScreenAgent(
                 "DONE" -> return action.summary.ifBlank { "Done." }
                 "FAIL" -> return "Could not complete: ${action.summary.ifBlank { "Stuck with no safe next step." }}"
                 else -> {
-                    // Track consecutive misses/blocks to detect true deadlock
                     if (result.contains("BLOCKED") || result.contains("MISS") || result.contains("SKIP")) {
                         consecutiveBlockedOrMiss++
                         if (consecutiveBlockedOrMiss >= 4) {
@@ -393,12 +426,12 @@ class ScreenAgent(
         screenText: String,
         history: List<String>,
         screenshot: Bitmap? = null,
+        stuckHint: String = "",
     ): ScreenAction {
         val historyStr = if (history.isEmpty()) "none" else history.takeLast(10).joinToString(" → ")
 
         // Annotate screenshot with numbered boxes if available (Set-of-Mark technique)
         val annotated = if (screenshot != null) annotateScreenshot(screenshot, elements) else null
-
         val usingVision = annotated != null && provider == AIProvider.GEMINI
 
         val prompt = buildString {
@@ -411,8 +444,15 @@ class ScreenAgent(
                 appendLine(plan)
                 appendLine()
             }
-            appendLine("HISTORY: $historyStr")
+            appendLine("HISTORY (what happened so far): $historyStr")
             appendLine()
+
+            // Inject stuck recovery hints when the agent is looping (from AppAgent/DroidClaw research)
+            if (stuckHint.isNotBlank()) {
+                appendLine("══ RECOVERY ALERT ══")
+                appendLine(stuckHint)
+                appendLine()
+            }
 
             if (usingVision) {
                 appendLine("SCREENSHOT: You can see the annotated screenshot of the current screen.")
@@ -426,42 +466,38 @@ class ScreenAgent(
                 appendLine("- RED/unlabeled = voice/mic buttons — DO NOT tap these")
                 appendLine("Use the NUMBER in the box corner as the 'index' in your action.")
                 appendLine()
-                appendLine("LOOK AT THE SCREENSHOT CAREFULLY before deciding. You can see the actual icons,")
-                appendLine("button shapes, text, and layout. Use this visual understanding to pick correctly.")
+                appendLine("LOOK AT THE SCREENSHOT CAREFULLY. Use visual info to pick the right element.")
             } else {
                 appendLine("SCREEN TEXT:")
                 appendLine(screenText.take(900))
                 appendLine()
-                appendLine("UI ELEMENTS (index, label, role, position, traits):")
+                appendLine("UI ELEMENTS (index, label, role, position, size, traits):")
                 appendLine(describeElements(elements).take(1000))
             }
             appendLine()
             appendLine("═══ UNIVERSAL UI RULES ═══")
-            appendLine("1. Understand the SCREEN TYPE before acting:")
-            appendLine("   - Home/feed → navigate to search or target section")
-            appendLine("   - Search open → type in the text field (green box), not the mic (avoid red)")
-            appendLine("   - Results/list → scroll to find target, then tap it")
-            appendLine("   - Detail screen → take action (add to cart, send, like, follow, etc)")
-            appendLine("   - Compose/input → fill all fields then submit")
-            appendLine("   - Settings → find the toggle and switch it")
-            appendLine("2. For search: tap the TEXT INPUT field (green, wide, editable) — NEVER the mic icon.")
-            appendLine("3. If you see a voice/mic overlay ('Speak now', 'Listening'), use action=back.")
-            appendLine("4. After typing, use action=enter. Don't retype already-typed text.")
-            appendLine("5. For lists: scroll until you SEE the target item, then tap it.")
-            appendLine("6. If the same element failed twice, try a different approach (scroll, back, or another element).")
-            appendLine("7. Return done only when you CONFIRM on screen the goal is complete.")
-            appendLine("8. Return fail only if truly stuck with zero path forward.")
+            appendLine("1. IDENTIFY SCREEN TYPE first:")
+            appendLine("   Home/feed → navigate to search. Search open → type (green), not mic (red).")
+            appendLine("   Results → scroll to target then tap. Detail → take requested action.")
+            appendLine("   Compose → fill all fields then submit. Settings → find toggle.")
+            appendLine("2. Search: always use TEXT INPUT field (wide, editable, green) — NEVER the mic icon.")
+            appendLine("3. Voice overlay ('Speak now', 'Listening') → use action=back immediately.")
+            appendLine("4. After typing → action=enter. Never retype already-typed text.")
+            appendLine("5. BOTTOM NAV BAR (Home/Shorts/Library tabs at very bottom of screen, pos=bottom):")
+            appendLine("   DO NOT tap bottom nav unless you INTEND to change section. Content items are in mid/top area.")
+            appendLine("6. If same element failed twice → try different approach (scroll, back, different element).")
+            appendLine("7. done only when you CONFIRM success is visible on screen.")
+            appendLine("8. fail only if truly stuck with absolutely no path forward.")
             appendLine()
             appendLine("ACTIONS:")
-            appendLine("""{"action":"tap","index":N}           {"action":"type","index":N,"text":"X"}""")
-            appendLine("""{"action":"scroll_down"}             {"action":"scroll_up"}""")
-            appendLine("""{"action":"swipe_left"}              {"action":"swipe_right"}""")
-            appendLine("""{"action":"long_press","index":N}    {"action":"toggle","index":N}""")
-            appendLine("""{"action":"back"}                    {"action":"home"}""")
-            appendLine("""{"action":"enter"}                   {"action":"wait"}""")
-            appendLine("""{"action":"done","summary":"X"}      {"action":"fail","summary":"X"}""")
+            appendLine("""tap:{"action":"tap","index":N}  type:{"action":"type","index":N,"text":"X"}  enter:{"action":"enter"}""")
+            appendLine("""scroll_down:{"action":"scroll_down"}  scroll_up:{"action":"scroll_up"}  back:{"action":"back"}""")
+            appendLine("""dismiss:{"action":"dismiss"}  wait:{"action":"wait"}  done:{"action":"done","summary":"X"}  fail:{"action":"fail","summary":"X"}""")
             appendLine()
-            append("Reply with ONE JSON object only. No markdown, no explanation.")
+            // ReAct format — forces model to observe before deciding (from AppAgent research)
+            // The "observation" field makes the model describe what it sees, which catches stuck loops naturally
+            appendLine("Reply with ONE JSON object in this EXACT format:")
+            append("""{"observation":"what you see RIGHT NOW in 1 sentence","thought":"what you will do and why in 1 sentence","action":"tap","index":N}""")
         }
 
         val response = callAIWithVision(prompt, annotated) ?: callAI(prompt)
@@ -620,11 +656,24 @@ class ScreenAgent(
             val jsonStr = extractJsonObject(cleaned)
                 ?: return ScreenAction("fail", summary = "No JSON in: ${response.take(60)}")
             val json = JsonParser.parseString(jsonStr).asJsonObject
+
+            // ReAct format support — observation + thought fields are logged as summary
+            // This forces the AI to describe what it sees before acting (from AppAgent research)
+            val observation = json.get("observation")?.asString ?: ""
+            val thought = json.get("thought")?.asString ?: ""
+            val explicitSummary = json.get("summary")?.asString ?: ""
+            val summary = when {
+                explicitSummary.isNotBlank() -> explicitSummary
+                thought.isNotBlank() -> thought
+                observation.isNotBlank() -> observation
+                else -> ""
+            }
+
             ScreenAction(
                 action = json.get("action")?.asString ?: "wait",
                 index = json.get("index")?.asInt ?: -1,
                 text = json.get("text")?.asString ?: "",
-                summary = json.get("summary")?.asString ?: "",
+                summary = summary,
             )
         } catch (_: Exception) {
             ScreenAction("fail", summary = "Parse error: ${response.take(60)}")

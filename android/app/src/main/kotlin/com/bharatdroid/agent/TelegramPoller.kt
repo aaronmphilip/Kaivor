@@ -48,7 +48,7 @@ class TelegramPoller(
                         lastUpdateId = maxOf(lastUpdateId, msg.updateId)
 
                         if (msg.chatId !in authorizedChatIds) {
-                            sendMessage(msg.chatId, "This is a private BharatClaw agent. Unauthorized.")
+                            sendMessage(msg.chatId, "This is a private BharatDroid agent. Unauthorized.")
                             continue
                         }
 

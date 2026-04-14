@@ -146,19 +146,19 @@ Open Telegram → message @BotFather → /newbot → give it any name ending in 
 Copy the token it gives you (looks like: 7123456789:AAF...)
 
 You can name your bot anything — "MyPhoneBot", "HomeAssistantBot", etc.
-BharatClaw is the app on your phone — your Telegram bot name is up to you.
+BharatDroid is the app on your phone — your Telegram bot name is up to you.
 ```
 
 **2. Install the app**
 
-👉 **[Download latest APK from Releases](https://github.com/aaronmphilip/BharatClaw/releases)**
+👉 **[Download latest APK from Releases](https://github.com/aaronmphilip/BharatDroid/releases)**
 
 Install it on your Android phone like any APK (enable "Install from unknown sources" if prompted).
 
-**3. Open BharatClaw and configure**
+**3. Open BharatDroid and configure**
 - Paste your **Telegram Bot Token**
 - Paste your **AI API Key** (Gemini/Claude/OpenAI — app auto-detects which)
-- Tap **Enable Accessibility Service** → find BharatClaw in the list → toggle ON → go back
+- Tap **Enable Accessibility Service** → find BharatDroid in the list → toggle ON → go back
 - Tap **Start Agent**
 
 **4. Test it — message your Telegram bot**
@@ -170,8 +170,8 @@ Install it on your Android phone like any APK (enable "Install from unknown sour
 
 > 🔧 **For developers** who want to build from source:
 > ```bash
-> git clone https://github.com/aaronmphilip/BharatClaw.git
-> cd BharatClaw/android && ./gradlew assembleDebug
+> git clone https://github.com/aaronmphilip/BharatDroid.git
+> cd BharatDroid/android && ./gradlew assembleDebug
 > # APK: android/app/build/outputs/apk/debug/app-debug.apk
 > ```
 
@@ -180,7 +180,7 @@ Install it on your Android phone like any APK (enable "Install from unknown sour
 ## 🧩 Project Structure
 
 ```
-BharatClaw/
+BharatDroid/
 ├── android/                          # Android app (Kotlin)
 │   └── app/src/main/kotlin/com/bharatdroid/agent/
 │       ├── AIBrain.kt                # Intent → skill routing
@@ -222,7 +222,7 @@ BharatClaw/
 **We want your help building this!** Read **[CONTRIBUTING.md](CONTRIBUTING.md)** for the full guide.
 
 Quick ways to contribute:
-- 🐛 **Found a bug?** → [Open an issue](https://github.com/aaronmphilip/BharatClaw/issues)
+- 🐛 **Found a bug?** → [Open an issue](https://github.com/aaronmphilip/BharatDroid/issues)
 - ➕ **Add a new skill** → Any Android app can become a skill in ~50 lines
 - 🌐 **Add language support** → Hindi built-in, add Tamil, Telugu, Bengali...
 - 📝 **Improve docs** → Always welcome
@@ -258,6 +258,6 @@ The MIT license means: do whatever you want with this code. Use it in your own p
 
 Built with ❤️ for India 🇮🇳 — but works everywhere
 
-**[⭐ Star this repo](https://github.com/aaronmphilip/BharatClaw)** · **[🐛 Report Bug](https://github.com/aaronmphilip/BharatClaw/issues)** · **[💡 Request Feature](https://github.com/aaronmphilip/BharatClaw/issues)**
+**[⭐ Star this repo](https://github.com/aaronmphilip/BharatDroid)** · **[🐛 Report Bug](https://github.com/aaronmphilip/BharatDroid/issues)** · **[💡 Request Feature](https://github.com/aaronmphilip/BharatDroid/issues)**
 
 </div>

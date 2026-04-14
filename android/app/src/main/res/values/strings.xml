@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">BharatClaw</string>
-    <string name="accessibility_service_description">BharatClaw needs this to control apps on your behalf when you send commands via Telegram. Your data never leaves your device.</string>
+    <string name="app_name">BharatDroid</string>
+    <string name="accessibility_service_description">BharatDroid needs this to control apps on your behalf when you send commands via Telegram. Your data never leaves your device.</string>
 </resources>

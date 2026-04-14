@@ -295,7 +295,7 @@ class AgentOrchestrator(
     }
 
     private fun buildWelcomeMessage(): String = """
-*BharatClaw Agent* is live on this phone.
+*BharatDroid Agent* is live on this phone.
 
 Tell me what to do — English or Hindi. I'll do it.
 
@@ -391,7 +391,7 @@ Tell me what to do — English or Hindi. I'll do it.
         val providerStr = prefs.getString("ai_provider", "GEMINI") ?: "GEMINI"
         val modelStr = prefs.getString("ai_model", "") ?: ""
         return """
-*BharatClaw Status*
+*BharatDroid Status*
 
 Agent: Running
 Accessibility: ${if (serviceOk) "Connected" else "Not connected"}

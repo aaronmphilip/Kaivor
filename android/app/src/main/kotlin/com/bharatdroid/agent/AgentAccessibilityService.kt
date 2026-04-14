@@ -52,7 +52,67 @@ class AgentAccessibilityService : AccessibilityService() {
         }
     }
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
+    /**
+     * Proactive popup dismisser — listens for TYPE_WINDOW_STATE_CHANGED events.
+     *
+     * Key insight from OpenClaw/AppAgent research: instead of waiting for the agent loop
+     * to notice a popup (which costs 1-2 steps of stuck time), we can dismiss obvious
+     * non-essential popups the moment their window appears. This is what makes fast agents
+     * appear "seamless" — they never visibly pause on a rate-us dialog.
+     *
+     * We only auto-dismiss popups that are clearly non-essential:
+     * - Notification permission requests (not needed for most tasks)
+     * - Rate-us dialogs
+     * - "Watch history" / "Search history" banners (YouTube specific)
+     *
+     * We do NOT dismiss: location dialogs, payment dialogs, login prompts
+     * (those require the agent or user to handle intentionally).
+     */
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+        // Run popup dismissal on background thread — avoid blocking UI
+        android.os.Handler(mainLooper).postDelayed({
+            tryAutoDismissNonEssentialPopup()
+        }, 300) // small delay to let window fully render
+    }
+
+    private fun tryAutoDismissNonEssentialPopup() {
+        val root = rootInActiveWindow ?: return
+        try {
+            val sb = StringBuilder()
+            collectText(root, sb)
+            val screen = sb.toString().lowercase()
+
+            // Notification permission popups — "Turn on notifications" / "Enable notifications"
+            val isNotificationPopup = (screen.contains("turn on notifications")
+                || screen.contains("enable notifications")
+                || screen.contains("allow notifications")
+                || screen.contains("send you notifications"))
+
+            // Rate-us dialogs
+            val isRateDialog = (screen.contains("rate") && (
+                screen.contains("play store") || screen.contains("stars") || screen.contains("star rating")))
+
+            // YouTube history banners
+            val isHistoryBanner = (screen.contains("watch history is off")
+                || screen.contains("search history is off")
+                || screen.contains("turn on watch history"))
+
+            if (!isNotificationPopup && !isRateDialog && !isHistoryBanner) return
+
+            // Try to tap dismiss buttons in priority order
+            val dismissCandidates = listOf(
+                "Not now", "Maybe later", "No thanks", "Skip",
+                "Got it", "Dismiss", "Cancel", "No, thanks",
+            )
+            for (text in dismissCandidates) {
+                val nodes = root.findAccessibilityNodeInfosByText(text) ?: continue
+                val node = nodes.firstOrNull { it.isClickable } ?: continue
+                node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                return // dismissed — stop looking
+            }
+        } catch (_: Exception) { /* ignore — never crash in event handler */ }
+    }
 
     override fun onInterrupt() {}
 

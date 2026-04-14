@@ -189,22 +189,39 @@ class YouTubeSkill : Skill {
             }
         }
 
-        // Coordinate fallback — try positions down the results list, NO back between tries
-        val tapYPositions = listOf(0.28f, 0.38f, 0.48f, 0.56f)
+        // Coordinate fallback — try positions down the results list
+        // CRITICAL: avoid bottom 15% of screen (nav bar area — Home/Shorts/Library tabs)
+        val safeH = (h * 0.84f).toInt() // never tap below this
+        val tapYPositions = listOf(0.28f, 0.36f, 0.44f, 0.52f, 0.60f)
         for (yFrac in tapYPositions) {
-            runner.tapAtPoint(w / 2f, h * yFrac)
+            val tapY = (h * yFrac).coerceAtMost(safeH.toFloat())
+            runner.tapAtPoint(w / 2f, tapY)
             delay(1800)
             val after = runner.readScreen()
+
+            // Success: we're on a video/channel page
             if (after.contains("Subscribe", ignoreCase = true)
                 || after.contains("Comments", ignoreCase = true)
                 || after.contains("Like", ignoreCase = true)) {
                 return SkillResult.Success("▶️ Playing video for: *$searchQuery*")
             }
-            // If we didn't open a video, go back to results (NOT home)
-            // Only press back if we left the results page
-            if (!after.contains(searchQuery.take(6), ignoreCase = true)) {
+
+            // Detect if we accidentally navigated to YouTube home (bottom nav tap)
+            // Signs: "Recommended", "What to watch", no search query text visible
+            val wentHome = !after.contains(searchQuery.take(5), ignoreCase = true)
+                && (after.contains("Recommended", ignoreCase = true)
+                    || after.contains("What to watch", ignoreCase = true)
+                    || after.contains("Trending", ignoreCase = true))
+
+            if (wentHome) {
+                // Re-do search from scratch instead of pressing back (which would exit YouTube)
+                return playVideo(runner, agent, searchQuery)
+            }
+
+            // Navigated somewhere wrong (not results, not video) — go back to results
+            if (!after.contains(searchQuery.take(5), ignoreCase = true)) {
                 runner.pressBack()
-                delay(800)
+                delay(600)
             }
         }
 
