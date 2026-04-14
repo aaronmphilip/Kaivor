@@ -37,6 +37,13 @@ class ScreenAgent(
     private val userMemory: UserMemory? = null,
     private val appKnowledge: AppKnowledgeBase? = null,
 ) {
+    // Stop flag — set by AgentOrchestrator when user sends "stop"
+    // Checked at every step of the execution loop
+    @Volatile var stopRequested = false
+        private set
+
+    fun requestStop() { stopRequested = true }
+    fun clearStop() { stopRequested = false }
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
@@ -158,7 +165,15 @@ class ScreenAgent(
         var lastTappedIdx = -1
         var repeatTapCount = 0
 
+        clearStop() // clear any previous stop request before starting
+
         for (step in 1..maxSteps) {
+            // Check stop flag — user sent "stop" while task was running
+            if (stopRequested) {
+                stopRequested = false
+                return "⛔ Stopped. Left the app where it was."
+            }
+
             delay(110)
             dismissVoiceOverlay(runner)
             // Dismiss popups at every step — Zomato/Swiggy etc. throw popups mid-task
@@ -431,9 +446,11 @@ class ScreenAgent(
             }
 
             "home" -> {
-                runner.goHome()
-                delay(260)
-                "home"
+                // Block going to device home screen during skill execution —
+                // this was causing food/shopping loops where agent went home,
+                // then re-opened the app, then went home again endlessly.
+                // The agent should navigate WITHIN apps, not to the device home.
+                "home BLOCKED — use back or navigate within app instead"
             }
 
             "enter" -> {

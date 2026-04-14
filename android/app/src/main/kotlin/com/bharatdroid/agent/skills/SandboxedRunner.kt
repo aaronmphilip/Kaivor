@@ -383,34 +383,39 @@ class SandboxedRunner(
     }
 
     /**
-     * Reset the app to its home/root screen by pressing back until we're no longer
-     * deep in a navigation stack. Fixes the #1 failure cause: app left mid-task
-     * (Zomato on restaurant page, YouTube on video, WhatsApp in a chat).
+     * Reset the app to its home/root screen — ONLY presses back if we're deep inside
+     * the app (on a product page, restaurant page, video, chat, etc.).
      *
-     * Smart: stops pressing back if screen starts showing home indicators,
-     * or if we accidentally leave the app (re-opens it).
+     * Key fix: previous version always pressed back on first iteration, which could
+     * exit the app if it was already on the home screen, causing the home-screen loop.
+     * Now it detects "deep content" first and only presses back if we're genuinely
+     * inside a sub-screen.
      */
-    suspend fun resetToAppHome(packageName: String, maxBackPresses: Int = 4) {
+    suspend fun resetToAppHome(packageName: String, maxBackPresses: Int = 3) {
         requirePermission(Permission.NAVIGATE_BACK)
-        val homeSignals = listOf(
-            // Generic home screens
-            "search", "home", "discover", "explore", "trending",
-            // Food delivery
-            "what are you craving", "order food", "restaurants near you",
-            "delivering to", "search for restaurants",
-            // Shopping
-            "search products", "deals of the day", "what are you looking for",
-            // Social
-            "reels", "for you", "following",
-            // Payments
-            "send money", "pay bills", "scan & pay", "check balance",
+
+        // Signals that we are DEEP inside an app (need to go back to home)
+        val deepContentSignals = listOf(
+            // YouTube — video playing
+            "subscribe", "comments", "like this video", "dislike",
+            // WhatsApp — inside a chat
+            "type a message", "voice message", "attach",
+            // Zomato/Swiggy — restaurant or cart page
+            "add to cart", "add item", "view cart", "checkout",
+            "restaurant", "menu", "item added",
+            // Amazon/Flipkart — product page
+            "add to cart", "buy now", "add to wishlist",
+            "emi available", "sold by",
+            // Instagram — post/reel open
+            "like", "comment", "share", "save",
+            // General deep-navigation signals
+            "go back", "navigate up",
         )
 
-        var pressedCount = 0
-        while (pressedCount < maxBackPresses) {
+        for (i in 0 until maxBackPresses) {
             val currentPkg = try { service.getCurrentPackage() } catch (_: Exception) { break }
 
-            // If we left the app, re-open it and stop
+            // If we left the app, re-open it
             if (currentPkg != packageName) {
                 openApp(packageName)
                 delay(1200)
@@ -419,14 +424,15 @@ class SandboxedRunner(
 
             val screen = try { service.getScreenText().lowercase() } catch (_: Exception) { break }
 
-            // Stop if screen looks like the app's home/root
-            if (pressedCount > 0 && homeSignals.any { screen.contains(it) }) break
+            // Only press back if we detect we're on a deep/sub-screen
+            // If no deep content signals found — we're probably already on home
+            val isDeep = deepContentSignals.any { screen.contains(it) }
+            if (!isDeep) break // already on home/safe screen — stop here
 
             service.goBack()
-            pressedCount++
-            delay(450)
+            delay(500)
         }
-        delay(200) // let final screen settle
+        delay(200)
     }
 
     /**

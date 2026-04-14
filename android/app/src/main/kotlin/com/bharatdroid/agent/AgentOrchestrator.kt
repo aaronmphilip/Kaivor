@@ -24,11 +24,12 @@ class AgentOrchestrator(
     private lateinit var poller: TelegramPoller
     private lateinit var brain: AIBrain
     private lateinit var skillRunner: SkillRunner
+    private lateinit var screenAgent: ScreenAgent
 
     fun start() {
         // Create the AI-driven screen agent — inject user memory so learned preferences
         // are automatically applied to every executeGoal call, without touching skill files
-        val screenAgent = ScreenAgent(
+        screenAgent = ScreenAgent(
             apiKey = config.claudeApiKey,
             provider = config.aiProvider,
             model = config.aiModel,
@@ -109,6 +110,12 @@ class AgentOrchestrator(
 
     private suspend fun handleMessage(msg: IncomingMessage): String {
         val trimmed = msg.text.trim()
+
+        // ── STOP — highest priority, checked before anything else ──
+        if (trimmed.lowercase() in listOf("stop", "रुको", "ruko", "band karo", "cancel")) {
+            screenAgent.requestStop()
+            return "⛔ Stopping current task. Left everything where it was."
+        }
 
         // ── Built-in commands ──
         when {

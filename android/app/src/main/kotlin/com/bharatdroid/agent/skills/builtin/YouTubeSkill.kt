@@ -150,6 +150,7 @@ class YouTubeSkill : Skill {
         runner: SandboxedRunner,
         agent: ScreenAgent,
         searchQuery: String,
+        retryCount: Int = 0,  // prevent infinite recursion
     ): SkillResult {
         val (w, h) = runner.getScreenSize()
         val elements = runner.getClickableElements()
@@ -214,8 +215,24 @@ class YouTubeSkill : Skill {
                     || after.contains("Trending", ignoreCase = true))
 
             if (wentHome) {
-                // Re-do search from scratch instead of pressing back (which would exit YouTube)
-                return playVideo(runner, agent, searchQuery)
+                // Accidentally hit YouTube home tab — re-search WITHOUT recursing into playVideo()
+                // (recursive playVideo() was causing the infinite loop: home→search→home→search...)
+                if (retryCount >= 1) {
+                    // Already retried once — give up gracefully
+                    return SkillResult.Success("Searched YouTube for *$searchQuery* — tap a result to play.")
+                }
+                // Re-open search directly from YouTube home (no back, no home press)
+                tapSearchIcon(runner)
+                delay(500)
+                runner.clearFocusedField()
+                runner.typeReliably(searchQuery)
+                delay(300)
+                runner.pressEnter()
+                delay(2200)
+                dismissYouTubePopups(runner)
+                delay(300)
+                // Try tapping a video one more time (retryCount=1 prevents further recursion)
+                return tapFirstVideo(runner, agent, searchQuery, retryCount = 1)
             }
 
             // Navigated somewhere wrong (not results, not video) — go back to results

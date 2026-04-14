@@ -90,23 +90,48 @@ class WhatsAppSkill : Skill {
                 if (contactEl != null) {
                     runner.tapAtPoint(contactEl.centerX.toFloat(), contactEl.centerY.toFloat())
                 } else {
-                    // Tap the first result row (below headers)
                     val (_, h) = runner.getScreenSize()
                     runner.tapAtPoint(runner.getScreenSize().first / 2f, h * 0.30f)
                 }
-                delay(1000)
 
-                // Step 5: Find message input field and type
-                runner.tapByText("Type a message")
-                    || run {
-                        val el = runner.getClickableElements().firstOrNull { el ->
-                            el.isEditable && (el.hint.contains("message", ignoreCase = true)
-                                || el.text.contains("Type", ignoreCase = true))
-                        }
-                        if (el != null) runner.tapAtPoint(el.centerX.toFloat(), el.centerY.toFloat()) else false
-                    }
-                delay(300)
-                runner.typeInFocused(message)
+                // Step 5: WAIT for chat to fully open before typing
+                // This is the key fix — without this wait, the search bar is still
+                // focused and the message gets typed there instead of the chat input
+                val chatOpened = runner.waitForAny(
+                    "Type a message", "Message", "Type message", "iMessage",
+                    timeoutMs = 4000,
+                )
+                if (chatOpened == null) {
+                    // Chat didn't open — we might still be on search results
+                    // Try tapping the first result more aggressively
+                    val (w2, h2) = runner.getScreenSize()
+                    runner.tapAtPoint(w2 / 2f, h2 * 0.28f)
+                    runner.waitForAny("Type a message", "Message", timeoutMs = 3000)
+                }
+                delay(400)
+
+                // Step 6: Explicitly tap the message input bar (bottom of chat screen)
+                // DO NOT use typeInFocused() — the search bar may still be focused
+                // Find the message input specifically: editable, at bottom, has "message" hint
+                val (w, h) = runner.getScreenSize()
+                val msgInput = runner.getClickableElements().firstOrNull { el ->
+                    el.isEditable
+                        && el.centerY > h * 0.80f  // bottom of screen
+                        && (el.hint.contains("message", ignoreCase = true)
+                            || el.hint.contains("type", ignoreCase = true)
+                            || el.contentDescription.contains("message", ignoreCase = true))
+                }
+
+                if (msgInput != null) {
+                    runner.tapAtPoint(msgInput.centerX.toFloat(), msgInput.centerY.toFloat())
+                } else {
+                    // Fallback: tap at the known message bar position (bottom 12% of screen)
+                    runner.tapAtPoint(w * 0.45f, h * 0.92f)
+                }
+                delay(400)
+
+                // Now type — use typeReliably with clipboard fallback for older phones
+                runner.typeReliably(message)
                 delay(300)
 
                 // Step 6: By default — do NOT send. User said "type only, don't send"
