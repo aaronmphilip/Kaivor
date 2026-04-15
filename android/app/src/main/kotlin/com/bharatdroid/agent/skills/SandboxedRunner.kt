@@ -19,6 +19,9 @@ class SandboxedRunner(
         return Pair(metrics.widthPixels, metrics.heightPixels)
     }
 
+    /** Expose context for package-manager lookups (app name → package resolution). */
+    fun getContext(): Context = context
+
     /** Capture current screen as a bitmap (Android 11+ only). Used for vision AI. */
     suspend fun captureScreenshot(): Bitmap? = service.captureScreenshot()
 
@@ -352,6 +355,7 @@ class SandboxedRunner(
     }
 
     fun goHome() {
+        requirePermission(Permission.NAVIGATE_BACK) // prevent untrusted skills from pressing Home
         service.goHome()
     }
 
@@ -371,13 +375,20 @@ class SandboxedRunner(
     suspend fun dismissPopups(maxAttempts: Int = 3): Int {
         requirePermission(Permission.TAP)
         var dismissed = 0
+        // SECURITY: "Allow" is NOT in this list — it grants real Android permissions
+        // (camera, mic, location, contacts) to arbitrary apps without user consent.
+        // We only tap DENY/DISMISS/DECLINE buttons. The user must grant permissions manually.
+        // SECURITY:
+        // - "Allow" is excluded — it grants real Android permissions (camera, mic, location)
+        // - "OK" is excluded — it can confirm terms of service, data deletion, purchases
+        // - Only DISMISS/DECLINE/SKIP buttons are safe to auto-tap
         val dismissTexts = listOf(
-            "Not now", "Maybe later", "Skip", "Got it", "OK", "No thanks",
+            "Not now", "Maybe later", "Skip", "Got it", "No thanks",
             "Dismiss", "Cancel", "Later", "Close", "CLOSE", "SKIP",
             "NOT NOW", "MAYBE LATER", "NO THANKS", "GOT IT",
             "Not interested", "No, thanks", "Deny", "DENY",
             "Don't allow", "Don\u2019t allow", "Block", "BLOCK",
-            "I'll do it later", "Remind me later", "Allow",
+            "I'll do it later", "Remind me later",
         )
 
         for (attempt in 0 until maxAttempts) {

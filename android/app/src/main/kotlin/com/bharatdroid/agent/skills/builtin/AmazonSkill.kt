@@ -35,7 +35,7 @@ class AmazonSkill : Skill {
 
         val action = (params["action"] as? String)?.lowercase() ?: "search"
         val query = params["query"] as? String ?: params["goal"] as? String ?: ""
-        val maxPrice = (params["maxPrice"] as? Long)?.toInt()
+        val maxPrice = (params["maxPrice"] as? Number)?.toInt()
         val filter = params["filter"] as? String ?: ""
 
         runner.openApp("in.amazon.mShop.android.shopping")
@@ -57,8 +57,8 @@ class AmazonSkill : Skill {
                 delay(1500) // wait for results
             } else {
                 // Tap the search bar area at top, avoiding mic/camera icons on the right
-                val (w, _) = runner.getScreenSize()
-                runner.tapAtPoint(w * 0.35f, 140f) // left-center of search bar
+                val (w, h) = runner.getScreenSize()
+                runner.tapAtPoint(w * 0.35f, h * 0.07f) // left-center of search bar, fraction not pixels
                 delay(400)
                 runner.typeReliably(query)
                 delay(200)

@@ -44,8 +44,8 @@ class FlipkartSkill : Skill {
                 runner.pressEnter()
                 delay(1500)
             } else {
-                val (w, _) = runner.getScreenSize()
-                runner.tapAtPoint(w * 0.35f, 140f)
+                val (w, h) = runner.getScreenSize()
+                runner.tapAtPoint(w * 0.35f, h * 0.07f)
                 delay(400)
                 runner.typeReliably(query)
                 delay(200)

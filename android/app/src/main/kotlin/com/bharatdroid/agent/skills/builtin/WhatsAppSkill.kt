@@ -76,14 +76,13 @@ class WhatsAppSkill : Skill {
                 delay(600)
 
                 // Step 3: Type ONLY the contact name in search — nothing else
-                runner.typeInFocused(contact)
-                    || runner.typeInFieldWithHint("Search", contact)
+                // Use typeInFieldWithHint first (more reliable than typeInFocused which
+                // bypasses verification and append-mode safety)
+                runner.typeInFieldWithHint("Search", contact)
+                    || runner.typeReliably(contact)
                 delay(1500) // wait for results to fully load
 
                 // Step 4: Tap the exact contact from search results — first result only
-                val afterSearch = runner.readScreen()
-                val elements = runner.getClickableElements()
-
                 val searchElements = runner.getClickableElements()
                 val (screenW, screenH) = runner.getScreenSize()
 
@@ -228,13 +227,16 @@ class WhatsAppSkill : Skill {
 
     /** Find and tap the WhatsApp search icon — tries multiple strategies */
     private suspend fun tapWhatsAppSearch(runner: SandboxedRunner): Boolean {
+        val (screenW, screenH) = runner.getScreenSize()
+        val topZone = screenH * 0.12f // top 12% of screen — works across all screen sizes
+
         // Strategy 1: element with search in text/description, small, at top
         val elements = runner.getClickableElements()
         val searchEl = elements.firstOrNull { el ->
             val combined = (el.text + el.hint + el.contentDescription + el.viewId).lowercase()
             (combined.contains("search") || combined.contains("find"))
-                && el.centerY < 400
-                && el.width < 250
+                && el.centerY < topZone
+                && el.width < screenW * 0.25f
         }
         if (searchEl != null) {
             return runner.tapAtPoint(searchEl.centerX.toFloat(), searchEl.centerY.toFloat())
@@ -244,7 +246,6 @@ class WhatsAppSkill : Skill {
         if (runner.tapByText("Search")) return true
 
         // Strategy 3: top-right corner area (where WhatsApp search icon usually is)
-        val (w, _) = runner.getScreenSize()
-        return runner.tapAtPoint(w * 0.85f, 130f)
+        return runner.tapAtPoint(screenW * 0.85f, screenH * 0.06f)
     }
 }

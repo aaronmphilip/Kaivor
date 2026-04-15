@@ -10,7 +10,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 class AgentOrchestrator(
     private val context: Context,
@@ -21,7 +20,9 @@ class AgentOrchestrator(
     private val activityLog = ActivityLog(context)
     private val userMemory = UserMemory(context)
     private val appKnowledge = AppKnowledgeBase(context)
-    private val pendingConfirmations = mutableMapOf<Long, CompletableDeferred<Boolean>>()
+    // Thread-safe: TelegramPoller fires scope.launch per message, so multiple
+    // coroutines access this map concurrently. mutableMapOf is NOT thread-safe.
+    private val pendingConfirmations = java.util.concurrent.ConcurrentHashMap<Long, CompletableDeferred<Boolean>>()
 
     // Serializes skill execution — only one task runs at a time.
     // When a new message arrives, requestStop() is called first so the
@@ -254,12 +255,21 @@ class AgentOrchestrator(
         // requestStop() was already called at the top of handleMessage, so the
         // previous task is stopping. We wait here until the lock is released,
         // then start the new task with a clean slate.
-        return taskMutex.withLock {
+        //
+        // Timeout: if the old task doesn't stop within 15s (e.g. skill stuck in
+        // a blocking call that ignores stopRequested), give up waiting and proceed.
+        // This prevents permanent deadlock from misbehaving skills.
+        val acquired = kotlinx.coroutines.withTimeoutOrNull(15_000L) {
+            taskMutex.lock()
+        }
+        return try {
             when (plan.type) {
                 PlanType.RUN_SKILL -> executeSingleSkill(msg, trimmed, plan.skillId!!, plan.params)
                 PlanType.MULTI_STEP -> executeMultiStep(msg, trimmed, plan.steps)
                 else -> "?"
             }
+        } finally {
+            if (acquired != null) taskMutex.unlock()
         }
     }
 
@@ -319,6 +329,7 @@ class AgentOrchestrator(
                 is SkillResult.Failure -> {
                     activityLog.log("$userText [step $stepNum]", step.skillId, "failure", result.reason)
                     results.add("❌ Step $stepNum (${step.skillId}): ${result.reason}")
+                    break // don't continue — later steps likely depend on this one
                 }
                 is SkillResult.NeedsConfirmation -> {
                     results.add("⏸️ Step $stepNum (${step.skillId}): ${result.prompt}")

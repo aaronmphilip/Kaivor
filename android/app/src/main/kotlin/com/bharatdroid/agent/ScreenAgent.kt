@@ -101,13 +101,19 @@ class ScreenAgent(
         goal: String,
         maxSteps: Int = 25,
     ): String {
+        // Check stop before starting — if user already sent a new message, don't even begin
+        if (stopRequested) { stopRequested = false; return "⛔ Stopped." }
+
         val result = executeGoalInternal(runner, goal, maxSteps, isRetry = false)
 
-        // Auto-retry once on failure — with extra context about what went wrong
-        // This handles transient failures (slow network, popup that appeared briefly)
-        if (result.startsWith("Could not complete") || result.startsWith("Stuck after") || result.startsWith("Reached step limit")) {
+        // Auto-retry once on failure — but ONLY for "stuck" failures (screen didn't change).
+        // Do NOT retry "Reached step limit" — that means the task ran 25+ steps of taps/types
+        // which may have had REAL side effects (added to cart, sent messages, typed text).
+        // Retrying would double those side effects.
+        if (result.startsWith("Could not complete") || result.startsWith("Stuck after")) {
+            if (stopRequested) { stopRequested = false; return "⛔ Stopped." }
             delay(1000)
-            return executeGoalInternal(runner, goal, maxSteps, isRetry = true, previousFailure = result)
+            return executeGoalInternal(runner, goal, maxSteps / 2, isRetry = true, previousFailure = result)
         }
         return result
     }
@@ -271,7 +277,9 @@ class ScreenAgent(
             // and total back presses (for blocking search→back→search→back cycling)
             if (action.action == "back") {
                 consecutiveBackCount++
-                if (!result.contains("BLOCKED")) totalBackCount++
+                // Only count backs that actually went somewhere — not BLOCKED and not EXIT CAUGHT
+                // (EXIT CAUGHT means back was reversed by re-opening the app, so it didn't "work")
+                if (!result.contains("BLOCKED") && !result.contains("EXIT CAUGHT")) totalBackCount++
             } else {
                 consecutiveBackCount = 0
             }
@@ -727,7 +735,7 @@ class ScreenAgent(
             appendLine("   a) Search → find item → tap to view details")
             appendLine("   b) On detail page: scroll down to read reviews, ratings, features, price")
             appendLine("   c) Look for filters (sort by price, rating, relevance) and apply if needed")
-            appendLine("   d) Compare options by going back and checking other results")
+            appendLine("   d) SCROLL the results list to compare — do NOT press back to the search page")
             appendLine("   e) Once satisfied, tap 'Add to Cart' or 'Buy Now' or 'Order'")
             appendLine("   f) Fill delivery/payment details if asked")
             appendLine("   g) STOP before final payment — report what you found to the user")

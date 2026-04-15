@@ -122,6 +122,13 @@ Do NOT return anything outside of JSON. No markdown, no prose.
 
     suspend fun process(chatId: Long, userMessage: String): AgentPlan {
         val chatHistory = history.getOrPut(chatId) { ArrayDeque() }
+
+        // Trim history aggressively — only keep 4 recent exchanges (8 messages).
+        // Longer history causes context bleed: if previous tasks were YouTube,
+        // the AI routes completely unrelated requests ("open Obsidian") to YouTube.
+        // 4 exchanges is enough for follow-up context without cross-task contamination.
+        while (chatHistory.size > 8) chatHistory.removeFirst()
+
         chatHistory.addLast(mapOf("role" to "user", "content" to userMessage))
 
         val result = when (provider) {
@@ -140,7 +147,8 @@ Do NOT return anything outside of JSON. No markdown, no prose.
         }
 
         chatHistory.addLast(mapOf("role" to "assistant", "content" to assistantText))
-        while (chatHistory.size > 10) chatHistory.removeFirst()
+        // Keep max 8 messages (4 exchanges) to prevent context leak
+        while (chatHistory.size > 8) chatHistory.removeFirst()
 
         return parseResponse(assistantText)
     }
@@ -316,8 +324,14 @@ Do NOT return anything outside of JSON. No markdown, no prose.
     private fun parseParams(paramsObj: com.google.gson.JsonObject?): Map<String, Any> {
         return paramsObj?.entrySet()?.associate { (k, v) ->
             k to when {
-                v.isJsonPrimitive && v.asJsonPrimitive.isNumber -> v.asLong as Any
-                else -> v.asString as Any
+                v.isJsonPrimitive && v.asJsonPrimitive.isNumber -> {
+                    // Prefer Int/Long over Double for cleaner usage downstream
+                    try { v.asLong as Any } catch (_: Exception) { v.asDouble as Any }
+                }
+                v.isJsonPrimitive && v.asJsonPrimitive.isBoolean -> v.asBoolean as Any
+                v.isJsonPrimitive -> v.asString as Any
+                // JSON arrays/objects: stringify them so callers don't crash with ClassCastException
+                else -> try { v.toString() as Any } catch (_: Exception) { "" as Any }
             }
         } ?: emptyMap()
     }

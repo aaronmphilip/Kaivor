@@ -36,24 +36,44 @@ class NotesSkill : Skill {
         runner.dismissPopups(2)
         delay(200)
 
+        // Escape quotes in user content so they don't break the goal string
+        val safeTitle = title.replace("'", "\\'").replace("\"", "\\\"")
+        val safeContent = content.replace("'", "\\'").replace("\"", "\\\"")
+        val safeQuery = query.replace("'", "\\'").replace("\"", "\\\"")
+
         val goal = when (action) {
-            "create", "add", "new" ->
-                """You are in Google Keep notes app. Create a new note.
-                STEPS: 1) Tap 'Take a note...' area or the '+' button. ${if (title.isNotBlank()) "2) Tap the Title field and type '$title'. 3) Tap the note body and type '$content'." else "2) Tap the note body and type '$content'."} ${if (action.isNotBlank()) "4) Tap the back button or checkmark to save. Google Keep auto-saves." else ""}"""
+            "create", "add", "new" -> buildString {
+                appendLine("You are in Google Keep notes app. Create a new note.")
+                appendLine("STEPS:")
+                appendLine("1) Tap the 'Take a note...' area or the '+' button to create a new note.")
+                if (safeTitle.isNotBlank()) {
+                    appendLine("2) Tap the Title field and type the title: $safeTitle")
+                    appendLine("3) Tap the note body field (below title) and type the full content in ONE type action:")
+                    appendLine("   $safeContent")
+                    appendLine("   Use \\n for line breaks. Type ALL the content in a single type action — do NOT type line by line.")
+                } else {
+                    appendLine("2) Tap the note body and type the full content in ONE type action:")
+                    appendLine("   $safeContent")
+                }
+                appendLine("4) Google Keep auto-saves. Tap back or the checkmark to confirm save.")
+                append("IMPORTANT: Type the ENTIRE content in one go. Do NOT type one line then delete and retype.")
+            }
 
             "search", "find" ->
-                """You are in Google Keep. Search for note "$query".
-                STEPS: 1) Tap the search icon (magnifying glass). 2) Type "$query". 3) Read the matching notes found."""
+                "You are in Google Keep. Search for note matching: $safeQuery\nSTEPS: 1) Tap the search icon. 2) Type: $safeQuery 3) Read the matching notes found."
 
             "read", "list" ->
-                "You are in Google Keep. Read the most recent notes. Scroll through and tell me the note titles and a brief preview of each."
+                "You are in Google Keep. Read the most recent notes. Scroll through and report the note titles and a brief preview of each."
 
-            "pin", "reminder" ->
-                """You are in Google Keep. ${if (title.isNotBlank()) "Find note '$title' and" else ""} set a reminder.
-                STEPS: 1) ${if (title.isNotBlank()) "Tap the note '$title'." else "Tap the relevant note."} 2) Tap the bell/reminder icon. 3) Set the time or location reminder as needed. 4) Tap Save."""
+            "pin", "reminder" -> buildString {
+                append("You are in Google Keep. ")
+                if (safeTitle.isNotBlank()) append("Find note titled $safeTitle and ")
+                appendLine("set a reminder.")
+                appendLine("STEPS: 1) Tap the relevant note. 2) Tap the bell/reminder icon. 3) Set the time. 4) Tap Save.")
+            }
 
             else ->
-                params["goal"] as? String ?: "Do this in Google Keep: $action $title $content".trim()
+                params["goal"] as? String ?: "Do this in Google Keep: $action $safeTitle $safeContent".trim()
         }
 
         val result = agent.executeGoal(runner, goal, maxSteps = 15)

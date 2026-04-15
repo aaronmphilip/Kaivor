@@ -100,21 +100,22 @@ class YouTubeSkill : Skill {
             val searchIconTapped = tapSearchIcon(runner)
             if (!searchIconTapped) {
                 // fallback: look for it in elements
+                val (_, sH) = runner.getScreenSize()
                 val el = runner.getClickableElements().firstOrNull { e ->
                     val t = (e.text + e.hint + e.contentDescription).lowercase()
-                    t.contains("search") && !t.contains("youtube") && e.centerY < 400
+                    t.contains("search") && !t.contains("youtube") && e.centerY < sH * 0.12f
                 }
                 if (el != null) runner.tapAtPoint(el.centerX.toFloat(), el.centerY.toFloat())
             }
             delay(600)
         }
 
-        // Step 2: Type query
-        runner.clearFocusedField()
+        // Step 2: Type query — clear old query first, then type fresh
+        runner.clearField() // safe clear via ACTION_SET_TEXT(""), no selection chaos
         delay(100)
-        val typed = runner.typeInFocused(searchQuery)
-            || runner.typeInFieldWithHint("Search YouTube", searchQuery)
+        val typed = runner.typeInFieldWithHint("Search YouTube", searchQuery)
             || runner.typeInFieldWithHint("Search", searchQuery)
+            || runner.typeReliably(searchQuery)
 
         if (!typed) return SkillResult.Failure("Could not type in YouTube search field")
         delay(300)
@@ -132,11 +133,12 @@ class YouTubeSkill : Skill {
 
     // ── Tap the search icon without pressing back ─────────────────────────────
     private suspend fun tapSearchIcon(runner: SandboxedRunner): Boolean {
-        // Try elements first
+        val (screenW, screenH) = runner.getScreenSize()
+        // Try elements first — use screen fractions, not hardcoded pixels
         val elements = runner.getClickableElements()
         val searchEl = elements.firstOrNull { el ->
             val combined = (el.text + el.hint + el.contentDescription + el.viewId).lowercase()
-            combined.contains("search") && el.centerY < 350 && el.width < 200
+            combined.contains("search") && el.centerY < screenH * 0.12f && el.width < screenW * 0.2f
         }
         if (searchEl != null) {
             return runner.tapAtPoint(searchEl.centerX.toFloat(), searchEl.centerY.toFloat())
