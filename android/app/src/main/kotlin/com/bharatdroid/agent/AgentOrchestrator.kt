@@ -9,6 +9,8 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class AgentOrchestrator(
     private val context: Context,
@@ -20,6 +22,11 @@ class AgentOrchestrator(
     private val userMemory = UserMemory(context)
     private val appKnowledge = AppKnowledgeBase(context)
     private val pendingConfirmations = mutableMapOf<Long, CompletableDeferred<Boolean>>()
+
+    // Serializes skill execution — only one task runs at a time.
+    // When a new message arrives, requestStop() is called first so the
+    // running task exits quickly, then this lock is acquired for the new task.
+    private val taskMutex = Mutex()
 
     private lateinit var poller: TelegramPoller
     private lateinit var brain: AIBrain
@@ -110,9 +117,34 @@ class AgentOrchestrator(
 
     private suspend fun handleMessage(msg: IncomingMessage): String {
         val trimmed = msg.text.trim()
+        val lower = trimmed.lowercase()
 
-        // ── STOP — highest priority, checked before anything else ──
-        if (trimmed.lowercase() in listOf("stop", "रुको", "ruko", "band karo", "cancel")) {
+        // ── AUTO-STOP: every new message kills the currently running task ─────
+        // Exceptions:
+        //   • Confirmation answers (YES/NO) — they continue a pending task, not start a new one
+        //   • Explicit stop commands — handled below, requestStop() called there
+        //
+        // Why: TelegramPoller fires scope.launch per message, so multiple messages run in
+        // parallel. Without this, "open Obsidian" while YouTube is running would fight with
+        // the YouTube task on the same accessibility service, causing chaos.
+        //
+        // How: requestStop() cancels the in-flight OkHttp call (~100ms) + sets stop flag.
+        // The running task sees the flag at its next step and exits cleanly.
+        val hasPendingConfirmation = pendingConfirmations.containsKey(msg.chatId)
+        val isStopCommand = run {
+            val stopExactInner = setOf("stop", "रुको", "ruko", "band karo", "cancel", "bas", "बस",
+                "rok", "रोक", "hatao", "हटाओ", "abort", "quit", "chhod do", "छोड़ दो",
+                "mat karo", "मत करो", "nahi", "नहीं", "enough", "done stop")
+            val stopContainsInner = listOf("stop", "रुको", "cancel", "abort", "band kar", "रोक", "bas kar")
+            lower in stopExactInner || stopContainsInner.any { lower.contains(it) }
+        }
+        if (!hasPendingConfirmation && !isStopCommand) {
+            // Kill whatever is currently running — the new message takes priority
+            screenAgent.requestStop()
+        }
+
+        // ── STOP — explicit stop command ──────────────────────────────────────
+        if (isStopCommand) {
             screenAgent.requestStop()
             return "⛔ Stopping current task. Left everything where it was."
         }
@@ -125,8 +157,9 @@ class AgentOrchestrator(
             trimmed.lowercase() == "/history" -> return activityLog.buildHistoryMessage()
             trimmed.lowercase() == "/memory" -> return buildMemoryMessage()
             trimmed.lowercase() == "/forget" -> {
+                val count = userMemory.getAll().size
                 userMemory.forgetAll()
-                return "🧹 All learned preferences cleared. Starting fresh."
+                return "🧹 All $count rules cleared. Starting fresh."
             }
             trimmed.lowercase() == "/knowledge" -> return appKnowledge.buildSummaryMessage()
             trimmed.lowercase() == "/knowledge clear" -> {
@@ -139,11 +172,34 @@ class AgentOrchestrator(
                 return "Cleared knowledge for $pkg."
             }
             trimmed.lowercase().startsWith("/forget ") -> {
-                val idx = trimmed.substringAfter("/forget ").trim().toIntOrNull()
-                return if (idx != null && userMemory.forget(idx)) {
-                    "Preference #$idx removed."
+                val arg = trimmed.substringAfter("/forget ").trim()
+                // Support: /forget 3  OR  /forget 1,3,5  OR  /forget 2-5  OR  /forget 1,3-5,7
+                val indices = userMemory.parseIndexString(arg)
+                return when {
+                    indices.isEmpty() -> "Usage: `/forget 3` or `/forget 1,3,5` or `/forget 2-5`\nSee /memory for the numbered list."
+                    indices.size == 1 -> {
+                        if (userMemory.forget(indices[0])) "✅ Rule #${indices[0]} removed."
+                        else "Rule #${indices[0]} not found. Use /memory to see the list."
+                    }
+                    else -> {
+                        val removed = userMemory.forgetMultiple(indices)
+                        "✅ Removed $removed rule${if (removed != 1) "s" else ""} (${indices.joinToString(", ")}).\nUse /memory to see what's left."
+                    }
+                }
+            }
+
+            trimmed.lowercase().startsWith("/remember ") -> {
+                // Manually add a rule directly without needing trigger phrases
+                // e.g. /remember Always confirm before sending WhatsApp messages
+                val rule = trimmed.substringAfter("/remember ").trim()
+                return if (rule.isBlank()) {
+                    "Usage: `/remember <your rule>`\nExample: `/remember Always confirm before sending WhatsApp messages`"
+                } else if (!userMemory.learningEnabled) {
+                    "⚠️ Learning is OFF. Turn it on in Settings first."
                 } else {
-                    "Usage: /forget <number> — see /memory for the list"
+                    val saved = userMemory.addRule(rule)
+                    if (saved) "📌 Rule saved: _\"$rule\"_\n\nUse /memory to see all rules."
+                    else "Already have that rule saved."
                 }
             }
             trimmed.lowercase() == "/clear" -> {
@@ -179,30 +235,32 @@ class AgentOrchestrator(
         }
 
         // ── Normal flow: AI -> Skill ──
+        // Brain routing is fast (just an API call), so do it outside the lock.
+        // Only the actual on-device skill execution is locked — one task at a time.
         poller.sendTyping(msg.chatId)
         val plan = brain.process(msg.chatId, trimmed)
 
-        val response = when (plan.type) {
-            PlanType.DIRECT_REPLY -> {
-                activityLog.log(trimmed, null, "success", plan.directReply?.take(100) ?: "")
-                plan.directReply ?: "?"
-            }
-
-            PlanType.RUN_SKILL -> {
-                executeSingleSkill(msg, trimmed, plan.skillId!!, plan.params)
-            }
-
-            PlanType.MULTI_STEP -> {
-                executeMultiStep(msg, trimmed, plan.steps)
-            }
-
-            PlanType.UNKNOWN -> {
-                activityLog.log(trimmed, null, "failure", "Unknown command")
-                plan.directReply ?: "I didn't understand that. Try again."
-            }
+        // Direct replies and unknowns don't touch the phone — no lock needed.
+        if (plan.type == PlanType.DIRECT_REPLY) {
+            activityLog.log(trimmed, null, "success", plan.directReply?.take(100) ?: "")
+            return plan.directReply ?: "?"
+        }
+        if (plan.type == PlanType.UNKNOWN) {
+            activityLog.log(trimmed, null, "failure", "Unknown command")
+            return plan.directReply ?: "I didn't understand that. Try again."
         }
 
-        return response
+        // Skill execution touches the phone — serialize with mutex.
+        // requestStop() was already called at the top of handleMessage, so the
+        // previous task is stopping. We wait here until the lock is released,
+        // then start the new task with a clean slate.
+        return taskMutex.withLock {
+            when (plan.type) {
+                PlanType.RUN_SKILL -> executeSingleSkill(msg, trimmed, plan.skillId!!, plan.params)
+                PlanType.MULTI_STEP -> executeMultiStep(msg, trimmed, plan.steps)
+                else -> "?"
+            }
+        }
     }
 
     private suspend fun executeSingleSkill(
@@ -305,12 +363,41 @@ class AgentOrchestrator(
 
     private fun buildMemoryMessage(): String {
         val memories = userMemory.getAll()
-        if (memories.isEmpty()) {
-            return "📭 No preferences saved yet.\n\nTell me something like:\n_\"Next time, always search before tapping\"_\nor\n_\"Remember I want messages typed, not auto-sent\"_\n\nI'll learn and follow your preferences automatically."
-        }
-        val list = memories.mapIndexed { i, m -> "${i + 1}. $m" }.joinToString("\n")
         val status = if (userMemory.learningEnabled) "✅ Learning: ON" else "❌ Learning: OFF (toggle in Settings)"
-        return "*Learned Preferences:*\n\n$list\n\n$status\n\nRemove one: /forget 1\nRemove all: /forget"
+
+        if (memories.isEmpty()) {
+            return buildString {
+                appendLine("📭 No rules saved yet.")
+                appendLine()
+                appendLine("*Two ways to add rules:*")
+                appendLine()
+                appendLine("1️⃣ *Just tell me naturally:*")
+                appendLine("_\"Next time always confirm before sending\"_")
+                appendLine("_\"Remember I want messages typed, not auto-sent\"_")
+                appendLine("_\"Always sort Amazon by rating\"_")
+                appendLine()
+                appendLine("2️⃣ *Direct command:*")
+                appendLine("`/remember Always confirm before WhatsApp send`")
+                appendLine()
+                append(status)
+            }
+        }
+
+        val list = memories.mapIndexed { i, m -> "${i + 1}. $m" }.joinToString("\n")
+        return buildString {
+            appendLine("📌 *Your Rules* (${memories.size}/30):")
+            appendLine()
+            appendLine(list)
+            appendLine()
+            appendLine(status)
+            appendLine()
+            appendLine("*Manage rules:*")
+            appendLine("`/forget 3` — remove rule 3")
+            appendLine("`/forget 1,3,5` — remove rules 1, 3 and 5")
+            appendLine("`/forget 2-5` — remove rules 2 through 5")
+            appendLine("`/forget` — clear all rules")
+            appendLine("`/remember <rule>` — add a rule directly")
+        }.trimEnd()
     }
 
     private fun buildWelcomeMessage(): String = """
@@ -349,16 +436,22 @@ Tell me what to do — English or Hindi. I'll do it.
 /skills — list all skills
 /status — agent health check
 /history — recent activity
-/memory — see what I've learned about your preferences
-/forget — clear learned preferences
-/knowledge — see what I've learned about each app's layout
+/memory — see your saved rules
+/remember <rule> — add a rule directly
+/forget 3 — delete rule #3
+/forget 1,3,5 — delete rules 1, 3 and 5
+/forget 2-5 — delete rules 2 through 5
+/forget — clear all rules
+/knowledge — see what I've learned per app
 /mode — toggle Ask Permission / Just Do It
 /clear — reset conversation memory
 /install <url> — add community skill
 
 💡 *Tips:*
-- I learn from you! Say _"next time, do it like this..."_ and I'll remember.
-- I also learn app layouts automatically — each task makes me faster on that app.
+- Teach me naturally: _"next time always confirm before sending"_
+- Or add a rule directly: `/remember Always sort Amazon results by rating`
+- Rules I learn are *mandatory* — I follow them every time, not just sometimes.
+- I also learn each app's layout — every task makes me faster.
     """.trimIndent()
 
     private suspend fun installSkill(url: String): String {

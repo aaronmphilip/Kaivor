@@ -42,7 +42,15 @@ class ScreenAgent(
     @Volatile var stopRequested = false
         private set
 
-    fun requestStop() { stopRequested = true }
+    // Reference to in-flight OkHttp call — cancelled immediately when stop is requested
+    // This is the key to making stop responsive: OkHttp.Call.cancel() throws IOException
+    // mid-request, unblocking the coroutine without waiting for the full API response (5-15s)
+    @Volatile private var activeCall: okhttp3.Call? = null
+
+    fun requestStop() {
+        stopRequested = true
+        activeCall?.cancel() // immediately abort any in-progress AI API call
+    }
     fun clearStop() { stopRequested = false }
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -111,14 +119,12 @@ class ScreenAgent(
         isRetry: Boolean = false,
         previousFailure: String = "",
     ): String {
-        // ── Phase 1: Reset app to clean home state ────────────────────────────
-        // Fixes #1 failure cause: app was left mid-task from previous use
-        // (Zomato on restaurant, YouTube on video, WhatsApp in a chat)
+        // ── Phase 1: Get current package context ─────────────────────────────
+        // NOTE: Do NOT call resetToAppHome() here — it caused infinite loops.
+        // Deep content signals ("like", "subscribe", "comment") appear on HOME feeds
+        // of YouTube/Instagram, causing false positives → pressBack → exit app → loop.
+        // Instead, let the AI handle navigation within its goal context.
         val currentPkg = runner.getCurrentPackage()
-        if (currentPkg.isNotBlank()) {
-            runner.resetToAppHome(currentPkg)
-            delay(200)
-        }
 
         // ── Phase 2: Dismiss any overlays ────────────────────────────────────
         repeat(2) {
@@ -146,8 +152,7 @@ class ScreenAgent(
             }
             if (memoryContext.isNotBlank()) {
                 appendLine()
-                appendLine("📌 USER PREFERENCES:")
-                appendLine(memoryContext)
+                appendLine(memoryContext) // already formatted as MANDATORY RULES by UserMemory
             }
         }
 
@@ -158,12 +163,20 @@ class ScreenAgent(
 
         val actionLog = mutableListOf<String>()
         var consecutiveBlockedOrMiss = 0
+        var consecutiveBackCount = 0 // tracks back presses to prevent back→exit→reopen loops
 
         // ── OpenClaw-style stuck detection (AppAgent/DroidClaw research) ─────────
         // Rolling window of screen state hashes — if unchanged for 3 steps, inject recovery hint
         val recentScreenHashes = ArrayDeque<Int>(5)
         var lastTappedIdx = -1
         var repeatTapCount = 0
+        var driftCount = 0      // how many times we've been pulled back to targetPkg
+        var totalBackCount = 0  // total backs used — blocks cycling even with other actions between
+
+        // Track the target package — if we drift away, force back to target.
+        // EXCEPTION: if we started on the home screen / launcher, the AI is supposed to
+        // navigate AWAY from home (e.g. "open YouTube"). Don't lock to the launcher.
+        val targetPkg = if (isLauncherPackage(currentPkg)) "" else currentPkg
 
         clearStop() // clear any previous stop request before starting
 
@@ -199,11 +212,26 @@ class ScreenAgent(
             val stuckHint = buildString {
                 if (isScreenFrozen) {
                     appendLine("🚨 STUCK: Screen has NOT changed for 3+ steps. Current approach is failing.")
-                    appendLine("TRY SOMETHING DIFFERENT: press back, scroll a new direction, tap a different element, or use dismiss.")
+                    appendLine("TRY SOMETHING DIFFERENT: scroll down to find new elements, tap a different button, or use dismiss.")
+                    appendLine("DO NOT press back — it will exit the app.")
                 }
                 if (isRepeatTapping) {
                     appendLine("🚨 REPEAT TAP: Element #$lastTappedIdx has been tapped $repeatTapCount times with no result. STOP tapping it.")
-                    appendLine("Choose a DIFFERENT element or a completely different action.")
+                    appendLine("Choose a DIFFERENT element or scroll to reveal new elements.")
+                }
+                if (consecutiveBackCount >= 2) {
+                    appendLine("🚨 BACK LOOP: You have pressed back $consecutiveBackCount times in a row.")
+                    appendLine("STOP pressing back. Use scroll_down, tap a visible element, or type in a field instead.")
+                }
+                if (totalBackCount >= 4) {
+                    appendLine("🚨 CYCLING: You have pressed back $totalBackCount times total in this task.")
+                    appendLine("You are search→back→search→back looping. STOP. Look at results already on screen and TAP one.")
+                    appendLine("If you see a list of results, SCROLL to explore them. Do NOT go back to the home page again.")
+                }
+                if (driftCount >= 2) {
+                    appendLine("🚨 APP DRIFT: You have left the target app $driftCount times. You keep navigating away.")
+                    appendLine("STOP tapping links, ads, or banners that open other apps. Stay inside this app.")
+                    appendLine("Scroll within the current screen instead of tapping things that might navigate away.")
                 }
             }.trim()
 
@@ -222,6 +250,13 @@ class ScreenAgent(
                 stuckHint = stuckHint,
             )
 
+            // Check stop AFTER the AI call — AI calls take 5-15s so this fires much faster
+            // than waiting for the next iteration's top-of-loop check
+            if (stopRequested) {
+                stopRequested = false
+                return "⛔ Stopped."
+            }
+
             // Track tap repetition — if AI keeps tapping same element, flag it next step
             if (action.action == "tap") {
                 if (action.index == lastTappedIdx) repeatTapCount++
@@ -230,7 +265,47 @@ class ScreenAgent(
                 repeatTapCount = 0 // reset on any real action
             }
 
-            val result = executeAction(runner, action, elements)
+            val result = executeAction(runner, action, elements, consecutiveBackCount, totalBackCount)
+
+            // Track consecutive back presses (for blocking 2-in-a-row)
+            // and total back presses (for blocking search→back→search→back cycling)
+            if (action.action == "back") {
+                consecutiveBackCount++
+                if (!result.contains("BLOCKED")) totalBackCount++
+            } else {
+                consecutiveBackCount = 0
+            }
+
+            // ── App drift guard ──────────────────────────────────────────────
+            // After EVERY action, check if we've drifted away from the target app.
+            // targetPkg is blank when we started on the home screen (GeneralSkill cross-app
+            // tasks) — in that case we skip this guard so the AI can freely open apps.
+            if (targetPkg.isNotBlank()) {
+                val nowPkg = try { runner.getCurrentPackage() } catch (_: Exception) { "" }
+                val isOkOverlay = nowPkg.contains("android.inputmethod")    // keyboard
+                    || nowPkg.contains("permissioncontroller")               // permission dialog
+                    || nowPkg.contains("systemui")                           // notification shade
+                    || nowPkg.contains("packageinstaller")                   // install dialog
+                if (nowPkg.isNotBlank() && nowPkg != targetPkg && !isOkOverlay) {
+                    driftCount++
+                    val driftMsg = if (driftCount >= 2) {
+                        "⛔ DRIFT #$driftCount: You keep leaving $targetPkg (went to $nowPkg). " +
+                        "CRITICAL: Stay inside $targetPkg. Do NOT tap links that open other apps. " +
+                        "Do NOT press home. Scroll and search WITHIN $targetPkg only."
+                    } else {
+                        "DRIFTED to $nowPkg → re-opened $targetPkg. Stay inside $targetPkg."
+                    }
+                    try {
+                        runner.openApp(targetPkg)
+                        runner.waitForApp(targetPkg, timeoutMs = 4000)
+                        delay(400)
+                        actionLog += driftMsg
+                    } catch (_: Exception) {
+                        // Runner may not have OPEN_APP permission — log but don't crash
+                        actionLog += "DRIFTED to $nowPkg (could not re-open $targetPkg)"
+                    }
+                }
+            }
 
             when (result) {
                 "DONE" -> {
@@ -282,12 +357,13 @@ class ScreenAgent(
             appendLine(elements.take(700))
             appendLine()
             appendLine("Write a numbered plan (4-10 steps) that:")
-            appendLine("1. Is specific about what to look for (element text, type, position)")
-            appendLine("2. States the action clearly (tap, type, scroll, enter, wait)")
-            appendLine("3. Includes how to verify each step succeeded")
-            appendLine("4. For search tasks: always do search-field → type → submit → scroll → pick result")
-            appendLine("5. NEVER recommends voice/mic/audio buttons")
-            appendLine("6. Works on ANY app — no app-specific assumptions")
+            appendLine("1. Does EXACTLY what the goal says — no extra steps, no assumptions")
+            appendLine("2. Is specific about what to look for (element text, type, position)")
+            appendLine("3. States the action clearly (tap, type, scroll, enter, wait)")
+            appendLine("4. Includes how to verify each step succeeded")
+            appendLine("5. For search tasks: search-field → type → submit → scroll → pick result")
+            appendLine("6. NEVER includes voice/mic/audio buttons")
+            appendLine("7. Stops exactly when the goal is achieved — does not add bonus actions")
             appendLine()
             appendLine("Reply with JSON only: {\"plan\":\"Step 1: ... Step 2: ... Step 3: ...\"}")
         }
@@ -321,37 +397,37 @@ class ScreenAgent(
         try {
             val screen = runner.readScreen().lowercase()
 
-            // Comprehensive popup signal list covering Indian apps (Zomato, Swiggy, PhonePe etc.)
-            // and generic Android popups. If ANY of these appear on screen we try to dismiss.
+            // IMPORTANT: Only match SPECIFIC multi-word popup phrases, NOT single common words.
+            //
+            // Banned from this list: "allow", "skip", "got it", "explore", "get started",
+            // "dismiss", "block", "deny" — these single words appear in NORMAL app content
+            // (YouTube "Skip" button, Amazon "Allow" in permissions that aren't dialogs, etc.)
+            // If we matched them and dismissPopups() returned 0 (no button found), the old
+            // code pressed back — which EXITS THE APP and causes the home screen loop.
+            //
+            // Rule: Only add a signal if it's a multi-word phrase that ONLY appears in popups.
             val popupSignals = listOf(
-                // Generic Android
-                "not now", "maybe later", "skip", "got it", "no thanks", "no, thanks",
-                "dismiss", "remind me later", "allow", "deny", "update available",
-                "rate this app", "new feature", "don't allow", "block",
-                // Notifications / location (VERY common in Zomato, Swiggy, PhonePe)
+                // Specific permission dialog phrases
+                "not now", "maybe later", "no thanks", "no, thanks",
+                "remind me later", "update available",
+                // Notifications / location — use full phrases, not single words
                 "enable notifications", "turn on notifications", "allow notifications",
-                "enable location", "allow location", "use my location", "set location",
-                "share location", "location permission",
-                // App store / update
+                "allow location access", "enable location access",
+                "use my location", "location permission", "share location",
+                // App store / update (specific phrases)
                 "update now", "update app", "rate us", "rate app", "rate on play store",
                 "rate now", "review app", "leave a review",
-                // Food delivery specific
-                "claim offer", "view offer", "see offers", "grab offer",
-                "explore restaurants", "start ordering",
-                // Payment apps
-                "set upi pin", "complete your profile", "verify your number",
-                "complete kyc", "finish setup",
-                // Onboarding overlays
-                "get started", "explore", "take a tour", "show me around",
+                // Food delivery (long specific phrases only)
+                "claim offer", "view offer", "grab offer",
+                // Payment apps (specific phrases)
+                "set upi pin", "complete kyc", "verify your number",
             )
 
             if (popupSignals.any { screen.contains(it) }) {
-                // First try the standard dismiss list (buttons like "Skip", "Not now", etc.)
-                val dismissed = runner.dismissPopups(2)
-                if (dismissed == 0) {
-                    // Nothing matched — try pressing back to close the modal
-                    runner.pressBack()
-                }
+                // Try to dismiss via actual popup buttons — never press back as a fallback.
+                // pressBack() here would exit the current app and cause home-screen loops.
+                // If dismissPopups() finds nothing, there's probably no real popup — leave it.
+                runner.dismissPopups(2)
                 delay(200)
             }
         } catch (_: Exception) { /* ignore */ }
@@ -363,6 +439,8 @@ class ScreenAgent(
         runner: SandboxedRunner,
         action: ScreenAction,
         elements: List<ScreenElement>,
+        consecutiveBackCount: Int = 0,
+        totalBackCount: Int = 0,
     ): String {
         return when (action.action) {
 
@@ -388,19 +466,79 @@ class ScreenAgent(
             }
 
             "type" -> {
-                // Tap the target field first
-                val typeIdx = findBestInputIndex(elements, action.index)
+                // Trust the AI's chosen index if it points to a valid editable field.
+                // Only fall back to best-scoring field if the index is invalid.
+                val typeIdx = if (action.index in elements.indices && elements[action.index].isEditable)
+                    action.index
+                else
+                    findBestInputIndex(elements, action.index)
+
+                // Determine the field's role to decide REPLACE vs APPEND behaviour:
+                //
+                //  • SEARCH fields (search bars, query boxes) → REPLACE mode:
+                //    Clear any stale query first, then type the new one fresh.
+                //    Reason: each new search should overwrite the previous query.
+                //
+                //  • ALL OTHER fields (notes, messages, forms, document editors) → APPEND mode:
+                //    Read existing content first, combine, then ACTION_SET_TEXT.
+                //    Reason: ACTION_SET_TEXT alone WIPES the entire field. Without append,
+                //    typing paragraph 2 erases paragraph 1 — the exact bug the user reported.
+                val fieldRole = if (typeIdx in elements.indices) elementRole(elements[typeIdx]) else "text-input"
+                val isSearchField = fieldRole == "search-input"
+
                 if (typeIdx in elements.indices) {
                     val el = elements[typeIdx]
+
+                    // Hint-based targeting: uses field's own hint to find the exact node.
+                    // For APPEND mode, pass appendToExisting=true so typeInFieldWithHint
+                    // reads existing content and combines before ACTION_SET_TEXT.
+                    val hint = el.hint.ifBlank { el.contentDescription }
+                    if (hint.isNotBlank()) {
+                        val hintOk = runner.typeInFieldWithHint(hint, action.text, appendToExisting = !isSearchField)
+                        if (hintOk) {
+                            delay(150)
+                            return "type[$typeIdx] '${action.text.take(30)}' → OK (hint${if (!isSearchField) "+append" else ""})"
+                        }
+                    }
+                    // Tap the specific field the AI chose — establishes focus before typing
                     runner.tapAtPoint(el.centerX.toFloat(), el.centerY.toFloat())
-                    delay(150)
+                    delay(300) // give focus time to settle on Indian phones
                 }
-                // Use typeReliably: tries standard typing → verifies → clipboard fallback
-                // Fixes silent typing failures on older Xiaomi/Realme/Samsung budget phones
-                val ok = runner.typeReliably(action.text)
+
+                val ok = if (isSearchField) {
+                    // REPLACE mode: clear stale query then type fresh
+                    // Safe clear via ACTION_SET_TEXT("") — no selection chaos
+                    runner.clearField()
+                    runner.typeReliably(action.text)
+                } else {
+                    // APPEND mode: read existing content, combine, then ACTION_SET_TEXT
+                    // This preserves existing paragraphs/lines in notes, messages, forms
+                    runner.typeAppending(action.text)
+                }
                 delay(150)
                 val idxLabel = if (typeIdx in elements.indices) "$typeIdx" else "auto"
-                "type[$idxLabel] '${action.text.take(30)}' → ${if (ok) "OK" else "MISS"}"
+                val modeTag = if (isSearchField) "replace" else "append"
+                "type[$idxLabel/$modeTag] '${action.text.take(30)}' → ${if (ok) "OK" else "MISS"}"
+            }
+
+            // Move focus to the next editable field (Tab equivalent)
+            // Used in multi-field forms: after typing email, call next_field to move to password
+            "next_field" -> {
+                // Find the next editable field after the current index
+                val nextIdx = elements.indices
+                    .drop((action.index + 1).coerceAtLeast(0))
+                    .firstOrNull { elements[it].isEditable }
+                if (nextIdx != null) {
+                    val next = elements[nextIdx]
+                    runner.tapAtPoint(next.centerX.toFloat(), next.centerY.toFloat())
+                    delay(250)
+                    "next_field → tapped field[$nextIdx] '${next.hint.ifBlank { next.text }.take(20)}'"
+                } else {
+                    // No next field — press enter to submit or move to next line
+                    val ok = runner.pressEnter()
+                    delay(200)
+                    "next_field → enter ${if (ok) "OK" else "MISS"}"
+                }
             }
 
             "scroll_down" -> {
@@ -440,9 +578,32 @@ class ScreenAgent(
             }
 
             "back" -> {
+                // Block consecutive backs — 2 in a row always exits the current screen/app
+                if (consecuiveBackCount >= 2) {
+                    return "back BLOCKED — pressed back ${consecutiveBackCount} times in a row. Use scroll_down, tap a different element, or type instead."
+                }
+                // Block total backs — prevents search→back→search→back cycling loops
+                // even when other actions are interspersed between backs
+                if (totalBackCount >= 6) {
+                    return "back BLOCKED — already used back ${totalBackCount} times in this task. STOP going back. Scroll down through results or tap a result to open it."
+                }
+
+                // Check package BEFORE pressing back — if back exits the app, re-open it
+                val pkgBefore = runner.getCurrentPackage()
                 runner.pressBack()
-                delay(220)
-                "back"
+                delay(300)
+                val pkgAfter = runner.getCurrentPackage()
+                // If we left the target app, re-open it immediately
+                if (pkgBefore.isNotBlank() && pkgAfter != pkgBefore) {
+                    try {
+                        runner.openApp(pkgBefore)
+                        runner.waitForApp(pkgBefore, timeoutMs = 4000)
+                        delay(400)
+                    } catch (_: Exception) { /* no OPEN_APP permission */ }
+                    "back → EXIT CAUGHT, re-opened $pkgBefore"
+                } else {
+                    "back"
+                }
             }
 
             "home" -> {
@@ -496,6 +657,7 @@ class ScreenAgent(
 
         val prompt = buildString {
             appendLine("You control an Android phone. Decide the SINGLE best next action to make progress.")
+            appendLine("Do EXACTLY what the GOAL says. Nothing more. Nothing less. Stop the moment it is done.")
             appendLine()
             appendLine("GOAL: $goal")
             appendLine()
@@ -535,23 +697,60 @@ class ScreenAgent(
                 appendLine(describeElements(elements).take(1000))
             }
             appendLine()
-            appendLine("═══ UNIVERSAL UI RULES ═══")
-            appendLine("1. IDENTIFY SCREEN TYPE first:")
-            appendLine("   Home/feed → navigate to search. Search open → type (green), not mic (red).")
-            appendLine("   Results → scroll to target then tap. Detail → take requested action.")
-            appendLine("   Compose → fill all fields then submit. Settings → find toggle.")
-            appendLine("2. Search: always use TEXT INPUT field (wide, editable, green) — NEVER the mic icon.")
-            appendLine("3. Voice overlay ('Speak now', 'Listening') → use action=back immediately.")
-            appendLine("4. After typing → action=enter. Never retype already-typed text.")
-            appendLine("5. BOTTOM NAV BAR (Home/Shorts/Library tabs at very bottom of screen, pos=bottom):")
-            appendLine("   DO NOT tap bottom nav unless you INTEND to change section. Content items are in mid/top area.")
-            appendLine("6. If same element failed twice → try different approach (scroll, back, different element).")
-            appendLine("7. done only when you CONFIRM success is visible on screen.")
-            appendLine("8. fail only if truly stuck with absolutely no path forward.")
+            appendLine("═══ CRITICAL RULES ═══")
+            appendLine("1. STAY IN THE CURRENT SCREEN. NEVER press back after you have search results or content on screen.")
+            appendLine("   Back = you lose the results and go back to the app home. Then you'll have to search again = LOOP.")
+            appendLine("   If you see results/items on screen → SCROLL through them or TAP one. NEVER press back.")
+            appendLine("   Only press back if you are on a completely wrong screen with NO useful content at all.")
+            appendLine()
+            appendLine("2. CORRECT FIELD TARGETING:")
+            appendLine("   - SEARCH BAR = top of screen, role=search-input, used for SEARCHING products/contacts/videos")
+            appendLine("   - MESSAGE INPUT = bottom of screen, role=message-input, used for TYPING messages")
+            appendLine("   - If the goal is 'send a message', find the MESSAGE input (bottom), NOT the search bar (top)")
+            appendLine("   - If the goal is 'search for X', find the SEARCH input (top)")
+            appendLine("   - NEVER type a message body into a search bar. NEVER type a search query into a message field.")
+            appendLine()
+            appendLine("3. VOICE/MIC/CAMERA ICONS — DO NOT TAP:")
+            appendLine("   - Mic icon, voice search, camera icon, lens icon, barcode scanner = NEVER tap these")
+            appendLine("   - They are small icons NEXT TO the search bar. Tap the WIDE text field instead.")
+            appendLine("   - If 'Speak now' or 'Listening' appears → press back immediately.")
+            appendLine()
+            appendLine("4. SEARCH FLOW (Amazon, Flipkart, YouTube, Zomato, Swiggy, etc.):")
+            appendLine("   a) Find and TAP the search bar (wide editable field at top, NOT the mic/camera icon next to it)")
+            appendLine("   b) TYPE the search query")
+            appendLine("   c) Press ENTER to submit")
+            appendLine("   d) WAIT for results to load")
+            appendLine("   e) SCROLL through results to find the best match")
+            appendLine("   f) TAP on the item to see details")
+            appendLine()
+            appendLine("5. SHOPPING/ORDERING FLOW:")
+            appendLine("   a) Search → find item → tap to view details")
+            appendLine("   b) On detail page: scroll down to read reviews, ratings, features, price")
+            appendLine("   c) Look for filters (sort by price, rating, relevance) and apply if needed")
+            appendLine("   d) Compare options by going back and checking other results")
+            appendLine("   e) Once satisfied, tap 'Add to Cart' or 'Buy Now' or 'Order'")
+            appendLine("   f) Fill delivery/payment details if asked")
+            appendLine("   g) STOP before final payment — report what you found to the user")
+            appendLine()
+            appendLine("6. MULTI-FIELD FORMS AND MULTI-LINE TEXT:")
+            appendLine("   - For SEPARATE fields (title + body, email + password): each field has its own index.")
+            appendLine("     Type into title field → next_field → type into body field (different indices).")
+            appendLine("   - For MULTI-LINE TEXT inside ONE field (notes, long messages): use \\n in your text.")
+            appendLine("     Example: type {\"text\": \"Line 1\\nLine 2\\nLine 3\"} in ONE type action — do NOT type each line separately.")
+            appendLine("     The system automatically APPENDS your text to what is already in the field.")
+            appendLine("     You do NOT need to press enter between paragraphs — just include \\n in your text value.")
+            appendLine("   - NEVER type the same content twice into the same field.")
+            appendLine("   - For login forms: type email into email field, next_field, type password into password field.")
+            appendLine()
+            appendLine("7. AFTER TYPING: if it's a search field → press enter. If it's a form → use next_field.")
+            appendLine("8. BOTTOM NAV BAR (Home/Shorts/Library at very bottom): DO NOT tap unless switching sections.")
+            appendLine("9. If same element failed twice → try scroll_down, or tap a DIFFERENT element.")
+            appendLine("10. done only when you CONFIRM success is visible on screen.")
+            appendLine("11. fail only if truly stuck with absolutely no path forward.")
             appendLine()
             appendLine("ACTIONS:")
             appendLine("""tap:{"action":"tap","index":N}  type:{"action":"type","index":N,"text":"X"}  enter:{"action":"enter"}""")
-            appendLine("""scroll_down:{"action":"scroll_down"}  scroll_up:{"action":"scroll_up"}  back:{"action":"back"}""")
+            appendLine("""next_field:{"action":"next_field","index":N}  scroll_down:{"action":"scroll_down"}  scroll_up:{"action":"scroll_up"}  back:{"action":"back"}""")
             appendLine("""dismiss:{"action":"dismiss"}  wait:{"action":"wait"}  done:{"action":"done","summary":"X"}  fail:{"action":"fail","summary":"X"}""")
             appendLine()
             // ReAct format — forces model to observe before deciding (from AppAgent research)
@@ -605,10 +804,16 @@ class ScreenAgent(
             el.viewId.substringAfterLast('/'), el.className,
         ).joinToString(" ").lowercase()
 
-        // Voice/mic — always marked, AI will avoid these
+        // Voice/mic/camera/lens — always marked, AI will avoid these
+        // Catches: mic icons, voice search, Amazon camera search, Flipkart lens,
+        // barcode scanner, Google Lens — all the non-text-input search triggers
         if (combined.containsAny("mic", "voice", "microphone", "speak now", "listening",
-                "audio_search", "voice_search", "speak")) {
-            return "voice"
+                "audio_search", "voice_search", "speak",
+                "camera", "lens", "scan", "barcode", "qr_code", "visual_search",
+                "image_search", "photo_search", "scanner")) {
+            // Exception: don't block if this is an editable text field that happens to
+            // have "scan" in its ID (like "scan_results_input" in some apps)
+            if (!el.isEditable) return "voice"
         }
 
         return when {
@@ -707,6 +912,27 @@ class ScreenAgent(
 
     private fun String.containsAny(vararg terms: String): Boolean =
         terms.any { this.contains(it) }
+
+    /**
+     * Returns true if the given package name looks like the device home screen / launcher.
+     * We use this to disable the drift guard when the agent starts on the home screen —
+     * otherwise it would lock the AI to the launcher and re-open it every time the AI
+     * navigates to any real app (GeneralSkill cross-app tasks).
+     *
+     * Android launcher packages universally contain "launcher" or ".home" in their name.
+     * Samsung: com.samsung.android.app.launcher
+     * MIUI:    com.miui.home
+     * Stock:   com.android.launcher3, com.google.android.apps.nexuslauncher
+     * OnePlus: com.oneplus.launcher
+     */
+    private fun isLauncherPackage(pkg: String): Boolean {
+        if (pkg.isBlank()) return true  // blank = unknown = treat as home
+        val lower = pkg.lowercase()
+        return lower.contains("launcher") ||
+               lower.contains(".home") ||
+               lower.contains("nexuslauncher") ||
+               lower == "com.android.systemui"
+    }
 
     // ─── JSON Parsing ─────────────────────────────────────────────────────────
 
@@ -846,6 +1072,7 @@ class ScreenAgent(
     }
 
     private suspend fun callGemini(prompt: String): String? {
+        if (stopRequested) return null // fast-path: don't even start the call
         val modelName = model.ifBlank { AIBrain.detectFastestModel(apiKey) }
         val body = gson.toJson(mapOf(
             "contents" to listOf(mapOf(
@@ -861,12 +1088,14 @@ class ScreenAgent(
         val url = "https://generativelanguage.googleapis.com/v1beta/models/$modelName:generateContent?key=$apiKey"
         return try {
             withContext(Dispatchers.IO) {
-                client.newCall(
+                val call = client.newCall(
                     Request.Builder().url(url)
                         .addHeader("content-type", "application/json")
                         .post(body.toRequestBody("application/json".toMediaType()))
                         .build()
-                ).execute().use { resp ->
+                )
+                activeCall = call // store so requestStop() can cancel it mid-call
+                call.execute().use { resp ->
                     val raw = resp.body?.string() ?: return@withContext null
                     val json = JsonParser.parseString(raw).asJsonObject
                     if (json.has("error")) return@withContext null
@@ -878,7 +1107,8 @@ class ScreenAgent(
                         ?.get("text")?.asString?.trim()
                 }
             }
-        } catch (_: Exception) { null }
+        } catch (_: Exception) { null
+        } finally { activeCall = null }
     }
 
     /**
@@ -887,6 +1117,7 @@ class ScreenAgent(
      * This is how AppAgent/UFO distinguish mic icon from search field — they LOOK at it.
      */
     private suspend fun callGeminiVision(prompt: String, bitmap: Bitmap): String? {
+        if (stopRequested) return null
         val modelName = model.ifBlank { AIBrain.detectFastestModel(apiKey) }
         val imageBase64 = bitmapToBase64(bitmap)
         val body = gson.toJson(mapOf(
@@ -908,12 +1139,14 @@ class ScreenAgent(
         val url = "https://generativelanguage.googleapis.com/v1beta/models/$modelName:generateContent?key=$apiKey"
         return try {
             withContext(Dispatchers.IO) {
-                client.newCall(
+                val call = client.newCall(
                     Request.Builder().url(url)
                         .addHeader("content-type", "application/json")
                         .post(body.toRequestBody("application/json".toMediaType()))
                         .build()
-                ).execute().use { resp ->
+                )
+                activeCall = call
+                call.execute().use { resp ->
                     val raw = resp.body?.string() ?: return@withContext null
                     val json = JsonParser.parseString(raw).asJsonObject
                     if (json.has("error")) return@withContext null
@@ -925,10 +1158,12 @@ class ScreenAgent(
                         ?.get("text")?.asString?.trim()
                 }
             }
-        } catch (_: Exception) { null }
+        } catch (_: Exception) { null
+        } finally { activeCall = null }
     }
 
     private suspend fun callClaude(prompt: String): String? {
+        if (stopRequested) return null
         val modelName = model.ifBlank { AIBrain.detectFastestModel(apiKey) }
         val body = gson.toJson(mapOf(
             "model" to modelName,
@@ -938,14 +1173,16 @@ class ScreenAgent(
         ))
         return try {
             withContext(Dispatchers.IO) {
-                client.newCall(
+                val call = client.newCall(
                     Request.Builder().url("https://api.anthropic.com/v1/messages")
                         .addHeader("x-api-key", apiKey)
                         .addHeader("anthropic-version", "2023-06-01")
                         .addHeader("content-type", "application/json")
                         .post(body.toRequestBody("application/json".toMediaType()))
                         .build()
-                ).execute().use { resp ->
+                )
+                activeCall = call
+                call.execute().use { resp ->
                     val raw = resp.body?.string() ?: return@withContext null
                     val json = JsonParser.parseString(raw).asJsonObject
                     json.getAsJsonArray("content")
@@ -953,10 +1190,12 @@ class ScreenAgent(
                         ?.get("text")?.asString?.trim()
                 }
             }
-        } catch (_: Exception) { null }
+        } catch (_: Exception) { null
+        } finally { activeCall = null }
     }
 
     private suspend fun callOpenAI(prompt: String): String? {
+        if (stopRequested) return null
         val modelName = model.ifBlank { AIBrain.detectFastestModel(apiKey) }
         val body = gson.toJson(mapOf(
             "model" to modelName,
@@ -969,13 +1208,15 @@ class ScreenAgent(
         ))
         return try {
             withContext(Dispatchers.IO) {
-                client.newCall(
+                val call = client.newCall(
                     Request.Builder().url("https://api.openai.com/v1/chat/completions")
                         .addHeader("Authorization", "Bearer $apiKey")
                         .addHeader("content-type", "application/json")
                         .post(body.toRequestBody("application/json".toMediaType()))
                         .build()
-                ).execute().use { resp ->
+                )
+                activeCall = call
+                call.execute().use { resp ->
                     val raw = resp.body?.string() ?: return@withContext null
                     val json = JsonParser.parseString(raw).asJsonObject
                     json.getAsJsonArray("choices")
@@ -984,6 +1225,7 @@ class ScreenAgent(
                         ?.get("content")?.asString?.trim()
                 }
             }
-        } catch (_: Exception) { null }
+        } catch (_: Exception) { null
+        } finally { activeCall = null }
     }
 }

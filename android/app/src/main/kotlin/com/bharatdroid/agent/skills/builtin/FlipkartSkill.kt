@@ -35,24 +35,40 @@ class FlipkartSkill : Skill {
         runner.dismissPopups(2)
         delay(200)
 
+        // Direct search: type into search field before AI takes over
+        if (action == "search" && query.isNotBlank()) {
+            val directTyped = runner.typeInFieldWithHint("Search for Products", query)
+                || runner.typeInFieldWithHint("Search", query)
+            if (directTyped) {
+                delay(200)
+                runner.pressEnter()
+                delay(1500)
+            } else {
+                val (w, _) = runner.getScreenSize()
+                runner.tapAtPoint(w * 0.35f, 140f)
+                delay(400)
+                runner.typeReliably(query)
+                delay(200)
+                runner.pressEnter()
+                delay(1500)
+            }
+        }
+
         val goal = if (action == "goal") {
             params["goal"] as? String ?: query
         } else {
             buildString {
-                append("TASK: Search for and show \"$query\" on Flipkart.\n\n")
-                append("CRITICAL RULES:\n")
-                append("1. Find the search INPUT FIELD at top (must be editable text, NOT icon)\n")
-                append("2. Tap only the TEXT input field. NEVER use voice/mic buttons\n")
-                append("3. If you see voice UI, press back immediately\n")
-                append("4. Type \"$query\" into the search field\n")
-                append("5. Press Enter to search\n")
-                append("6. Wait for results\n")
-                append("7. Scroll down to see options\n")
-                append("8. Find the best product")
-                if (maxPrice != null) append(" under Rs $maxPrice")
-                append("\n")
-                append("9. Tap to show product details\n\n")
-                append("DO NOT use voice. Text search only.")
+                append("TASK: Find the BEST \"$query\" on Flipkart.\n\n")
+                if (action == "search") append("Search already submitted. You should see results.\n\n")
+                append("STEPS:\n")
+                append("1. Scroll through results to compare options\n")
+                if (maxPrice != null) append("2. Filter by price under Rs $maxPrice\n")
+                append("3. Look for high ratings (4+ stars) and good review count\n")
+                append("4. Tap the best match to see details\n")
+                append("5. On product page: scroll to read reviews, specs, features\n")
+                append("6. Report findings — name, price, rating, key features\n\n")
+                append("DO NOT press back repeatedly. DO NOT go to home screen.\n")
+                append("DO NOT tap mic/camera/voice icons. Stay on results page.")
             }
         }
 

@@ -37,6 +37,30 @@ class SwigySkill : Skill {
         runner.dismissPopups(2)
         delay(200)
 
+        // Direct search: type into Swiggy's search field before AI takes over
+        if (query.isNotBlank() && action != "goal") {
+            val directTyped = runner.typeInFieldWithHint("Search for", query)
+                || runner.typeInFieldWithHint("Search", query)
+            if (directTyped) {
+                delay(200)
+                runner.pressEnter()
+                delay(1500)
+            } else {
+                val searchEl = runner.getClickableElements().firstOrNull { el ->
+                    val t = (el.text + el.hint + el.contentDescription).lowercase()
+                    (t.contains("search") || t.contains("find")) && !t.contains("voice") && !t.contains("mic")
+                }
+                if (searchEl != null) {
+                    runner.tapAtPoint(searchEl.centerX.toFloat(), searchEl.centerY.toFloat())
+                    delay(400)
+                    runner.typeReliably(query)
+                    delay(200)
+                    runner.pressEnter()
+                    delay(1500)
+                }
+            }
+        }
+
         val priceNote = if (maxPrice != null) " under Rs $maxPrice" else ""
         val filterNote = when {
             filter.contains("fast") -> ", fastest delivery"
@@ -48,22 +72,26 @@ class SwigySkill : Skill {
         val goal = if (action == "goal") {
             params["goal"] as? String ?: query
         } else {
-            """
-            You are in Swiggy food delivery app.
-            TASK: Find "$query"$priceNote$filterNote and ${if (action == "order" || action == "add_to_cart") "order it" else "show results"}.
-
-            STEPS:
-            1. Find and tap the search bar or search icon at the top of the screen.
-            2. Type "$query" in the search field.
-            3. Press enter or tap search.
-            4. Wait for restaurant/food results to appear.
-            ${if (filter.isNotBlank()) "5. Apply filter: $filterNote." else ""}
-            ${if (maxPrice != null) "5. Look for options$priceNote." else ""}
-            ${if (action == "order" || action == "add_to_cart")
-                "6. Tap the first restaurant. 7. Find the item and tap ADD. 8. Tap Go to Cart. 9. Tap Proceed to Pay."
-            else
-                "6. Tap the first restaurant to see the menu."}
-            """.trimIndent()
+            buildString {
+                appendLine("TASK: Find \"$query\"$priceNote$filterNote on Swiggy.")
+                appendLine()
+                appendLine("Search may already be submitted. Check if results are visible.")
+                appendLine()
+                appendLine("STEPS:")
+                appendLine("1. If no results visible, find the search bar and type \"$query\"")
+                appendLine("2. Scroll through restaurant results")
+                if (filter.isNotBlank()) appendLine("3. Apply filter: $filterNote")
+                if (maxPrice != null) appendLine("3. Look for options$priceNote")
+                appendLine("4. Tap the best restaurant")
+                appendLine("5. Find \"$query\" on their menu")
+                if (action == "order" || action == "add_to_cart") {
+                    appendLine("6. Tap ADD to add to cart")
+                    appendLine("7. Open cart → Proceed — STOP before payment")
+                }
+                appendLine()
+                appendLine("DO NOT press back repeatedly. DO NOT go to home screen.")
+                appendLine("DO NOT tap mic/voice icons. Stay in Swiggy.")
+            }
         }
 
         val result = agent.executeGoal(runner, goal, maxSteps = 25)

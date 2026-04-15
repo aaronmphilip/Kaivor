@@ -171,17 +171,34 @@ class SandboxedRunner(
         return node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
     }
 
-    fun typeInFieldWithHint(hint: String, text: String): Boolean {
+    /**
+     * Type text into a field that matches the given hint text.
+     *
+     * @param appendToExisting  When true, reads the field's current content and PREPENDS it
+     *                          before ACTION_SET_TEXT. Use this for multi-line text fields
+     *                          (notes, message composers) so existing paragraphs are preserved.
+     *                          Use false (default) for search bars where old text should be replaced.
+     */
+    fun typeInFieldWithHint(hint: String, text: String, appendToExisting: Boolean = false): Boolean {
         requirePermission(Permission.TYPE)
 
         val node = service.findBestTextInput(listOf(hint))
             ?: service.findNodeByText(hint)
 
+        fun combine(existing: CharSequence?): String {
+            if (!appendToExisting) return text
+            val cur = existing?.toString() ?: ""
+            return if (cur.isNotBlank()) "$cur$text" else text
+        }
+
         if (node != null) {
             node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
             node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
             val args = Bundle().apply {
-                putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+                putCharSequence(
+                    AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                    combine(node.text),
+                )
             }
             if (node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)) return true
         }
@@ -189,12 +206,51 @@ class SandboxedRunner(
         val focused = service.findFocusedInput()
         if (focused != null) {
             val args = Bundle().apply {
-                putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+                putCharSequence(
+                    AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                    combine(focused.text),
+                )
             }
             if (focused.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)) return true
         }
 
         return false
+    }
+
+    /**
+     * Clear the currently focused text field safely using ACTION_SET_TEXT("").
+     * Safe alternative to clearFocusedField() which uses ACTION_SELECT and causes
+     * paragraph-selection chaos in rich-text editors (Notes, Google Docs, etc.).
+     */
+    fun clearField(): Boolean {
+        requirePermission(Permission.TYPE)
+        val focused = service.findFocusedInput() ?: return false
+        val args = Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, "")
+        }
+        return focused.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+    }
+
+    /**
+     * Type text into the focused field, APPENDING to any existing content rather than replacing.
+     *
+     * This is the correct method for notes, message composers, and any field where the user
+     * has already typed content that must not be erased. It reads the current field text,
+     * combines it with the new text, then does ACTION_SET_TEXT with the combined string.
+     *
+     * Example: field has "Hello\n" → typeAppending("World") → field becomes "Hello\nWorld"
+     * This is NOT the same as clearField() + typeReliably() which would discard "Hello\n".
+     */
+    suspend fun typeAppending(text: String): Boolean {
+        requirePermission(Permission.TYPE)
+        if (text.isBlank()) return true
+
+        val currentContent = try {
+            service.findFocusedInput()?.text?.toString() ?: ""
+        } catch (_: Exception) { "" }
+
+        val combined = if (currentContent.isNotBlank()) "$currentContent$text" else text
+        return typeReliably(combined)
     }
 
     fun typeInFocused(text: String): Boolean {
@@ -454,38 +510,38 @@ class SandboxedRunner(
         if (typed) {
             delay(180)
             val screen = try { service.getScreenText() } catch (_: Exception) { "" }
-            // Verify something from our text actually appeared
-            if (text.take(4).lowercase().any { ch ->
-                    screen.lowercase().contains(ch.toString())
-                }) return true
+            // Verify a meaningful substring of our text appeared on screen
+            // Previous bug: checking individual characters always passed (every char exists somewhere)
+            val verifyChunk = text.take(8).lowercase()
+            if (verifyChunk.length >= 3 && screen.lowercase().contains(verifyChunk)) return true
+            // For very short text (1-2 chars), check exact match
+            if (verifyChunk.length < 3 && screen.contains(text, ignoreCase = true)) return true
         }
 
-        // Strategy 2: Clipboard paste (reliable on all devices)
+        // Strategy 2: Clipboard + ACTION_PASTE (no long-press — long-press causes selection chaos
+        // in rich-text fields like Notes, causing it to select paragraphs, tap headings, etc.)
         return try {
-            setClipboard(text)
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
+                as android.content.ClipboardManager
+            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("BharatDroid", text))
             delay(120)
 
-            // Re-focus the field
-            val focused = service.findFocusedInput()
-            focused?.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
-            focused?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-            delay(150)
-
-            val target = service.findFocusedInput() ?: focused
+            val target = service.findFocusedInput()
             if (target != null) {
-                // Try direct paste action first
+                // ACTION_PASTE is clean — no UI interaction, no selection chaos
                 if (target.performAction(AccessibilityNodeInfo.ACTION_PASTE)) {
                     delay(200)
                     return true
                 }
-                // Fallback: long press → tap Paste from context menu
-                val (cx, cy) = service.getNodeCenter(target)
-                service.longPress(cx, cy)
-                delay(700)
-                service.findClickableByText("Paste")?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                delay(200)
             }
-            true
+            // Strategy 3: ACTION_SET_TEXT as last resort (works on most fields even without focus)
+            val allInputs = service.findBestTextInput(emptyList())
+            if (allInputs != null) {
+                val args = Bundle().apply {
+                    putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+                }
+                allInputs.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+            } else false
         } catch (_: Exception) { false }
     }
 

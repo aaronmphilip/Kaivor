@@ -60,11 +60,22 @@ class UserMemory(private val context: Context) {
         else raw.split(SEPARATOR).filter { it.isNotBlank() }
     }
 
-    /** Build a compact string of preferences to inject into the AI prompt. */
+    /**
+     * Build mandatory instruction block for the AI prompt.
+     * These are not optional suggestions — they are rules the user has explicitly set
+     * and the agent MUST follow them exactly, every time, without exception.
+     */
     fun buildPromptContext(): String {
         val memories = getAll()
         if (memories.isEmpty()) return ""
-        return memories.mapIndexed { i, m -> "${i + 1}. $m" }.joinToString("\n")
+        return buildString {
+            appendLine("⚠️ MANDATORY USER INSTRUCTIONS — YOU MUST FOLLOW THESE EXACTLY:")
+            appendLine("The user has given these instructions. Violating them is a failure.")
+            memories.forEachIndexed { i, m ->
+                appendLine("  RULE ${i + 1}: $m")
+            }
+            appendLine("These rules override your default behaviour. Apply all of them.")
+        }.trim()
     }
 
     /** Remove a specific memory by its 1-based number (as shown in /memory list). */
@@ -75,6 +86,47 @@ class UserMemory(private val context: Context) {
         prefs.edit().putString(KEY_MEMORY_LIST, current.joinToString(SEPARATOR)).apply()
         return true
     }
+
+    /**
+     * Remove multiple memories by a list of 1-based indices.
+     * Indices are sorted descending so removing one doesn't shift the others.
+     * Returns how many were successfully removed.
+     */
+    fun forgetMultiple(indices: List<Int>): Int {
+        val current = getAll().toMutableList()
+        val valid = indices.filter { it in 1..current.size }
+            .distinct()
+            .sortedDescending() // remove from the end first so earlier indices stay stable
+        valid.forEach { current.removeAt(it - 1) }
+        prefs.edit().putString(KEY_MEMORY_LIST, current.joinToString(SEPARATOR)).apply()
+        return valid.size
+    }
+
+    /**
+     * Parse a user-provided index string into a list of 1-based indices.
+     * Supports:
+     *   "3"       → [3]
+     *   "1,3,5"   → [1, 3, 5]
+     *   "2-5"     → [2, 3, 4, 5]
+     *   "1,3-5,7" → [1, 3, 4, 5, 7]
+     */
+    fun parseIndexString(input: String): List<Int> {
+        val result = mutableListOf<Int>()
+        input.split(",").map { it.trim() }.forEach { part ->
+            if (part.contains("-")) {
+                val pieces = part.split("-").map { it.trim().toIntOrNull() ?: 0 }
+                val a = pieces.getOrElse(0) { 0 }
+                val b = pieces.getOrElse(1) { 0 }
+                if (a > 0 && b >= a) result.addAll(a..b)
+            } else {
+                part.toIntOrNull()?.let { if (it > 0) result.add(it) }
+            }
+        }
+        return result.distinct().sorted()
+    }
+
+    /** Manually add a rule directly (bypasses trigger-phrase detection). */
+    fun addRule(rule: String): Boolean = remember(rule)
 
     /** Clear all memories. */
     fun forgetAll() {

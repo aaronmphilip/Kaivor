@@ -82,11 +82,18 @@ Rules:
 4. Always reply in the same language the user used (Hindi or English).
 5. Be concise. Do not explain — just do it.
 6. IMPORTANT: If no specific skill matches, use "general" skill with "goal" param. NEVER say "I don't have a skill for that".
-7. YouTube ROUTING (CRITICAL):
+6b. APP OPENING (CRITICAL — check this FIRST before any other rule):
+   - "open X", "launch X", "start X", "go to X" where X is an APP NAME (not a YouTube channel or video) → {"skill":"general","params":{"goal":"open X app"}}
+   - Examples: "open Obsidian" → general. "launch Spotify" → general. "open calculator" → general. "start Notion" → general.
+   - Known skill apps: whatsapp, youtube, amazon, flipkart, swiggy, zomato, zepto, blinkit, phonePe, gpay, paytm, cred, maps, ola, uber, instagram, chrome, gmail, calendar, notes, settings, contacts, files, screen.
+   - If the app name does NOT match a known skill → ALWAYS use "general" skill. NEVER force it into youtube or any other skill.
+7. YouTube ROUTING (CRITICAL — only applies when user EXPLICITLY mentions YouTube or video content):
+   - ONLY use youtube skill when user says: "play", "watch", "YouTube", "song", "video", "music", or names a YouTube channel.
    - SIMPLE: "play X song" OR "play X video" → {"skill":"youtube","params":{"action":"play","query":"X"}}
-   - COMPLEX: ANYTHING involving: go to, channel, navigate, visit, browse, like, subscribe, multiple videos/channels → {"skill":"youtube","params":{"action":"goal","goal":"<FULL user intent here>"}}
-   - Examples: "go to ValueEntainment" = goal. "navigate to that channel" = goal. "like the top 2 videos" = goal. "subscribe to channels" = goal.
-   - RULE: If user says multiple actions or "go to" or "channel" or "like" or "subscribe to multiple" → ALWAYS use action="goal", pass complete user intent as "goal" param.
+   - COMPLEX: channel navigation, likes, subscribes, multiple video tasks → {"skill":"youtube","params":{"action":"goal","goal":"<FULL user intent here>"}}
+   - Examples: "go to MrBeast channel" = youtube goal. "subscribe to Veritasium" = youtube goal. "like the top 2 videos" = youtube goal.
+   - "go to Obsidian" → NOT YouTube. "open Spotify" → NOT YouTube. "launch X" for any non-video app → NOT YouTube.
+   - RULE: If uncertain whether user means YouTube or another app → use "general" skill, NOT youtube.
 8. WhatsApp (CRITICAL):
    - ALWAYS extract contact name PRECISELY from message. If user says "message John", contact="John" (NEVER default to Papa or others).
    - ALWAYS use action="send"

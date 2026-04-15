@@ -273,34 +273,32 @@ class YouTubeSkill : Skill {
         }
     }
 
-    // ── Build a rich goal string for complex tasks ────────────────────────────
+    // ── Build a precise goal string — do EXACTLY what was asked, nothing more ──
     private fun buildFullGoal(goal: String, query: String): String {
-        val searchTerm = query.ifBlank {
-            // Extract key noun from goal — skip filler words
-            val skip = setOf("go", "to", "the", "and", "then", "open", "find",
-                "channel", "subscribe", "like", "video", "videos", "on", "in", "their", "its")
-            goal.split(" ").filter { w -> w.length > 2 && w.lowercase() !in skip }
-                .take(2).joinToString(" ").ifBlank { goal.take(40) }
-        }
+        val searchTerm = query.ifBlank { goal.take(60) }
         return """
-You are in the YouTube app. Complete this task: $goal
+You are in the YouTube app. The user said: "$goal"
 
-EXECUTION PLAN:
-1. Tap the Search icon (magnifying glass) at the top right — NOT the back button
-2. Type "$searchTerm" into the search field
-3. Press Enter and wait 2 seconds for results
-4. Dismiss any history/privacy banners by tapping "Got it" or "No thanks"
-5. Scroll through results to find: ${goal.take(60)}
-6. Tap the correct video or channel
-7. Complete the requested action (like, subscribe, watch, etc.)
+DO EXACTLY what the user asked. NOTHING MORE. NOTHING LESS.
+- If they said "play X" → search and play that specific video
+- If they said "subscribe to X" → find that channel and subscribe ONLY
+- If they said "like the video" → tap the like button ONLY
+- If they said "find videos about X" → show search results, do NOT auto-play
+- Do NOT do extra steps the user didn't ask for
 
-CRITICAL RULES:
-- NEVER press the back button to navigate — use scroll instead
-- NEVER tap the Home tab unless explicitly told to go home
-- After search results appear, SCROLL DOWN to see more — don't go back
-- To subscribe: tap channel name → tap SUBSCRIBE button
-- To like: tap the thumbs up icon below the video
-- When done, report what you accomplished
+STEPS:
+1. Tap the Search icon (magnifying glass at top) — NOT back, NOT mic
+2. Type "$searchTerm" in the search field (text only, NOT voice)
+3. Press Enter — wait for results
+4. Dismiss banners ("Got it", "No thanks") if they appear
+5. Do exactly what the goal says — tap the right video/channel/button
+6. Report EXACTLY what you did, matching what was asked
+
+STRICT RULES:
+- NEVER press back — scroll or tap visible elements instead
+- NEVER tap Home/Shorts/Library bottom tabs
+- NEVER tap the mic/voice/camera icon — text search only
+- Do NOT add extra actions (don't like if asked to subscribe, don't subscribe if asked to play)
         """.trimIndent()
     }
 }

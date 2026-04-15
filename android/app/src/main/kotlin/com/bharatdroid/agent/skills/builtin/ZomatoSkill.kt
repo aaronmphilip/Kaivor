@@ -45,6 +45,32 @@ class ZomatoSkill : Skill {
         runner.dismissPopups(2)
         delay(150)
 
+        // Direct search: type into Zomato's search field before AI takes over
+        if (query.isNotBlank() && action != "goal") {
+            val directTyped = runner.typeInFieldWithHint("Search for restaurant", query)
+                || runner.typeInFieldWithHint("Search", query)
+                || runner.typeInFieldWithHint("search", query)
+            if (directTyped) {
+                delay(200)
+                runner.pressEnter()
+                delay(1500)
+            } else {
+                // Tap the search icon/bar — Zomato has a search icon at the top
+                val searchEl = runner.getClickableElements().firstOrNull { el ->
+                    val t = (el.text + el.hint + el.contentDescription).lowercase()
+                    (t.contains("search") || t.contains("find")) && !t.contains("voice") && !t.contains("mic")
+                }
+                if (searchEl != null) {
+                    runner.tapAtPoint(searchEl.centerX.toFloat(), searchEl.centerY.toFloat())
+                    delay(400)
+                    runner.typeReliably(query)
+                    delay(200)
+                    runner.pressEnter()
+                    delay(1500)
+                }
+            }
+        }
+
         val priceNote = if (maxPrice != null) " Prefer options under Rs $maxPrice." else ""
         val filterNote = if (filter.isNotBlank()) " Apply this preference if useful: $filter." else ""
 
@@ -52,14 +78,21 @@ class ZomatoSkill : Skill {
             params["goal"] as? String ?: query
         } else {
             buildString {
-                append("In Zomato, search for \"$query\".")
+                append("TASK: Find \"$query\" on Zomato.\n\n")
+                if (action != "goal") append("Search may already be submitted. Check if results are visible.\n\n")
+                append("STEPS:\n")
+                append("1. If no results visible, find the search bar and type \"$query\"\n")
+                append("2. Scroll through restaurant/food results\n")
                 append(priceNote)
                 append(filterNote)
+                append("\n3. Tap the best matching restaurant\n")
+                append("4. Find \"$query\" on their menu\n")
                 if (action == "order" || action == "add_to_cart") {
-                    append(" Then open the best matching result and add it to the cart.")
-                } else {
-                    append(" Then open the most relevant result or restaurant.")
+                    append("5. Tap ADD to add to cart\n")
+                    append("6. Open cart and proceed — STOP before payment\n")
                 }
+                append("\nDO NOT press back repeatedly. DO NOT go to home screen.\n")
+                append("DO NOT tap mic/voice icons. Stay in Zomato.")
             }
         }
 

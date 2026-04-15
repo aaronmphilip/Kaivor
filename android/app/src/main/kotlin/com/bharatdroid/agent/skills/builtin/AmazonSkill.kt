@@ -44,27 +44,52 @@ class AmazonSkill : Skill {
         runner.dismissPopups(2)
         delay(150)
 
+        // For search tasks: directly type into search field BEFORE delegating to AI
+        // This skips the mic/camera/voice confusion entirely
+        if (action == "search" && query.isNotBlank()) {
+            // Try to find and type directly into the Amazon search bar
+            val directTyped = runner.typeInFieldWithHint("Search Amazon", query)
+                || runner.typeInFieldWithHint("Search", query)
+                || runner.typeInFieldWithHint("search", query)
+            if (directTyped) {
+                delay(200)
+                runner.pressEnter()
+                delay(1500) // wait for results
+            } else {
+                // Tap the search bar area at top, avoiding mic/camera icons on the right
+                val (w, _) = runner.getScreenSize()
+                runner.tapAtPoint(w * 0.35f, 140f) // left-center of search bar
+                delay(400)
+                runner.typeReliably(query)
+                delay(200)
+                runner.pressEnter()
+                delay(1500)
+            }
+        }
+
         val goal = when (action) {
             "orders", "track" -> "In Amazon, open the Orders section and show recent orders."
             "cart" -> "In Amazon, open the shopping cart and show what is inside."
             "goal" -> params["goal"] as? String ?: query
+            "search" -> buildString {
+                append("TASK: Find the BEST \"$query\" on Amazon.\n\n")
+                append("The search has already been submitted. You should now see results.\n\n")
+                append("STEPS:\n")
+                append("1. Scroll through the search results to see options\n")
+                if (maxPrice != null) append("2. Look for products under Rs $maxPrice\n")
+                append("3. Check ratings (4+ stars preferred) and review count\n")
+                append("4. Tap on the best matching product to see its details\n")
+                append("5. On the product page: scroll down to read reviews, features, specifications\n")
+                append("6. Report what you found — product name, price, rating, key features\n\n")
+                append("DO NOT press back repeatedly. Stay on the results/product page.\n")
+                append("DO NOT go to home screen or open other apps.")
+            }
             else -> buildString {
-                append("TASK: Search for and show \"$query\" on Amazon.\n\n")
-                append("CRITICAL RULES:\n")
-                append("1. Find the search INPUT FIELD at the top (must be editable text box, NOT a microphone or icon)\n")
-                append("2. Tap only the TEXT input field. NEVER click microphone icons or voice buttons\n")
-                append("3. If you see \"Speak now\", \"Listening\", or voice UI, press back immediately\n")
-                append("4. Type \"$query\" into the search field\n")
-                append("5. Press Enter to submit the search\n")
-                append("6. Wait for results to load\n")
-                append("7. Scroll down to see multiple product options\n")
-                append("8. Find the BEST matching product")
-                if (maxPrice != null) append(" under Rs $maxPrice")
-                append("\n")
-                append("9. Tap on that product to show its details\n\n")
-                append("SUCCESS: Successfully found and opened the product.\n\n")
-                if (maxPrice != null) append("Price limit: Rs $maxPrice\n\n")
-                append("DO NOT use voice search. Only use the text input field.")
+                append("TASK: \"$query\" on Amazon.\n\n")
+                append("If search is needed: find the WIDE TEXT INPUT field at the top.\n")
+                append("NEVER tap mic/camera/voice/lens icons. Only the text field.\n")
+                append("After searching: scroll results, find best match, tap to view details.\n")
+                if (maxPrice != null) append("Price limit: Rs $maxPrice\n")
             }
         }
 

@@ -1,5 +1,6 @@
 package com.bharatdroid.agent.skills.builtin
 
+import com.bharatdroid.agent.ScreenElement
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
 
@@ -50,48 +51,81 @@ class WhatsAppSkill : Skill {
                 if (contact.isBlank()) return SkillResult.Failure("Who should I message?")
                 if (message.isBlank()) return SkillResult.Failure("What should I say?")
 
-                // Step 1: Make sure we're on the chat list — go back if inside a chat
+                // Step 1: Make sure we're on the CHATS tab, not Status/Calls/Communities
+                // WhatsApp sometimes opens on Status tab which breaks the search flow
                 val screen0 = runner.readScreen()
-                val inAChat = screen0.contains("Type a message", ignoreCase = true)
-                    || screen0.contains("message", ignoreCase = true) && screen0.contains("Audio", ignoreCase = true)
-                if (inAChat) {
-                    runner.pressBack()
-                    delay(500)
+                when {
+                    screen0.contains("Type a message", ignoreCase = true) -> {
+                        // Inside a chat — go back to chat list
+                        runner.pressBack(); delay(500)
+                    }
+                    screen0.contains("Status", ignoreCase = true)
+                        && !screen0.contains("Chats", ignoreCase = true) -> {
+                        // On Status tab — tap Chats tab
+                        runner.tapByText("Chats")
+                        delay(400)
+                    }
                 }
 
                 // Step 2: ALWAYS search — never tap from visible chat list
-                // Find and tap the search icon (magnifying glass at top)
                 val searchTapped = tapWhatsAppSearch(runner)
                 if (!searchTapped) {
-                    // Retry after a brief wait
                     delay(500)
                     tapWhatsAppSearch(runner)
                 }
-                delay(500)
+                delay(600)
 
-                // Step 3: Type contact name in search
+                // Step 3: Type ONLY the contact name in search — nothing else
                 runner.typeInFocused(contact)
                     || runner.typeInFieldWithHint("Search", contact)
-                delay(1200) // wait for results
+                delay(1500) // wait for results to fully load
 
                 // Step 4: Tap the exact contact from search results — first result only
                 val afterSearch = runner.readScreen()
                 val elements = runner.getClickableElements()
 
-                // Find element that matches contact name (not "Messages", "Contacts" headers)
-                val contactEl = elements.firstOrNull { el ->
-                    el.text.contains(contact, ignoreCase = true)
-                        && el.text.length < 60
-                        && el.isClickable
-                        && !el.text.equals("Messages", ignoreCase = true)
-                        && !el.text.equals("Contacts", ignoreCase = true)
+                val searchElements = runner.getClickableElements()
+                val (screenW, screenH) = runner.getScreenSize()
+
+                val notAContact = setOf(
+                    "messages", "contacts", "groups", "chats", "people",
+                    "recent", "all contacts", "search", "cancel"
+                )
+
+                // Profile pictures in WhatsApp are small square/circular elements on the FAR LEFT
+                // of each row (x < 15% of screen width). We MUST avoid tapping them.
+                // The contact name element is wider and centred in the row.
+                fun isProfilePic(el: ScreenElement): Boolean {
+                    val isSmall = el.width < screenW * 0.15f || el.height < screenW * 0.15f
+                    val isFarLeft = el.centerX < screenW * 0.15f
+                    return isSmall && isFarLeft
+                }
+
+                // Find the best contact element — exact match > starts-with > contains
+                val contactEl = searchElements.firstOrNull { el ->
+                    el.text.trim().equals(contact.trim(), ignoreCase = true)
+                        && el.isClickable && !isProfilePic(el)
+                        && el.centerY > screenH * 0.12f
+                        && notAContact.none { el.text.trim().equals(it, ignoreCase = true) }
+                } ?: searchElements.firstOrNull { el ->
+                    el.text.trim().startsWith(contact.trim(), ignoreCase = true)
+                        && el.isClickable && !isProfilePic(el)
+                        && el.text.length < 80 && el.centerY > screenH * 0.12f
+                        && notAContact.none { el.text.trim().equals(it, ignoreCase = true) }
+                } ?: searchElements.firstOrNull { el ->
+                    el.text.contains(contact.trim(), ignoreCase = true)
+                        && el.isClickable && !isProfilePic(el)
+                        && el.text.length < 80 && el.centerY > screenH * 0.12f
+                        && notAContact.none { el.text.trim().equals(it, ignoreCase = true) }
                 }
 
                 if (contactEl != null) {
-                    runner.tapAtPoint(contactEl.centerX.toFloat(), contactEl.centerY.toFloat())
+                    // Tap the RIGHT HALF of the row to guarantee we hit the name, not the avatar
+                    val tapX = (contactEl.centerX + screenW * 0.15f).coerceAtMost(screenW * 0.85f)
+                    runner.tapAtPoint(tapX.toFloat(), contactEl.centerY.toFloat())
                 } else {
-                    val (_, h) = runner.getScreenSize()
-                    runner.tapAtPoint(runner.getScreenSize().first / 2f, h * 0.30f)
+                    // Fallback: tap the right-centre of first result row below search bar
+                    runner.tapAtPoint(screenW * 0.55f, screenH * 0.28f)
                 }
 
                 // Step 5: WAIT for chat to fully open before typing
@@ -110,28 +144,44 @@ class WhatsAppSkill : Skill {
                 }
                 delay(400)
 
-                // Step 6: Explicitly tap the message input bar (bottom of chat screen)
-                // DO NOT use typeInFocused() — the search bar may still be focused
-                // Find the message input specifically: editable, at bottom, has "message" hint
-                val (w, h) = runner.getScreenSize()
-                val msgInput = runner.getClickableElements().firstOrNull { el ->
-                    el.isEditable
-                        && el.centerY > h * 0.80f  // bottom of screen
-                        && (el.hint.contains("message", ignoreCase = true)
-                            || el.hint.contains("type", ignoreCase = true)
-                            || el.contentDescription.contains("message", ignoreCase = true))
-                }
+                // Step 6: Clear any stale focus from search bar BEFORE typing the message
+                // When WhatsApp opens a chat after searching, the search bar may still
+                // have keyboard focus. Pressing back dismisses the keyboard/search focus,
+                // then tapping the message field gets clean focus there.
+                runner.pressBack() // dismiss keyboard/search focus
+                delay(300)
 
-                if (msgInput != null) {
-                    runner.tapAtPoint(msgInput.centerX.toFloat(), msgInput.centerY.toFloat())
-                } else {
-                    // Fallback: tap at the known message bar position (bottom 12% of screen)
-                    runner.tapAtPoint(w * 0.45f, h * 0.92f)
-                }
-                delay(400)
+                // Now tap the message input field at the bottom to get fresh focus there
+                val (ww, hh) = runner.getScreenSize()
+                runner.tapAtPoint(ww * 0.45f, hh * 0.92f) // tap message bar area
+                delay(300)
 
-                // Now type — use typeReliably with clipboard fallback for older phones
-                runner.typeReliably(message)
+                // Step 7: Type message in the chat input field
+                // PRIMARY: use typeInFieldWithHint to target the actual "Type a message" field
+                // This avoids the bug where message was typed in the search bar instead
+                val typedOk = runner.typeInFieldWithHint("Type a message", message)
+                    || runner.typeInFieldWithHint("Message", message)
+                    || runner.typeInFieldWithHint("Type message", message)
+
+                if (!typedOk) {
+                    // Fallback: find message input by position + hint, then typeReliably
+                    val (w, h) = runner.getScreenSize()
+                    val msgInput = runner.getClickableElements().firstOrNull { el ->
+                        el.isEditable
+                            && el.centerY > h * 0.70f  // bottom 30% of screen
+                            && (el.hint.contains("message", ignoreCase = true)
+                                || el.hint.contains("type", ignoreCase = true)
+                                || el.contentDescription.contains("message", ignoreCase = true))
+                    }
+                    if (msgInput != null) {
+                        runner.tapAtPoint(msgInput.centerX.toFloat(), msgInput.centerY.toFloat())
+                    } else {
+                        // Last resort: tap at the known message bar position
+                        runner.tapAtPoint(w * 0.45f, h * 0.92f)
+                    }
+                    delay(400)
+                    runner.typeReliably(message)
+                }
                 delay(300)
 
                 // Step 6: By default — do NOT send. User said "type only, don't send"
