@@ -27,7 +27,7 @@ class CREDSkill : Skill {
 
         val action = (params["action"] as? String)?.lowercase() ?: "check"
         val card = params["card"] as? String ?: ""
-        val amount = (params["amount"] as? String) ?: (params["amount"] as? Long)?.toString() ?: ""
+        val amount = (params["amount"] as? String) ?: (params["amount"] as? Number)?.toLong()?.toString() ?: ""
 
         runner.openApp("com.dreamplug.androidapp")
         runner.waitForApp("com.dreamplug.androidapp", timeoutMs = 6000)

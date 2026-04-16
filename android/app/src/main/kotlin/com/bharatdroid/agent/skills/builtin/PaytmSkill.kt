@@ -28,7 +28,7 @@ class PaytmSkill : Skill {
         val action = (params["action"] as? String)?.lowercase() ?: "home"
         val mobile = params["mobile"] as? String ?: params["number"] as? String ?: ""
         val contact = params["contact"] as? String ?: ""
-        val amount = (params["amount"] as? String) ?: (params["amount"] as? Long)?.toString() ?: ""
+        val amount = (params["amount"] as? String) ?: (params["amount"] as? Number)?.toLong()?.toString() ?: ""
 
         runner.openApp("net.one97.paytm")
         runner.waitForApp("net.one97.paytm", timeoutMs = 6000)

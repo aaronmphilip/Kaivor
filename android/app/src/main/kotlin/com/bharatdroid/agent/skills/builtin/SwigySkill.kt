@@ -27,7 +27,7 @@ class SwigySkill : Skill {
 
         val query = params["query"] as? String ?: params["goal"] as? String
             ?: return SkillResult.Failure("What food do you want to order?")
-        val maxPrice = (params["maxPrice"] as? Long)?.toInt()
+        val maxPrice = (params["maxPrice"] as? Number)?.toInt()
         val filter = (params["filter"] as? String)?.lowercase() ?: ""
         val action = (params["action"] as? String)?.lowercase() ?: "search"
 

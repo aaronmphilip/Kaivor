@@ -35,7 +35,7 @@ class ZomatoSkill : Skill {
 
         val query = params["query"] as? String ?: params["goal"] as? String
             ?: return SkillResult.Failure("What do you want to order from Zomato?")
-        val maxPrice = (params["maxPrice"] as? Long)?.toInt()
+        val maxPrice = (params["maxPrice"] as? Number)?.toInt()
         val filter = (params["filter"] as? String)?.trim().orEmpty()
         val action = (params["action"] as? String)?.lowercase() ?: "search"
 

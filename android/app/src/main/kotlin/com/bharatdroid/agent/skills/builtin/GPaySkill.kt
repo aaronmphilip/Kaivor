@@ -27,7 +27,7 @@ class GPaySkill : Skill {
 
         val action = (params["action"] as? String)?.lowercase() ?: "home"
         val contact = params["contact"] as? String ?: params["upiId"] as? String ?: ""
-        val amount = (params["amount"] as? String) ?: (params["amount"] as? Long)?.toString() ?: ""
+        val amount = (params["amount"] as? String) ?: (params["amount"] as? Number)?.toLong()?.toString() ?: ""
         val note = params["note"] as? String ?: ""
 
         runner.openApp("com.google.android.apps.nbu.paisa.user")

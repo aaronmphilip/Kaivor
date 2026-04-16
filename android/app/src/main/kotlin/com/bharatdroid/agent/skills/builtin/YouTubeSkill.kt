@@ -226,7 +226,7 @@ class YouTubeSkill : Skill {
                 // Re-open search directly from YouTube home (no back, no home press)
                 tapSearchIcon(runner)
                 delay(500)
-                runner.clearFocusedField()
+                runner.clearField()
                 runner.typeReliably(searchQuery)
                 delay(300)
                 runner.pressEnter()

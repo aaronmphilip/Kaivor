@@ -27,7 +27,7 @@ class BlinkitSkill : Skill {
 
         val action = (params["action"] as? String)?.lowercase() ?: "search"
         val item = params["item"] as? String ?: params["query"] as? String ?: ""
-        val quantity = params["quantity"] as? Long ?: 1L
+        val quantity = (params["quantity"] as? Number)?.toLong() ?: 1L
 
         runner.openApp("com.grofers.customerapp")
         runner.waitForApp("com.grofers.customerapp", timeoutMs = 6000)

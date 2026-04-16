@@ -26,7 +26,7 @@ class FlipkartSkill : Skill {
         val agent = context.agent ?: return SkillResult.Failure("Agent not available.")
 
         val query = params["query"] as? String ?: params["goal"] as? String ?: ""
-        val maxPrice = (params["maxPrice"] as? Long)?.toInt()
+        val maxPrice = (params["maxPrice"] as? Number)?.toInt()
         val action = (params["action"] as? String)?.lowercase() ?: "search"
 
         runner.openApp("com.flipkart.android")

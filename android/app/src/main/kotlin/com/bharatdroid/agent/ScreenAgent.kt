@@ -587,7 +587,7 @@ class ScreenAgent(
 
             "back" -> {
                 // Block consecutive backs — 2 in a row always exits the current screen/app
-                if (consecuiveBackCount >= 2) {
+                if (consecutiveBackCount >= 2) {
                     return "back BLOCKED — pressed back ${consecutiveBackCount} times in a row. Use scroll_down, tap a different element, or type instead."
                 }
                 // Block total backs — prevents search→back→search→back cycling loops
