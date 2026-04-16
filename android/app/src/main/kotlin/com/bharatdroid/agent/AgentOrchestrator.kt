@@ -263,6 +263,14 @@ class AgentOrchestrator(
             taskMutex.lock()
         }
         return try {
+            // At this point the previous task has stopped and released the mutex.
+            // Clear any leftover stop flag so the NEW task doesn't immediately self-stop.
+            // Root cause of the "Stopped." spam: requestStop() is called for every message
+            // to kill old tasks, but with no old task running the flag stays true and the
+            // new task sees it in executeGoal's first check and returns "⛔ Stopped." before
+            // doing anything. Clearing here (after acquiring the mutex = old task is done)
+            // fixes this without losing the ability to stop a genuinely running task.
+            screenAgent.clearStop()
             when (plan.type) {
                 PlanType.RUN_SKILL -> executeSingleSkill(msg, trimmed, plan.skillId!!, plan.params)
                 PlanType.MULTI_STEP -> executeMultiStep(msg, trimmed, plan.steps)

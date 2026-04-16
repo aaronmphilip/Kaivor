@@ -101,15 +101,16 @@ class ScreenAgent(
         goal: String,
         maxSteps: Int = 25,
     ): String {
-        // Check stop before starting — if user already sent a new message, don't even begin
-        if (stopRequested) { stopRequested = false; return "⛔ Stopped." }
+        // NOTE: Do NOT check stopRequested here.
+        // AgentOrchestrator.handleMessage calls requestStop() on every new message to kill
+        // any PREVIOUS task, then calls clearStop() right before starting the new task.
+        // If we check here, the new task would see the stop flag set by its OWN handleMessage
+        // call and immediately return "⛔ Stopped." — causing the "Stopped." spam the user sees.
 
         val result = executeGoalInternal(runner, goal, maxSteps, isRetry = false)
 
         // Auto-retry once on failure — but ONLY for "stuck" failures (screen didn't change).
-        // Do NOT retry "Reached step limit" — that means the task ran 25+ steps of taps/types
-        // which may have had REAL side effects (added to cart, sent messages, typed text).
-        // Retrying would double those side effects.
+        // Do NOT retry "Reached step limit" — that means the task ran 25+ steps with real effects.
         if (result.startsWith("Could not complete") || result.startsWith("Stuck after")) {
             if (stopRequested) { stopRequested = false; return "⛔ Stopped." }
             delay(1000)
