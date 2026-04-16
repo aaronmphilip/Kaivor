@@ -48,23 +48,30 @@ class AmazonSkill : Skill {
         // This skips the mic/camera/voice confusion entirely
         if (action == "search" && query.isNotBlank()) {
             // Try to find and type directly into the Amazon search bar
-            val directTyped = runner.typeInFieldWithHint("Search Amazon", query)
+            // Try multiple hint variants — Amazon India uses "Search Amazon.in"
+            val directTyped = runner.typeInFieldWithHint("Search Amazon.in", query)
+                || runner.typeInFieldWithHint("Search Amazon", query)
                 || runner.typeInFieldWithHint("Search", query)
-                || runner.typeInFieldWithHint("search", query)
             if (directTyped) {
                 delay(200)
                 runner.pressEnter()
-                delay(1500) // wait for results
+                delay(1800) // wait for results to fully load
             } else {
-                // Tap the search bar area at top, avoiding mic/camera icons on the right
+                // Fallback: tap LEFT side of search bar (35% from left) — the mic/camera icons
+                // are on the FAR RIGHT of the bar. Tapping left avoids them entirely.
                 val (w, h) = runner.getScreenSize()
-                runner.tapAtPoint(w * 0.35f, h * 0.07f) // left-center of search bar, fraction not pixels
+                runner.tapAtPoint(w * 0.35f, h * 0.07f)
                 delay(400)
                 runner.typeReliably(query)
                 delay(200)
                 runner.pressEnter()
-                delay(1500)
+                delay(1800)
             }
+            // Tap center of screen to dismiss keyboard and unfocus search bar
+            // This prevents the AI from accidentally re-tapping the search area
+            val (w, h) = runner.getScreenSize()
+            runner.tapAtPoint(w * 0.5f, h * 0.4f)
+            delay(400)
         }
 
         val goal = when (action) {
@@ -73,21 +80,26 @@ class AmazonSkill : Skill {
             "goal" -> params["goal"] as? String ?: query
             "search" -> buildString {
                 append("TASK: Find the BEST \"$query\" on Amazon.\n\n")
-                append("The search has already been submitted. You should now see results.\n\n")
+                append("⚠️ SEARCH IS ALREADY DONE. Product results are NOW on screen.\n")
+                append("⚠️ DO NOT tap the search bar, camera icon, or mic icon at the top.\n")
+                append("   The camera (📷) opens photo search. The mic (🎤) opens voice search. NEVER tap them.\n")
+                append("   The search for \"$query\" is finished. Just scroll the product list below.\n\n")
                 append("STEPS:\n")
-                append("1. Scroll through the search results to see options\n")
+                append("1. SCROLL DOWN to see the list of products in the results\n")
                 if (maxPrice != null) append("2. Look for products under Rs $maxPrice\n")
                 append("3. Check ratings (4+ stars preferred) and review count\n")
                 append("4. Tap on the best matching product to see its details\n")
                 append("5. On the product page: scroll down to read reviews, features, specifications\n")
                 append("6. Report what you found — product name, price, rating, key features\n\n")
-                append("DO NOT press back repeatedly. Stay on the results/product page.\n")
-                append("DO NOT go to home screen or open other apps.")
+                append("STRICT RULES:\n")
+                append("- DO NOT touch the search bar at the top — results are already showing\n")
+                append("- DO NOT press back — you will lose the results\n")
+                append("- DO NOT go to home screen or open other apps")
             }
             else -> buildString {
                 append("TASK: \"$query\" on Amazon.\n\n")
-                append("If search is needed: find the WIDE TEXT INPUT field at the top.\n")
-                append("NEVER tap mic/camera/voice/lens icons. Only the text field.\n")
+                append("⚠️ NEVER tap the camera (📷) or mic (🎤) icons next to the search bar.\n")
+                append("If search is needed: tap the WIDE TEXT FIELD in the center of the search bar only.\n")
                 append("After searching: scroll results, find best match, tap to view details.\n")
                 if (maxPrice != null) append("Price limit: Rs $maxPrice\n")
             }

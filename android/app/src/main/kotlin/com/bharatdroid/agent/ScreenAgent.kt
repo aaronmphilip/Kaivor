@@ -725,11 +725,14 @@ class ScreenAgent(
             appendLine()
             appendLine("4. SEARCH FLOW (Amazon, Flipkart, YouTube, Zomato, Swiggy, etc.):")
             appendLine("   a) Find and TAP the search bar (wide editable field at top, NOT the mic/camera icon next to it)")
-            appendLine("   b) TYPE the search query")
+            appendLine("      Amazon specifically: the search bar is wide in the CENTER. On its RIGHT are small icons:")
+            appendLine("      📷 camera/photo search and 🎤 mic/voice search — NEVER tap these small icons.")
+            appendLine("      Tap only the WIDE TEXT AREA in the middle of the bar.")
+            appendLine("   b) TYPE the search query (text, never voice)")
             appendLine("   c) Press ENTER to submit")
-            appendLine("   d) WAIT for results to load")
-            appendLine("   e) SCROLL through results to find the best match")
-            appendLine("   f) TAP on the item to see details")
+            appendLine("   d) WAIT for results to load — results appear AS A LIST below the search bar")
+            appendLine("   e) SCROLL DOWN through the product list to see options")
+            appendLine("   f) TAP on a product card to see its details")
             appendLine()
             appendLine("5. SHOPPING/ORDERING FLOW:")
             appendLine("   a) Search → find item → tap to view details")
@@ -815,10 +818,18 @@ class ScreenAgent(
         // Voice/mic/camera/lens — always marked, AI will avoid these
         // Catches: mic icons, voice search, Amazon camera search, Flipkart lens,
         // barcode scanner, Google Lens — all the non-text-input search triggers
-        if (combined.containsAny("mic", "voice", "microphone", "speak now", "listening",
+        //
+        // Amazon India specific: camera search button has contentDescription "Camera" (caught by
+        // "camera") OR "Search by camera"/"Search by photo" (caught by "by camera"/"by photo").
+        // Mic button has "Search by voice" (caught by "voice") or "Microphone" (caught by "microphone").
+        if (combined.containsAny(
+                "mic", "voice", "microphone", "speak now", "listening",
                 "audio_search", "voice_search", "speak",
                 "camera", "lens", "scan", "barcode", "qr_code", "visual_search",
-                "image_search", "photo_search", "scanner")) {
+                "image_search", "photo_search", "scanner",
+                "by camera", "by photo", "by voice", "search camera", "camera search",
+                "search photo", "photo search", "take photo", "snap",
+            )) {
             // Exception: don't block if this is an editable text field that happens to
             // have "scan" in its ID (like "scan_results_input" in some apps)
             if (!el.isEditable) return "voice"

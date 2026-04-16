@@ -62,7 +62,9 @@ class YouTubeSkill : Skill {
 
             "channel", "goal" -> {
                 // Complex multi-step task — give AI full context
-                val fullGoal = buildFullGoal(goal.ifBlank { query }, query)
+                // Use the goal text directly; extract a clean search term from it
+                val rawGoal = goal.ifBlank { query }
+                val fullGoal = buildFullGoal(rawGoal, query)
                 val result = agent.executeGoal(runner, fullGoal, maxSteps = 35)
                 SkillResult.Success(result)
             }
@@ -181,20 +183,24 @@ class YouTubeSkill : Skill {
             if (ok) {
                 delay(2000)
                 val afterScreen = runner.readScreen()
-                val isPlaying = afterScreen.contains("Subscribe", ignoreCase = true)
-                    || afterScreen.contains("Comments", ignoreCase = true)
+                // Success checks — video OR channel page
+                val isVideoPlaying = afterScreen.contains("Comments", ignoreCase = true)
                     || afterScreen.contains("Like", ignoreCase = true)
-                if (isPlaying) {
+                val isOnChannel = isChannelPage(afterScreen)
+                if (isVideoPlaying) {
                     return SkillResult.Success("▶️ Playing: *${target.text.take(80)}*")
                 }
-                // If tap opened something else (channel page etc) that's fine too
+                if (isOnChannel) {
+                    return SkillResult.Success("📺 Opened channel: *${target.text.take(80)}*")
+                }
+                // Something else opened — still count as success
                 return SkillResult.Success("Opened: *${target.text.take(80)}*")
             }
         }
 
         // Coordinate fallback — try positions down the results list
-        // CRITICAL: avoid bottom 15% of screen (nav bar area — Home/Shorts/Library tabs)
-        val safeH = (h * 0.84f).toInt() // never tap below this
+        // CRITICAL: avoid bottom 16% of screen (nav bar area — Home/Shorts/Library tabs)
+        val safeH = (h * 0.83f).toInt() // never tap below this
         val tapYPositions = listOf(0.28f, 0.36f, 0.44f, 0.52f, 0.60f)
         for (yFrac in tapYPositions) {
             val tapY = (h * yFrac).coerceAtMost(safeH.toFloat())
@@ -202,10 +208,10 @@ class YouTubeSkill : Skill {
             delay(1800)
             val after = runner.readScreen()
 
-            // Success: we're on a video/channel page
-            if (after.contains("Subscribe", ignoreCase = true)
-                || after.contains("Comments", ignoreCase = true)
-                || after.contains("Like", ignoreCase = true)) {
+            // Success: we're on a video or channel page
+            if (after.contains("Comments", ignoreCase = true)
+                || after.contains("Like", ignoreCase = true)
+                || isChannelPage(after)) {
                 return SkillResult.Success("▶️ Playing video for: *$searchQuery*")
             }
 
@@ -275,32 +281,70 @@ class YouTubeSkill : Skill {
         }
     }
 
+    // ── Extract clean search term from natural language goal ─────────────────
+    // "go to MrBeast channel" → "MrBeast"
+    // "navigate to Kurzgesagt" → "Kurzgesagt"
+    // "play Tum Hi Ho" → "Tum Hi Ho"
+    // "subscribe to Veritasium channel" → "Veritasium"
+    private fun extractSearchTerm(goal: String, query: String): String {
+        if (query.isNotBlank()) return query
+        return goal
+            .replace(Regex("""(?i)^(go to|open|navigate to|visit|take me to|find|show me|search for)\s+"""), "")
+            .replace(Regex("""(?i)\s+(channel|page|on youtube)$"""), "")
+            .trim()
+            .take(60)
+            .ifBlank { goal.take(60) }
+    }
+
+    // ── Detect if we're on a YouTube channel page ─────────────────────────────
+    // Channel pages show subscriber count ("subscribers") + tab row (Videos/Shorts/Playlists)
+    private fun isChannelPage(screen: String): Boolean {
+        val lower = screen.lowercase()
+        return lower.contains("subscribers") ||
+            (lower.contains("videos") && lower.contains("shorts") && lower.contains("playlists"))
+    }
+
     // ── Build a precise goal string — do EXACTLY what was asked, nothing more ──
     private fun buildFullGoal(goal: String, query: String): String {
-        val searchTerm = query.ifBlank { goal.take(60) }
-        return """
-You are in the YouTube app. The user said: "$goal"
+        val searchTerm = extractSearchTerm(goal, query)
 
-DO EXACTLY what the user asked. NOTHING MORE. NOTHING LESS.
-- If they said "play X" → search and play that specific video
-- If they said "subscribe to X" → find that channel and subscribe ONLY
-- If they said "like the video" → tap the like button ONLY
-- If they said "find videos about X" → show search results, do NOT auto-play
-- Do NOT do extra steps the user didn't ask for
+        // Detect if this is a channel navigation goal
+        val isChannelGoal = goal.lowercase().let { g ->
+            g.contains("channel") || g.contains("go to") || g.contains("navigate to") ||
+            g.contains("subscribe") || g.contains("unsubscribe") || g.contains("visit")
+        }
 
-STEPS:
-1. Tap the Search icon (magnifying glass at top) — NOT back, NOT mic
-2. Type "$searchTerm" in the search field (text only, NOT voice)
-3. Press Enter — wait for results
-4. Dismiss banners ("Got it", "No thanks") if they appear
-5. Do exactly what the goal says — tap the right video/channel/button
-6. Report EXACTLY what you did, matching what was asked
-
-STRICT RULES:
-- NEVER press back — scroll or tap visible elements instead
-- NEVER tap Home/Shorts/Library bottom tabs
-- NEVER tap the mic/voice/camera icon — text search only
-- Do NOT add extra actions (don't like if asked to subscribe, don't subscribe if asked to play)
-        """.trimIndent()
+        return buildString {
+            appendLine("You are in the YouTube app. The user said: \"$goal\"")
+            appendLine()
+            appendLine("DO EXACTLY what the user asked. NOTHING MORE. NOTHING LESS.")
+            appendLine()
+            appendLine("STEPS:")
+            appendLine("1. Tap the Search icon (magnifying glass at top-right) — NOT the mic icon")
+            appendLine("2. Type \"$searchTerm\" in the search field (text only, NOT voice)")
+            appendLine("3. Press Enter — wait for results")
+            appendLine("4. Dismiss banners (\"Got it\", \"No thanks\") if they appear")
+            if (isChannelGoal) {
+                appendLine("5. FIND THE CHANNEL in results:")
+                appendLine("   - Look for a result that has a ROUND AVATAR + channel name + subscriber count")
+                appendLine("   - If you see filter chips at the top of results, tap \"Channels\" to filter")
+                appendLine("   - Tap the channel name/avatar to open the channel page")
+                appendLine("6. SUCCESS — you are DONE when you see the channel page:")
+                appendLine("   - Channel name as a heading at top")
+                appendLine("   - Subscriber count (e.g. \"12M subscribers\")")
+                appendLine("   - Tab row with Videos / Shorts / Playlists")
+                appendLine("   - Call done IMMEDIATELY when you reach the channel page")
+            } else {
+                appendLine("5. Do exactly what the goal says — tap the right video/channel/button")
+                appendLine("6. SUCCESS — call done when you reach the target (video playing or action done)")
+            }
+            appendLine()
+            appendLine("STRICT RULES:")
+            appendLine("- NEVER press back — scroll or tap visible elements instead")
+            appendLine("- NEVER tap Home/Shorts/Library/Subscriptions bottom tabs")
+            appendLine("- NEVER tap the mic/voice/camera icon — text search ONLY")
+            appendLine("- Do NOT add extra actions (don't like if asked to subscribe)")
+            appendLine("- Call done IMMEDIATELY when goal is achieved — do NOT keep navigating")
+        }.trimEnd()
     }
 }
