@@ -391,12 +391,25 @@ class ScreenAgent(
 
     private suspend fun dismissVoiceOverlay(runner: SandboxedRunner) {
         val screen = try { runner.readScreen().lowercase() } catch (_: Exception) { return }
-        val voiceIndicators = listOf(
-            "speak now", "listening", "search by voice", "try saying",
-            "voice search", "say something", "microphone active",
-            "voice input", "listening to you",
+
+        // ⚠️  STRICT list — ONLY phrases that appear EXCLUSIVELY inside the active
+        //     voice-capture modal. Adding anything broader causes pressBack() to fire
+        //     on normal screens and sends the agent to the app home → loop.
+        //
+        // REMOVED (were causing YouTube home-page loop):
+        //   "search by voice"  → is a BUTTON LABEL in YouTube's search UI, NOT modal text
+        //   "listening"        → appears in music apps ("Now Listening"), video content
+        //   "voice search"     → appears as a settings label, help text, button label
+        //   "try saying"       → appears in suggestion UI outside the voice modal
+        //   "voice input"      → Android settings label, not just modal
+        //   "say something"    → too broad: appears in chat apps, assistant prompts
+        //   "listening to you" → can appear as marketing copy / regular text
+        //
+        // "speak now" is the only phrase that appears ONLY in the Google voice modal.
+        val strictModalOnly = listOf(
+            "speak now",   // Google voice modal heading — never appears elsewhere on screen
         )
-        if (voiceIndicators.any { screen.contains(it) }) {
+        if (strictModalOnly.any { screen.contains(it) }) {
             runner.pressBack()
             delay(280)
         }
@@ -463,6 +476,13 @@ class ScreenAgent(
 
                 if (role == "voice") {
                     return "tap[$idx] BLOCKED — voice/mic element, skipping"
+                }
+
+                // Block tapping the bottom-nav Home tab — it resets to the app's home feed,
+                // losing all search results and creating a search→home→search→home loop.
+                // The AI should scroll and navigate within the current screen instead.
+                if (role == "nav-home") {
+                    return "tap[$idx] BLOCKED — bottom Home tab would lose search results. Scroll or tap a result instead."
                 }
 
                 val ok = runner.tapAtPoint(el.centerX.toFloat(), el.centerY.toFloat())
@@ -755,7 +775,9 @@ class ScreenAgent(
             appendLine("   - For login forms: type email into email field, next_field, type password into password field.")
             appendLine()
             appendLine("7. AFTER TYPING: if it's a search field → press enter. If it's a form → use next_field.")
-            appendLine("8. BOTTOM NAV BAR (Home/Shorts/Library at very bottom): DO NOT tap unless switching sections.")
+            appendLine("8. BOTTOM NAV BAR (Home/Shorts/Library/Subscriptions — role=nav-home at very bottom): NEVER tap.")
+            appendLine("   Tapping it resets to the app home feed and loses ALL search results = instant loop.")
+            appendLine("   Navigate within the current screen using scroll_down, scroll_up, or tap visible results.")
             appendLine("9. If same element failed twice → try scroll_down, or tap a DIFFERENT element.")
             appendLine("10. done only when you CONFIRM success is visible on screen.")
             appendLine("11. fail only if truly stuck with absolutely no path forward.")
@@ -822,19 +844,25 @@ class ScreenAgent(
         //
         // Amazon India specific: camera search button has contentDescription "Camera" (caught by
         // "camera") OR "Search by camera"/"Search by photo" (caught by "by camera"/"by photo").
-        // Mic button has "Search by voice" (caught by "voice") or "Microphone" (caught by "microphone").
-        if (combined.containsAny(
-                "mic", "voice", "microphone", "speak now", "listening",
-                "audio_search", "voice_search", "speak",
-                "camera", "lens", "scan", "barcode", "qr_code", "visual_search",
-                "image_search", "photo_search", "scanner",
-                "by camera", "by photo", "by voice", "search camera", "camera search",
-                "search photo", "photo search", "take photo", "snap",
-            )) {
-            // Exception: don't block if this is an editable text field that happens to
-            // have "scan" in its ID (like "scan_results_input" in some apps)
-            if (!el.isEditable) return "voice"
-        }
+        // Mic button has "Search by voice" (caught by "by voice") or "Microphone" (caught by "microphone").
+        //
+        // ⚠️  SHORT-TERM MATCHING RULES:
+        //   - "mic", "voice", "speak", "snap", "scan" are matched as WHOLE WORDS (word-boundary)
+        //     because substring-contains("mic") would also match "comic", "atomic", "ceramic"
+        //     and substring-contains("voice") would match "invoice" (payment apps!),
+        //     and substring-contains("speak") would match "speaker" (Bluetooth speaker controls).
+        //   - Longer unambiguous terms (microphone, camera, barcode, qr_code, etc.) still use
+        //     substring matching — they won't appear inside other common words.
+        val hasVoiceWord = combined.containsWord("mic", "voice", "speak", "snap")
+        val hasVoicePhrase = combined.containsAny(
+            "microphone", "speak now",
+            "audio_search", "voice_search",
+            "camera", "lens", "barcode", "qr_code", "visual_search",
+            "image_search", "photo_search", "scanner",
+            "by camera", "by photo", "by voice", "search camera", "camera search",
+            "search photo", "photo search", "take photo",
+        )
+        if ((hasVoiceWord || hasVoicePhrase) && !el.isEditable) return "voice"
 
         return when {
             // Editable fields first (most specific)
@@ -849,7 +877,12 @@ class ScreenAgent(
 
             // Navigation elements
             combined.containsAny("back", "navigate up", "arrow_back") -> "back-button"
-            combined.containsAny("home", "bottom_nav") && el.centerY > 1500 -> "nav-home"
+            // Bottom nav Home tab — two detection paths:
+            //   1. Label contains "home"/"bottom_nav" AND element is below 1500px (pixel threshold)
+            //   2. Element text is literally "Home" and it's not an editable field
+            //      (catches large screens where 1500px cutoff is too low)
+            (combined.containsAny("home", "bottom_nav") && el.centerY > 1500)
+                || (el.text.lowercase() == "home" && !el.isEditable) -> "nav-home"
             combined.containsAny("profile", "account", "me") && el.centerY > 1500 -> "nav-profile"
 
             // Action buttons
@@ -932,6 +965,26 @@ class ScreenAgent(
 
     private fun String.containsAny(vararg terms: String): Boolean =
         terms.any { this.contains(it) }
+
+    /**
+     * Word-boundary contains — checks that each given word appears as a complete token,
+     * NOT as a substring of a longer word. The string is split on any non-alphanumeric
+     * character so we get a real word list before comparing.
+     *
+     * Examples:
+     *   "comic book".containsWord("mic")   → false  ("mic" is inside "comic", not a token)
+     *   "open mic tonight".containsWord("mic") → true  ("mic" is a separate token)
+     *   "invoice paid".containsWord("voice") → false  ("voice" is inside "invoice")
+     *   "voice search".containsWord("voice") → true
+     *   "my speaker".containsWord("speak")  → false
+     *   "speak now".containsWord("speak")   → true
+     *
+     * Use this for short ambiguous terms where containsAny() would false-match.
+     */
+    private fun String.containsWord(vararg words: String): Boolean {
+        val tokens = this.split(Regex("[^a-z0-9]")).filter { it.isNotEmpty() }
+        return words.any { word -> tokens.contains(word) }
+    }
 
     /**
      * Returns true if the given package name looks like the device home screen / launcher.
