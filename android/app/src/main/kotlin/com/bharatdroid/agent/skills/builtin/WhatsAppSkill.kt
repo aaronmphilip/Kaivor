@@ -128,32 +128,29 @@ class WhatsAppSkill : Skill {
                 }
 
                 // Step 5: WAIT for chat to fully open before typing
-                // This is the key fix — without this wait, the search bar is still
-                // focused and the message gets typed there instead of the chat input
                 val chatOpened = runner.waitForAny(
                     "Type a message", "Message", "Type message", "iMessage",
                     timeoutMs = 4000,
                 )
                 if (chatOpened == null) {
-                    // Chat didn't open — we might still be on search results
-                    // Try tapping the first result more aggressively
+                    // Chat didn't open — still on search results, tap more aggressively
                     val (w2, h2) = runner.getScreenSize()
                     runner.tapAtPoint(w2 / 2f, h2 * 0.28f)
                     runner.waitForAny("Type a message", "Message", timeoutMs = 3000)
                 }
-                delay(400)
+                delay(600) // let the chat transition animation fully finish
 
-                // Step 6: Clear any stale focus from search bar BEFORE typing the message
-                // When WhatsApp opens a chat after searching, the search bar may still
-                // have keyboard focus. Pressing back dismisses the keyboard/search focus,
-                // then tapping the message field gets clean focus there.
-                runner.pressBack() // dismiss keyboard/search focus
-                delay(300)
-
-                // Now tap the message input field at the bottom to get fresh focus there
+                // Step 6: Tap the message input bar at the bottom of the chat.
+                // ⚠️  DO NOT call runner.pressBack() here — the chat is NOW OPEN.
+                // pressBack from inside an open chat goes BACK to the chat list, closing the
+                // chat entirely. That was the root cause of the "goes back after clicking
+                // contact" bug: tap contact → chat opens → pressBack closes chat → type lands
+                // in the search bar = wrong field, wrong screen.
+                //
+                // Instead, just tap directly on the message input bar to get focus there.
                 val (ww, hh) = runner.getScreenSize()
-                runner.tapAtPoint(ww * 0.45f, hh * 0.92f) // tap message bar area
-                delay(300)
+                runner.tapAtPoint(ww * 0.45f, hh * 0.92f) // message bar, bottom-center
+                delay(400)
 
                 // Step 7: Type message in the chat input field
                 // PRIMARY: use typeInFieldWithHint to target the actual "Type a message" field

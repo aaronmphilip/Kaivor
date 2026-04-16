@@ -36,7 +36,9 @@ class FlipkartSkill : Skill {
         delay(200)
 
         // Direct search: type into search field before AI takes over
-        if (action == "search" && query.isNotBlank()) {
+        // Run for all shopping actions — buy/add_to_cart need the search done first too
+        val isShoppingAction = action in setOf("search", "buy", "add_to_cart", "order", "purchase")
+        if (isShoppingAction && query.isNotBlank()) {
             val directTyped = runner.typeInFieldWithHint("Search for Products", query)
                 || runner.typeInFieldWithHint("Search", query)
             if (directTyped) {
@@ -54,12 +56,28 @@ class FlipkartSkill : Skill {
             }
         }
 
-        val goal = if (action == "goal") {
-            params["goal"] as? String ?: query
-        } else {
-            buildString {
+        val goal = when (action) {
+            "goal" -> params["goal"] as? String ?: query
+
+            "buy", "add_to_cart", "order", "purchase" -> buildString {
+                append("TASK: Find \"$query\" on Flipkart and ADD IT TO CART.\n\n")
+                append("⚠️ Search results are already on screen. Do not re-search.\n\n")
+                append("STEPS:\n")
+                append("1. Scroll through the product list\n")
+                if (maxPrice != null) append("2. Find a product UNDER Rs $maxPrice\n")
+                else append("2. Find the best rated product (4+ stars preferred)\n")
+                append("3. TAP the product card to open its detail page\n")
+                append("4. On the product page: scroll to find 'Add to Cart' button\n")
+                append("5. TAP 'Add to Cart'\n")
+                append("6. STOP after cart confirmation — report what was added\n\n")
+                append("⚠️ STOP BEFORE CHECKOUT. Do NOT tap 'Buy Now' or enter payment details.\n")
+                append("⚠️ If a variant/size picker appears, tap the FIRST option.\n")
+                append("⚠️ DO NOT press back — you will lose the product page.")
+            }
+
+            else -> buildString {
                 append("TASK: Find the BEST \"$query\" on Flipkart.\n\n")
-                if (action == "search") append("Search already submitted. You should see results.\n\n")
+                if (isShoppingAction) append("Search already submitted. You should see results.\n\n")
                 append("STEPS:\n")
                 append("1. Scroll through results to compare options\n")
                 if (maxPrice != null) append("2. Filter by price under Rs $maxPrice\n")

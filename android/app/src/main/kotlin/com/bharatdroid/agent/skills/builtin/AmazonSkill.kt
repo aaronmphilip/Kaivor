@@ -44,9 +44,11 @@ class AmazonSkill : Skill {
         runner.dismissPopups(2)
         delay(150)
 
-        // For search tasks: directly type into search field BEFORE delegating to AI
+        // For search/buy tasks: directly type into search field BEFORE delegating to AI
         // This skips the mic/camera/voice confusion entirely
-        if (action == "search" && query.isNotBlank()) {
+        // Run for ALL shopping actions — "buy", "add_to_cart", "order", "purchase" all need search first
+        val isShoppingAction = action in setOf("search", "buy", "add_to_cart", "order", "purchase")
+        if (isShoppingAction && query.isNotBlank()) {
             // Try to find and type directly into the Amazon search bar
             // Try multiple hint variants — Amazon India uses "Search Amazon.in"
             val directTyped = runner.typeInFieldWithHint("Search Amazon.in", query)
@@ -78,6 +80,26 @@ class AmazonSkill : Skill {
             "orders", "track" -> "In Amazon, open the Orders section and show recent orders."
             "cart" -> "In Amazon, open the shopping cart and show what is inside."
             "goal" -> params["goal"] as? String ?: query
+
+            // ADD TO CART / BUY: search already done above — now find product and tap Add to Cart
+            "buy", "add_to_cart", "order", "purchase" -> buildString {
+                append("TASK: Find \"$query\" on Amazon and ADD IT TO CART.\n\n")
+                append("⚠️ Search results for \"$query\" are ALREADY ON SCREEN. Do not re-search.\n")
+                append("⚠️ DO NOT tap the search bar, camera (📷), or mic (🎤) icons at the top.\n\n")
+                append("STEPS:\n")
+                append("1. SCROLL DOWN through the product list to see results\n")
+                if (maxPrice != null) append("2. Look for a product UNDER Rs $maxPrice — check the price shown on each card\n")
+                else append("2. Look for a well-rated product (4+ stars, good review count)\n")
+                append("3. TAP the best product card to open its detail page\n")
+                append("4. On the detail page: scroll down until you see the YELLOW 'Add to Cart' button\n")
+                append("5. TAP 'Add to Cart' — this is the required action\n")
+                append("6. Wait for confirmation, then say 'Added [product name] to cart'\n\n")
+                append("⚠️ STOP after 'Add to Cart' succeeds. Do NOT tap 'Proceed to Buy'.\n")
+                append("⚠️ Do NOT enter payment or address details.\n")
+                append("⚠️ If a variant picker appears (size/color), tap the FIRST option shown.\n")
+                append("⚠️ Do NOT press back — you will lose the product page.")
+            }
+
             "search" -> buildString {
                 append("TASK: Find the BEST \"$query\" on Amazon.\n\n")
                 append("⚠️ SEARCH IS ALREADY DONE. Product results are NOW on screen.\n")
