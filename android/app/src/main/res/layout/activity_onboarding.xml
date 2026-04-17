@@ -417,14 +417,24 @@
                 android:textSize="24sp"
                 android:textStyle="bold" />
 
+            <!-- Permission 1: Accessibility -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="BharatDroid needs Accessibility permission to control apps on your behalf.\n\nTap the button below, find 'BharatDroid Agent' in the list, and toggle it on."
-                android:textColor="#AAAAAA"
-                android:textSize="14sp"
-                android:lineSpacingMultiplier="1.5"
+                android:text="1. Accessibility Access (required)"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
                 android:layout_marginTop="16dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Lets BharatDroid control apps on your behalf — tap, type, scroll."
+                android:textColor="#AAAAAA"
+                android:textSize="13sp"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="6dp" />
 
             <TextView
                 android:id="@+id/tvAccessStatus"
@@ -432,9 +442,8 @@
                 android:layout_height="wrap_content"
                 android:text="✗ Not enabled"
                 android:textColor="#FF6B6B"
-                android:textSize="14sp"
-                android:gravity="center"
-                android:layout_marginTop="20dp" />
+                android:textSize="13sp"
+                android:layout_marginTop="8dp" />
 
             <Button
                 android:id="@+id/btnEnableAccess"
@@ -443,7 +452,44 @@
                 android:text="Open Accessibility Settings"
                 android:backgroundTint="#1E1E1E"
                 android:textColor="#FFFFFF"
-                android:layout_marginTop="12dp" />
+                android:layout_marginTop="6dp" />
+
+            <!-- Permission 2: Notification Access -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="2. Notification Access (for 24×7 relay)"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Forwards every app notification to your Telegram. Reply in Telegram to reply in the app.\n\nOptional — skip if you don't want this."
+                android:textColor="#AAAAAA"
+                android:textSize="13sp"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="6dp" />
+
+            <TextView
+                android:id="@+id/tvNotifStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="✗ Not enabled"
+                android:textColor="#FF6B6B"
+                android:textSize="13sp"
+                android:layout_marginTop="8dp" />
+
+            <Button
+                android:id="@+id/btnEnableNotifAccess"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Open Notification Access Settings"
+                android:backgroundTint="#1E1E1E"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="6dp" />
 
             <Button
                 android:id="@+id/btnLaunchAgent"

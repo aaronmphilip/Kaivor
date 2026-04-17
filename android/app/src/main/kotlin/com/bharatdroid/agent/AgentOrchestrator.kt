@@ -603,11 +603,14 @@ Tell me what to do — English or Hindi. I'll do it.
         val modelStr = prefs.getString("ai_model", "") ?: ""
         val knownApps = appKnowledge.getAppList().size
         val memCount = userMemory.getAll().size
+        val notifGranted = NotificationRelay.isPermissionGranted(context)
+        val mutedCount = muteStore.list().size
         return """
 *BharatDroid Status*
 
 Agent: Running
-Accessibility: ${if (serviceOk) "Connected" else "Not connected"}
+Accessibility: ${if (serviceOk) "✅ Connected" else "❌ Not connected"}
+Notification relay: ${if (notifGranted) "✅ Active${if (mutedCount > 0) " ($mutedCount muted)" else ""}" else "⚠️ Off — grant in Settings → Notification Access"}
 Skills: ${skillRunner.listSkills().size} loaded
 Mode: $mode
 AI: $providerStr ${if (modelStr.isNotBlank()) "($modelStr)" else ""}

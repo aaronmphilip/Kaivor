@@ -39,13 +39,24 @@ class OnboardingActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Accessibility status
         findViewById<TextView>(R.id.tvAccessStatus)?.let { tv ->
             if (AgentAccessibilityService.isConnected) {
-                tv.text = "Accessibility Service enabled"
+                tv.text = "✓ Accessibility enabled"
                 tv.setTextColor(0xFF00CC88.toInt())
             } else {
-                tv.text = "Not enabled yet"
+                tv.text = "✗ Not enabled yet"
                 tv.setTextColor(0xFFFF6B6B.toInt())
+            }
+        }
+        // Notification access status
+        findViewById<TextView>(R.id.tvNotifStatus)?.let { tv ->
+            if (NotificationRelay.isPermissionGranted(this)) {
+                tv.text = "✓ Notification access enabled — relay is active"
+                tv.setTextColor(0xFF00CC88.toInt())
+            } else {
+                tv.text = "✗ Not enabled (optional — tap button below)"
+                tv.setTextColor(0xFFAAAAAA.toInt())
             }
         }
     }
@@ -281,11 +292,15 @@ class OnboardingActivity : AppCompatActivity() {
         }
     }
 
-    // ── Step 5: Accessibility + Launch ───────
+    // ── Step 5: Accessibility + Notification Access + Launch ────────
 
     private fun setupStep5() {
         findViewById<Button>(R.id.btnEnableAccess).setOnClickListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+
+        findViewById<Button>(R.id.btnEnableNotifAccess).setOnClickListener {
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
 
         findViewById<Button>(R.id.btnLaunchAgent).setOnClickListener {

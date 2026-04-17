@@ -14,6 +14,7 @@
 </p>
 
 <p>Order food. Send messages. Play music. Book cabs. Pay bills.<br/>
+Receive every notification. Reply from anywhere in the world.<br/>
 Just tell it what to do — in <strong>English or Hindi</strong>.</p>
 
 > ⚠️ **Active Development** — We are actively building this. Features work but expect rough edges. Star the repo to follow progress.
@@ -56,6 +57,17 @@ Bot:  ✅ Playing: Tum Hi Ho — Arijit Singh
       📸 [screenshot of video playing]
 ```
 
+```
+[WhatsApp notification arrives on phone]
+Bot:  📩 *WhatsApp*
+      *Mom*
+      Coming home for dinner?
+      _Reply to this message to respond._
+
+You:  [Reply in Telegram] Yes, leaving in 10 minutes!
+Bot:  ✉️ Reply sent.       ← message delivered inside WhatsApp, zero app-switching
+```
+
 ---
 
 ## ✨ Features
@@ -67,6 +79,7 @@ Bot:  ✅ Playing: Tum Hi Ho — Arijit Singh
 | 📸 | **Screenshot Proof** | Sends a photo after every task so you see exactly what happened |
 | ⚡ | **Superhuman Speed** | Executes faster than any human can tap |
 | 🔗 | **Multi-step Chaining** | "Do X then Y then Z" — runs all steps automatically |
+| 🔔 | **24×7 Notification Relay** | Every app notification forwarded to Telegram. Reply in Telegram → reply in the app |
 | 🇮🇳 | **Hindi + English** | Understands commands in both languages |
 | 🔌 | **Any AI Provider** | Gemini, Claude, or OpenAI — paste key, it auto-detects |
 | 🏠 | **100% On-Device** | No cloud server. Everything runs on your Android phone |
@@ -159,6 +172,9 @@ Install it on your Android phone like any APK (enable "Install from unknown sour
 - Paste your **Telegram Bot Token**
 - Paste your **AI API Key** (Gemini/Claude/OpenAI — app auto-detects which)
 - Tap **Enable Accessibility Service** → find BharatDroid in the list → toggle ON → go back
+- *(Optional)* Tap **Enable Notification Access** → find BharatDroid → toggle ON → go back
+  - This enables the **24×7 notification relay** — every app notification is forwarded to your Telegram, and you can reply directly from Telegram
+  - Use `/muted` in Telegram to see status, `/mute <app>` to silence specific apps
 - Tap **Start Agent**
 
 **4. Test it — message your Telegram bot**
@@ -188,6 +204,8 @@ BharatDroid/
 │       ├── AgentAccessibilityService.kt  # Gestures + screenshot
 │       ├── AgentOrchestrator.kt      # Skill runner + Telegram replies
 │       ├── TelegramPoller.kt         # Telegram bot API
+│       ├── NotificationRelay.kt      # 24×7 notification forwarding + reply
+│       ├── MuteStore.kt              # Per-app notification mute list
 │       └── skills/
 │           ├── Skill.kt              # Skill interface + permissions
 │           ├── SandboxedRunner.kt    # Safe action executor
@@ -232,6 +250,13 @@ Quick ways to contribute:
 
 ## 🗺️ Roadmap
 
+**Recently shipped:**
+- [x] 24×7 notification relay — forwards every app to Telegram with two-way reply
+- [x] 30+ built-in skills across food, payments, transport, productivity
+- [x] Composite multi-app skills (Travel Planner, Price Compare, Morning Brief, Emergency SOS)
+- [x] AI learns your preferences — "next time always confirm before sending"
+- [x] Per-app layout memory — gets faster every use
+
 **Currently working on:**
 - [ ] Vision-based screen understanding (see icons, not just text)
 - [ ] Better WhatsApp contact finding
@@ -243,6 +268,16 @@ Quick ways to contribute:
 - [ ] Voice commands via phone mic
 - [ ] Multi-device support (control phone from PC)
 - [ ] iOS support (Shortcuts API)
+
+---
+
+## 👥 Built By
+
+| | Role |
+|---|---|
+| **[@aaronmphilip](https://github.com/aaronmphilip)** | Creator & Lead Developer |
+| **[Claude](https://claude.ai) (Anthropic)** | AI pair programmer — architecture, skills, agent logic |
+| **[Codex](https://openai.com/codex) (OpenAI)** | AI pair programmer — contributed to skill development |
 
 ---
 
