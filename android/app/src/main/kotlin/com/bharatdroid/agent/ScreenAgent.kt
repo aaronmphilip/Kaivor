@@ -772,7 +772,15 @@ class ScreenAgent(
             appendLine("     The system automatically APPENDS your text to what is already in the field.")
             appendLine("     You do NOT need to press enter between paragraphs — just include \\n in your text value.")
             appendLine("   - NEVER type the same content twice into the same field.")
-            appendLine("   - For login forms: type email into email field, next_field, type password into password field.")
+            appendLine("   - For login forms: READ THE PLACEHOLDERS/HINTS on each field to know what goes where.")
+            appendLine("     role=email-input or hint='Email' → type ONLY the email address.")
+            appendLine("     role=password-input or hint='Password' → type ONLY the password (NEVER type email here).")
+            appendLine("     role=phone-input or hint='Mobile' → type ONLY the phone number.")
+            appendLine("     role=otp-input or hint='OTP/Code' → type ONLY the verification code.")
+            appendLine("     role=username-input → type ONLY the username.")
+            appendLine("   - NEVER concatenate email+password into one field. Each field gets its OWN value.")
+            appendLine("   - If two editable fields are visible, the TOP one is usually email/username, the BOTTOM one is password.")
+            appendLine("     Type into field 1 → next_field → type into field 2. Use next_field, do NOT retype the first value.")
             appendLine()
             appendLine("7. AFTER TYPING: if it's a search field → press enter. If it's a form → use next_field.")
             appendLine("8. BOTTOM NAV BAR (Home/Shorts/Library/Subscriptions — role=nav-home at very bottom): NEVER tap.")
@@ -866,9 +874,21 @@ class ScreenAgent(
 
         return when {
             // Editable fields first (most specific)
+            // Password field — detect via hint/id containing "password", "pwd", "pass",
+            // or via className=EditText + contentDescription containing password hints.
+            // Password fields usually expose the hint "Password" or id "password"/"pwd_edit".
+            el.isEditable && combined.containsAny("password", "passwd", "pwd", "pass_word") -> "password-input"
+            // OTP / verification code field — hint "OTP", "Enter code", "Verification code"
+            el.isEditable && combined.containsAny("otp", "verification code", "verify code", "enter code", "one-time") -> "otp-input"
+            // Phone / mobile number field — hint "Phone", "Mobile", "Mobile number"
+            el.isEditable && combined.containsAny("phone", "mobile", "contact number") -> "phone-input"
+            // Email field — hint "Email", "Email address"
+            el.isEditable && combined.containsAny("email", "e-mail", "email address") && !combined.contains("password") -> "email-input"
+            // Username / login id field
+            el.isEditable && combined.containsAny("username", "user name", "user id", "login id", "account id") -> "username-input"
             el.isEditable && combined.containsAny("search", "find", "query") -> "search-input"
             el.isEditable && combined.containsAny("message", "reply", "chat", "compose") -> "message-input"
-            el.isEditable && combined.containsAny("to", "recipient", "email") -> "recipient-input"
+            el.isEditable && combined.containsAny("to", "recipient") -> "recipient-input"
             el.isEditable && combined.containsAny("amount", "price", "number") -> "number-input"
             el.isEditable -> "text-input"
 

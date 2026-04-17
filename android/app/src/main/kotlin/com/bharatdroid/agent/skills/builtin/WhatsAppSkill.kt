@@ -136,7 +136,45 @@ class WhatsAppSkill : Skill {
                     // Chat didn't open — still on search results, tap more aggressively
                     val (w2, h2) = runner.getScreenSize()
                     runner.tapAtPoint(w2 / 2f, h2 * 0.28f)
-                    runner.waitForAny("Type a message", "Message", timeoutMs = 3000)
+                    val retryOpened = runner.waitForAny("Type a message", "Message", timeoutMs = 3000)
+
+                    // FINAL FALLBACK: delegate to AI with crystal-clear instructions
+                    // The AI can see the screen and will pick the right contact row,
+                    // then type into the "Type a message" field at the bottom.
+                    if (retryOpened == null) {
+                        val aiGoal = buildString {
+                            append("You are in WhatsApp. Search results for \"$contact\" are visible.\n\n")
+                            append("STEPS (do EXACTLY this):\n")
+                            append("1. TAP the contact row matching \"$contact\" (look for role=list-item with this name). ")
+                            append("   DO NOT tap profile avatars on the far left. Tap the NAME/row center.\n")
+                            append("2. WAIT — the chat screen opens with 'Type a message' at the BOTTOM of the screen.\n")
+                            append("3. Find the EDITABLE FIELD with role=message-input or hint 'Type a message' at the BOTTOM.\n")
+                            append("4. TAP that message field (NOT the search bar at the top).\n")
+                            append("5. TYPE this EXACT text in that field: $message\n")
+                            append("6. CALL done with summary 'Message typed for $contact'.\n\n")
+                            append("⚠️ CRITICAL:\n")
+                            append("- The search bar is at the TOP. The message field is at the BOTTOM.\n")
+                            append("- NEVER type the message into the search bar.\n")
+                            append("- NEVER press back — you will lose the chat.\n")
+                            append("- NEVER press Send. Just type the message and stop.\n")
+                            append("- If you see search results, TAP a contact row first.")
+                        }
+                        val aiResult = agent.executeGoal(runner, aiGoal, maxSteps = 10)
+                        return if (shouldSend) {
+                            runner.tapByText("Send")
+                            delay(500)
+                            SkillResult.Success("✅ Message sent to *$contact*: \"$message\"")
+                        } else {
+                            SkillResult.NeedsConfirmation(
+                                prompt = "Message typed for *$contact*:\n\"$message\"\n\nReply *YES* to send it, or *NO* to cancel.\n\n(AI fallback used: $aiResult)",
+                                onConfirm = {
+                                    runner.tapByText("Send")
+                                    delay(500)
+                                    SkillResult.Success("✅ Message sent to *$contact*!")
+                                },
+                            )
+                        }
+                    }
                 }
                 delay(600) // let the chat transition animation fully finish
 
@@ -153,8 +191,24 @@ class WhatsAppSkill : Skill {
                 delay(400)
 
                 // Step 7: Type message in the chat input field
-                // PRIMARY: use typeInFieldWithHint to target the actual "Type a message" field
-                // This avoids the bug where message was typed in the search bar instead
+                // SAFETY CHECK: find the message-input field explicitly BEFORE typing.
+                // Previously, typeInFieldWithHint("Type a message") would silently fall back
+                // to the search bar at the top if the chat hadn't fully opened — that caused
+                // "message typed into search bar" bug. Now we verify the field is at the BOTTOM
+                // of the screen (y > 70% of height) before trusting it.
+                val (sw, sh) = runner.getScreenSize()
+                val msgField = runner.getClickableElements().firstOrNull { el ->
+                    el.isEditable
+                        && el.centerY > sh * 0.70f  // must be in bottom 30%
+                        && (el.hint.contains("message", ignoreCase = true)
+                            || el.hint.contains("type", ignoreCase = true)
+                            || el.contentDescription.contains("message", ignoreCase = true))
+                }
+                if (msgField != null) {
+                    // Tap to focus the verified message input, then type
+                    runner.tapAtPoint(msgField.centerX.toFloat(), msgField.centerY.toFloat())
+                    delay(350)
+                }
                 val typedOk = runner.typeInFieldWithHint("Type a message", message)
                     || runner.typeInFieldWithHint("Message", message)
                     || runner.typeInFieldWithHint("Type message", message)

@@ -92,9 +92,19 @@ class YouTubeSkill : Skill {
             && (screen0.contains("Comments", ignoreCase = true) || screen0.contains("Like", ignoreCase = true))
 
         if (alreadyPlaying) {
-            // Already on a video — go back to home first to search fresh
-            tapBottomNav(runner, "Home")
-            delay(800)
+            // Already on a video — minimize via pressBack (PIP) so the video keeps playing
+            // in a floating window, and YouTube returns to the previous screen (results/feed).
+            // Tapping the Home bottom-nav caused the "home page loop" because it reset the
+            // feed entirely and the AI kept bouncing between home and search.
+            runner.pressBack()
+            delay(600)
+            // Verify we're off the player. If still on a video, press back once more.
+            val nowScreen = runner.readScreen()
+            if (nowScreen.contains("Subscribe", ignoreCase = true)
+                && nowScreen.contains("Comments", ignoreCase = true)) {
+                runner.pressBack()
+                delay(500)
+            }
         }
 
         if (!alreadyInSearch) {
