@@ -80,7 +80,9 @@ STEPS: 1) Tap the 'Where to?' search field. 2) Type "$destination" and tap the b
                 params["goal"] as? String ?: "Do this in Uber: $action $destination".trim()
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 20)
+        // Uber needs more steps: pickup field → type → suggestion → dest field → type → suggestion
+        // → confirm pickup on map → ride options screen → choose ride → confirm. Easily 22-28 steps.
+        val result = agent.executeGoal(runner, goal, maxSteps = 32)
         return SkillResult.Success(result)
     }
 }

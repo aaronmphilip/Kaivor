@@ -340,8 +340,72 @@ class ScreenAgent(
             }
         }
 
-        val finalScreen = try { runner.readScreen().take(500) } catch (_: Exception) { "" }
-        return "Reached step limit ($maxSteps).\n$finalScreen"
+        // Step limit hit — build a HUMAN-FRIENDLY summary instead of dumping raw screen text.
+        // The raw screen often contains noise like repeated "Vehicle Vehicle Vehicle..." which
+        // leaks internal element labels to the user. Extract only the meaningful signals:
+        //   - Prices/fares (₹420, Rs 1,200)
+        //   - ETAs (3 min away, drop-off 1:48pm)
+        //   - Obvious success markers (Confirmed, Booked, Added to cart, Order placed)
+        //   - Next-step prompt (Choose Uber Go, Confirm details)
+        val finalScreen = try { runner.readScreen() } catch (_: Exception) { "" }
+        return buildStepLimitSummary(finalScreen, maxSteps, goal)
+    }
+
+    /**
+     * Produces a clean user-facing summary when the agent exhausts its step budget.
+     * Avoids dumping raw repeated element labels by scanning the screen for semantic signals.
+     */
+    private fun buildStepLimitSummary(screen: String, maxSteps: Int, goal: String): String {
+        if (screen.isBlank()) return "Reached step limit ($maxSteps) — no screen content to report."
+
+        // De-duplicate lines and drop obvious UI noise.
+        val rawLines = screen.lineSequence()
+            .map { it.trim() }
+            .filter { it.isNotBlank() && it.length in 2..140 }
+            .toList()
+        val seen = mutableSetOf<String>()
+        val uniqueLines = rawLines.filter { seen.add(it.lowercase()) }
+
+        // Extract signals.
+        val priceRegex = Regex("""(?:₹|Rs\.?|INR)\s*[\d,]+(?:\.\d+)?""", RegexOption.IGNORE_CASE)
+        val etaRegex = Regex("""\b\d+\s*(?:min|mins|minute|minutes|hr|hrs|hour|hours)\b""", RegexOption.IGNORE_CASE)
+        val timeRegex = Regex("""\b\d{1,2}:\d{2}\s*(?:am|pm)?\b""", RegexOption.IGNORE_CASE)
+
+        val prices = priceRegex.findAll(screen).map { it.value }.distinct().take(3).toList()
+        val etas = etaRegex.findAll(screen).map { it.value }.distinct().take(3).toList()
+        val times = timeRegex.findAll(screen).map { it.value }.distinct().take(3).toList()
+
+        val successMarkers = listOf(
+            "confirmed", "booked", "order placed", "added to cart", "payment successful",
+            "ride confirmed", "trip booked", "scheduled", "saved",
+        )
+        val hasSuccess = successMarkers.any { screen.contains(it, ignoreCase = true) }
+
+        val actionPrompts = uniqueLines.filter { line ->
+            val l = line.lowercase()
+            l.startsWith("confirm") || l.startsWith("choose ") || l.startsWith("book ") ||
+                l.startsWith("schedule") || l.startsWith("pay ") || l == "continue" || l == "next"
+        }.take(3)
+
+        return buildString {
+            if (hasSuccess) {
+                appendLine("✅ Task mostly completed (hit step limit on the final confirmation).")
+            } else {
+                appendLine("⏱️ Reached step limit ($maxSteps) while working on: \"${goal.take(80)}\"")
+            }
+            if (prices.isNotEmpty()) appendLine("💰 Prices seen: ${prices.joinToString(", ")}")
+            if (etas.isNotEmpty())   appendLine("⏰ ETA: ${etas.joinToString(", ")}")
+            if (times.isNotEmpty())  appendLine("🕐 Times: ${times.joinToString(", ")}")
+            if (actionPrompts.isNotEmpty()) {
+                appendLine("👉 Next step visible on screen: ${actionPrompts.joinToString(" / ")}")
+                appendLine("Tap the button manually to finish, or tell me to continue.")
+            }
+            if (prices.isEmpty() && etas.isEmpty() && actionPrompts.isEmpty()) {
+                // Fall back to a tiny preview — first 3 unique lines, capped.
+                val preview = uniqueLines.take(3).joinToString(" · ").take(180)
+                if (preview.isNotBlank()) appendLine("Screen preview: $preview")
+            }
+        }.trim()
     }
 
     /** Quick single action decision (used by tapSmartly callers). */
@@ -783,6 +847,20 @@ class ScreenAgent(
             appendLine("     Type into field 1 → next_field → type into field 2. Use next_field, do NOT retype the first value.")
             appendLine()
             appendLine("7. AFTER TYPING: if it's a search field → press enter. If it's a form → use next_field.")
+            appendLine("7a. INSTRUCTION vs VALUE — VERY IMPORTANT:")
+            appendLine("    If the user's goal contains a FORMATTING DIRECTIVE, APPLY the transformation to the")
+            appendLine("    value before typing. Do NOT type the directive itself as literal text.")
+            appendLine("    Examples:")
+            appendLine("      Goal: 'title as hello world with first letter of each word capital'")
+            appendLine("        → type {\"text\": \"Hello World\"}  NOT  \"hello world with first letter of each word capital\"")
+            appendLine("      Goal: 'name as john in all caps'")
+            appendLine("        → type {\"text\": \"JOHN\"}  NOT  \"john in all caps\"")
+            appendLine("      Goal: 'note: remind me tomorrow (make it polite)'")
+            appendLine("        → type {\"text\": \"Please remind me tomorrow\"}")
+            appendLine("    Common directives to APPLY: 'capital first letter(s)', 'title case', 'uppercase',")
+            appendLine("    'lowercase', 'sentence case', 'all caps', 'polite', 'formal', 'shorten', 'add emoji'.")
+            appendLine("    Rule of thumb: the part AFTER 'as' / 'title:' / 'name:' is the core value; the rest is an")
+            appendLine("    instruction to you about how to format that value.")
             appendLine("8. BOTTOM NAV BAR (Home/Shorts/Library/Subscriptions — role=nav-home at very bottom): NEVER tap.")
             appendLine("   Tapping it resets to the app home feed and loses ALL search results = instant loop.")
             appendLine("   Navigate within the current screen using scroll_down, scroll_up, or tap visible results.")
