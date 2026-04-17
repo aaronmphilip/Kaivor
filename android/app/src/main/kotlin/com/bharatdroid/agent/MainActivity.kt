@@ -8,6 +8,7 @@ import android.view.Gravity
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS
 
 class MainActivity : AppCompatActivity() {
 
@@ -60,6 +61,7 @@ class MainActivity : AppCompatActivity() {
 
         setupToggleButton()
         setupSettingsButton()
+        setupNotifRelayCard()
         populateSkillsGrid()
         refreshStatus()
         populateActivityLog()
@@ -73,6 +75,12 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         refreshStatus()
         populateActivityLog()
+    }
+
+    private fun setupNotifRelayCard() {
+        findViewById<Button>(R.id.btnEnableNotifRelay).setOnClickListener {
+            startActivity(Intent(ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        }
     }
 
     private fun refreshStatus() {
@@ -115,6 +123,25 @@ class MainActivity : AppCompatActivity() {
         val providerStr = prefs.getString("ai_provider", "GEMINI") ?: "GEMINI"
         skillCount.text = "${allSkills.size} skills  |  $modeText  |  $providerStr"
         todayCount.text = "${activityLog.todayCount()} commands today"
+
+        // Notification relay card
+        val notifGranted = NotificationRelay.isPermissionGranted(this)
+        val badge = findViewById<TextView>(R.id.tvNotifRelayBadge)
+        val desc = findViewById<TextView>(R.id.tvNotifRelayDesc)
+        val btn = findViewById<Button>(R.id.btnEnableNotifRelay)
+        if (notifGranted) {
+            badge.text = "LIVE"
+            badge.setTextColor(0xFF00CC88.toInt())
+            badge.setBackgroundColor(0xFF0D2B1E.toInt())
+            desc.text = "Active — forwarding notifications from all apps to your Telegram. Reply to any forwarded message to reply inside that app.\n\nTip: send /muted to your bot to manage per-app muting."
+            btn.text = "Manage in Settings"
+        } else {
+            badge.text = "OFF"
+            badge.setTextColor(0xFFFF6B6B.toInt())
+            badge.setBackgroundColor(0xFF331111.toInt())
+            desc.text = "Every app notification → forwarded to your Telegram bot. Reply in Telegram → reply lands in the app."
+            btn.text = "Enable in Settings → Notification Access"
+        }
     }
 
     private fun setupToggleButton() {

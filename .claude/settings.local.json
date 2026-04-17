@@ -27,7 +27,10 @@
       "Bash(gradlew assembleDebug)",
       "Bash(cmd /c \"gradlew assembleDebug 2>&1\")",
       "Bash(cmd /c \"gradlew.bat assembleDebug 2>&1\")",
-      "Bash(powershell -Command \"Set-Location 'C:\\\\Users\\\\Astro\\\\OneDrive\\\\Desktop\\\\BharatClaw\\\\.claude\\\\worktrees\\\\priceless-joliot\\\\android'; .\\\\gradlew.bat assembleDebug 2>&1 | Select-Object -Last 40\")"
+      "Bash(powershell -Command \"Set-Location 'C:\\\\Users\\\\Astro\\\\OneDrive\\\\Desktop\\\\BharatClaw\\\\.claude\\\\worktrees\\\\priceless-joliot\\\\android'; .\\\\gradlew.bat assembleDebug 2>&1 | Select-Object -Last 40\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

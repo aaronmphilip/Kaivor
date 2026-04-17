@@ -2,6 +2,7 @@ package com.bharatdroid.agent
 
 import android.content.Context
 import android.content.Intent
+import android.os.PowerManager
 import com.bharatdroid.agent.skills.RemoteSkill
 import com.bharatdroid.agent.skills.SkillResult
 import com.bharatdroid.agent.skills.SkillStore
@@ -22,6 +23,20 @@ class AgentOrchestrator(
     private val userMemory = UserMemory(context)
     private val appKnowledge = AppKnowledgeBase(context)
     private val muteStore = MuteStore(context)
+
+    // Wake lock: keeps the screen on while a skill is executing so the
+    // accessibility service can interact with apps even when called from
+    // a locked/sleeping phone. Released immediately after the task finishes.
+    @Suppress("DEPRECATION")
+    private val wakeLock: PowerManager.WakeLock by lazy {
+        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        pm.newWakeLock(
+            PowerManager.FULL_WAKE_LOCK or
+            PowerManager.ACQUIRE_CAUSES_WAKEUP or
+            PowerManager.ON_AFTER_RELEASE,
+            "bharatdroid:agent_task"
+        )
+    }
     // Thread-safe: TelegramPoller fires scope.launch per message, so multiple
     // coroutines access this map concurrently. mutableMapOf is NOT thread-safe.
     private val pendingConfirmations = java.util.concurrent.ConcurrentHashMap<Long, CompletableDeferred<Boolean>>()
@@ -311,12 +326,17 @@ class AgentOrchestrator(
             // doing anything. Clearing here (after acquiring the mutex = old task is done)
             // fixes this without losing the ability to stop a genuinely running task.
             screenAgent.clearStop()
+
+            // Wake screen so agent can interact with apps even if phone was sleeping.
+            if (!wakeLock.isHeld) wakeLock.acquire(180_000L) // 3 min max; released in finally
+
             when (plan.type) {
                 PlanType.RUN_SKILL -> executeSingleSkill(msg, trimmed, plan.skillId!!, plan.params)
                 PlanType.MULTI_STEP -> executeMultiStep(msg, trimmed, plan.steps)
                 else -> "?"
             }
         } finally {
+            try { if (wakeLock.isHeld) wakeLock.release() } catch (_: Exception) {}
             if (acquired != null) taskMutex.unlock()
         }
     }

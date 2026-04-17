@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * NotificationRelay — listens to every notification the phone receives and
@@ -46,9 +47,10 @@ class NotificationRelay : NotificationListenerService() {
             "com.android.vending", // Play Store downloads
         )
 
-        @Volatile private var poller: TelegramPoller? = null
-        @Volatile private var muteStore: MuteStore? = null
-        @Volatile private var chatId: Long = -1L
+        @Volatile var poller: TelegramPoller? = null
+        @Volatile var muteStore: MuteStore? = null
+        @Volatile var chatId: Long = -1L
+        private val bootstrapped = AtomicBoolean(false)
 
         // telegram outgoing message_id → notification we forwarded (for reply routing)
         private val notifMap = ConcurrentHashMap<Long, NotifRecord>()
@@ -123,6 +125,24 @@ class NotificationRelay : NotificationListenerService() {
 
     override fun onListenerConnected() {
         super.onListenerConnected()
+        // Self-bootstrap: if the AgentForegroundService hasn't started yet (e.g. on boot,
+        // or after a crash), read the saved credentials and create a send-only poller so
+        // notifications still get forwarded without the full agent running.
+        if (bootstrapped.compareAndSet(false, true)) {
+            tryBootstrapFromPrefs()
+        }
+    }
+
+    private fun tryBootstrapFromPrefs() {
+        if (poller != null && chatId > 0) return  // already wired by orchestrator
+        val prefs = applicationContext.getSharedPreferences("bharatdroid", 0)
+        val token = prefs.getString("bot_token", null) ?: return
+        val cid = prefs.getLong("chat_id", -1L)
+        if (cid <= 0) return
+        chatId = cid
+        muteStore = MuteStore(applicationContext)
+        // Send-only poller — no message polling, just Telegram API sender
+        poller = TelegramPoller(token, emptySet()) { "" }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
