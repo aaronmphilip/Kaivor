@@ -63,7 +63,7 @@ class AgentOrchestrator(
             },
             screenAgent = screenAgent,
         ).also { runner ->
-            // ── Official Skills (26 total) ──
+            // ── Official Skills (31 total) ──
             runner.register(SwigySkill())
             runner.register(ZomatoSkill())
             runner.register(ZeptoSkill())
@@ -91,6 +91,11 @@ class AgentOrchestrator(
             runner.register(ContactsSkill())
             // ── Composite / Multi-App Skills ──
             runner.register(TravelPlannerSkill())
+            runner.register(PriceComparatorSkill())
+            runner.register(FoodDealFinderSkill())
+            runner.register(BillSplitterSkill())
+            runner.register(MorningBriefSkill())
+            runner.register(EmergencySOSSkill())
             // ── General Agent (catch-all) ──
             runner.register(GeneralSkill())
 
