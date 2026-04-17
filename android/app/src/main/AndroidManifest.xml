@@ -67,6 +67,17 @@
             android:exported="false"
             android:foregroundServiceType="specialUse" />
 
+        <!-- 24x7 Notification relay — forwards every app notification to Telegram -->
+        <service
+            android:name=".NotificationRelay"
+            android:exported="true"
+            android:label="BharatDroid Notifications"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <!-- Auto-start on boot -->
         <receiver
             android:name=".BootReceiver"

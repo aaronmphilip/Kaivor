@@ -1,6 +1,7 @@
 package com.bharatdroid.agent
 
 import android.content.Context
+import android.content.Intent
 import com.bharatdroid.agent.skills.RemoteSkill
 import com.bharatdroid.agent.skills.SkillResult
 import com.bharatdroid.agent.skills.SkillStore
@@ -20,6 +21,7 @@ class AgentOrchestrator(
     private val activityLog = ActivityLog(context)
     private val userMemory = UserMemory(context)
     private val appKnowledge = AppKnowledgeBase(context)
+    private val muteStore = MuteStore(context)
     // Thread-safe: TelegramPoller fires scope.launch per message, so multiple
     // coroutines access this map concurrently. mutableMapOf is NOT thread-safe.
     private val pendingConfirmations = java.util.concurrent.ConcurrentHashMap<Long, CompletableDeferred<Boolean>>()
@@ -119,6 +121,14 @@ class AgentOrchestrator(
         )
 
         poller.start()
+
+        // Wire the 24x7 notification relay. The listener service is declared in
+        // the manifest; this just hands it the poller/mute store/chat id. If the
+        // user hasn't granted notification-access yet, rebind() is a no-op.
+        config.authorizedChatIds.firstOrNull()?.let { chatId ->
+            NotificationRelay.attach(poller, muteStore, chatId)
+            NotificationRelay.rebind(context)
+        }
     }
 
     fun stop() { poller.stop() }
@@ -126,6 +136,16 @@ class AgentOrchestrator(
     private suspend fun handleMessage(msg: IncomingMessage): String {
         val trimmed = msg.text.trim()
         val lower = trimmed.lowercase()
+
+        // ── Notification reply relay ─────────────────────────────────────────
+        // If the user replied to a forwarded notification, try to send their text
+        // back into the source app via RemoteInput. If that notification isn't
+        // tracked anymore (old / no reply action), fall through to normal routing.
+        if (msg.replyToMessageId != null) {
+            val delivered = NotificationRelay.sendReply(msg.replyToMessageId, trimmed)
+            if (delivered) return "✉️ Reply sent."
+            // else: fall through — user may have replied to a regular bot message
+        }
 
         // ── AUTO-STOP: every new message kills the currently running task ─────
         // Exceptions:
@@ -209,6 +229,19 @@ class AgentOrchestrator(
                     if (saved) "📌 Rule saved: _\"$rule\"_\n\nUse /memory to see all rules."
                     else "Already have that rule saved."
                 }
+            }
+            trimmed.lowercase() == "/muted" -> return buildMutedListMessage()
+            trimmed.lowercase().startsWith("/mute ") -> {
+                val arg = trimmed.substringAfter("/mute ").trim()
+                val pkg = resolvePackage(arg) ?: return "Can't find app \"$arg\". Try the package name (e.g. `com.whatsapp`) or the exact app label."
+                muteStore.mute(pkg)
+                return "🔕 Muted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`). Use `/unmute $arg` to re-enable."
+            }
+            trimmed.lowercase().startsWith("/unmute ") -> {
+                val arg = trimmed.substringAfter("/unmute ").trim()
+                val pkg = resolvePackage(arg) ?: return "Can't find app \"$arg\"."
+                muteStore.unmute(pkg)
+                return "🔔 Unmuted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`)."
             }
             trimmed.lowercase() == "/clear" -> {
                 brain.clearHistory(msg.chatId)
@@ -374,6 +407,40 @@ class AgentOrchestrator(
         return message // no screenshot — return as plain text
     }
 
+    /**
+     * Resolve "WhatsApp" or "com.whatsapp" to a package name. If the input already
+     * looks like a package id (contains a dot), we trust it. Otherwise we scan
+     * installed apps for a case-insensitive label match.
+     */
+    private fun resolvePackage(arg: String): String? {
+        if (arg.isBlank()) return null
+        if (arg.contains(".")) return arg
+        val pm = context.packageManager
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val apps = try { pm.queryIntentActivities(intent, 0) } catch (_: Exception) { return null }
+        val match = apps.firstOrNull { info ->
+            val label = info.loadLabel(pm).toString()
+            label.equals(arg, ignoreCase = true)
+        } ?: apps.firstOrNull { info ->
+            val label = info.loadLabel(pm).toString()
+            label.contains(arg, ignoreCase = true)
+        }
+        return match?.activityInfo?.packageName
+    }
+
+    private fun buildMutedListMessage(): String {
+        val muted = muteStore.list()
+        val granted = NotificationRelay.isPermissionGranted(context)
+        val header = if (granted) "✅ Notification relay: ON" else "⚠️ Notification relay needs permission. Settings → Notifications → Device & app notifications → BharatDroid → Allow."
+        if (muted.isEmpty()) {
+            return "$header\n\n🔔 No apps muted. All notifications are forwarded.\n\n*Commands:*\n`/mute WhatsApp` or `/mute com.whatsapp`\n`/unmute WhatsApp`"
+        }
+        val list = muted.mapIndexed { i, pkg ->
+            "${i + 1}. ${NotificationRelay.labelFor(context, pkg)} (`$pkg`)"
+        }.joinToString("\n")
+        return "$header\n\n🔕 *Muted apps (${muted.size}):*\n$list\n\nUse `/unmute <name>` to re-enable."
+    }
+
     private fun toggleMode(chatId: Long): String {
         val prefs = context.getSharedPreferences("bharatdroid", Context.MODE_PRIVATE)
         val current = prefs.getBoolean("ask_permission", true)
@@ -469,6 +536,9 @@ Tell me what to do — English or Hindi. I'll do it.
 /forget 2-5 — delete rules 2 through 5
 /forget — clear all rules
 /knowledge — see what I've learned per app
+/muted — notification relay status + muted apps
+/mute <app> — stop forwarding notifications from that app
+/unmute <app> — re-enable notifications from that app
 /mode — toggle Ask Permission / Just Do It
 /clear — reset conversation memory
 /install <url> — add community skill

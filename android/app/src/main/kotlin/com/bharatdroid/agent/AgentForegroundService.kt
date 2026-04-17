@@ -62,6 +62,9 @@ class AgentForegroundService : LifecycleService() {
         orchestrator = AgentOrchestrator(this, config)
         orchestrator.start()
 
+        // Kick the notification listener to rebind after service restarts / boot.
+        NotificationRelay.rebind(this)
+
         return START_STICKY
     }
 

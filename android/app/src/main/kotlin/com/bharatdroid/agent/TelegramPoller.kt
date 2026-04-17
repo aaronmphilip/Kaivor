@@ -23,6 +23,8 @@ data class IncomingMessage(
     val chatId: Long,
     val username: String?,
     val text: String,
+    /** If the user replied to a previous bot message, this is that message's Telegram id. */
+    val replyToMessageId: Long? = null,
 )
 
 class TelegramPoller(
@@ -72,7 +74,13 @@ class TelegramPoller(
         }
     }
 
-    suspend fun sendMessage(chatId: Long, text: String, parseMode: String = "Markdown") {
+    /**
+     * Sends a Telegram message and returns the Telegram `message_id` of the outgoing message.
+     * Used by the notification relay to map forwarded notifications → incoming Telegram replies
+     * (so a user's reply in Telegram can be routed back to the source app).
+     * Returns null if the send failed.
+     */
+    suspend fun sendMessage(chatId: Long, text: String, parseMode: String = "Markdown"): Long? {
         val body = gson.toJson(mapOf(
             "chat_id" to chatId,
             "text" to text,
@@ -82,9 +90,15 @@ class TelegramPoller(
             .url("$baseUrl/sendMessage")
             .post(body.toRequestBody("application/json".toMediaType()))
             .build()
-        withContext(Dispatchers.IO) {
-            try { client.newCall(request).execute().close() }
-            catch (e: IOException) { /* best-effort send */ }
+        return withContext(Dispatchers.IO) {
+            try {
+                client.newCall(request).execute().use { response ->
+                    val bodyStr = response.body?.string() ?: return@use null
+                    val json = gson.fromJson(bodyStr, JsonObject::class.java)
+                    if (!json.get("ok").asBoolean) return@use null
+                    json.getAsJsonObject("result")?.get("message_id")?.asLong
+                }
+            } catch (_: IOException) { null }
         }
     }
 
@@ -159,11 +173,15 @@ class TelegramPoller(
                     val text = message.get("text")?.asString ?: return@mapNotNull null
                     val from = message.getAsJsonObject("from")
 
+                    val replyTo = message.getAsJsonObject("reply_to_message")
+                        ?.get("message_id")?.asLong
+
                     IncomingMessage(
                         updateId = update.get("update_id").asLong,
                         chatId = chat.get("id").asLong,
                         username = from?.get("username")?.asString,
                         text = text,
+                        replyToMessageId = replyTo,
                     )
                 }
             }
