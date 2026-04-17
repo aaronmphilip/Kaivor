@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "note": "Android build tasks — not web servers. Run via Android Studio or terminal.",
+      "note": "Android build tasks â€” not web servers. Run via Android Studio or terminal.",
       "name": "build-debug",
       "runtimeExecutable": "./android/gradlew",
       "runtimeArgs": ["-p", "android", "assembleDebug"],

@@ -276,8 +276,7 @@ Quick ways to contribute:
 | | Role |
 |---|---|
 | **[@aaronmphilip](https://github.com/aaronmphilip)** | Creator & Lead Developer |
-| **[Claude](https://claude.ai) (Anthropic)** | AI pair programmer — architecture, skills, agent logic |
-| **[Codex](https://openai.com/codex) (OpenAI)** | AI pair programmer — contributed to skill development |
+| **[Codex](https://openai.com/codex) (OpenAI)** | AI pair programmer — architecture, skills, and agent logic |
 
 ---
 
