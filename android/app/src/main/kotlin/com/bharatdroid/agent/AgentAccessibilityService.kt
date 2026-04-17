@@ -304,6 +304,14 @@ class AgentAccessibilityService : AccessibilityService() {
         return swipe(w * 0.2f, h * 0.5f, w * 0.8f, h * 0.5f, 250)
     }
 
+    /** Swipe from the bottom up to dismiss the lock screen (standard Android unlock gesture). */
+    suspend fun swipeUpToUnlock(): Boolean {
+        val w = resources.displayMetrics.widthPixels.toFloat()
+        val h = resources.displayMetrics.heightPixels.toFloat()
+        // Start near the very bottom centre, end near the top — fast and exaggerated like a human
+        return swipe(w * 0.5f, h * 0.92f, w * 0.5f, h * 0.08f, durationMs = 400)
+    }
+
     suspend fun captureScreenshot(): Bitmap? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return null
 

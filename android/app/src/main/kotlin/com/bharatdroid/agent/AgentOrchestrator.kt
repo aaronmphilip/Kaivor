@@ -153,13 +153,47 @@ class AgentOrchestrator(
         val lower = trimmed.lowercase()
 
         // ── Notification reply relay ─────────────────────────────────────────
-        // If the user replied to a forwarded notification, try to send their text
-        // back into the source app via RemoteInput. If that notification isn't
-        // tracked anymore (old / no reply action), fall through to normal routing.
+        // User replied (using Telegram's Reply button) to a forwarded notification.
+        // Try RemoteInput first (fastest — fires directly into the source app).
+        // If that fails (no quick-reply action on the notification), fall back to
+        // opening the app and sending via the accessibility skill.
         if (msg.replyToMessageId != null) {
             val delivered = NotificationRelay.sendReply(msg.replyToMessageId, trimmed)
             if (delivered) return "✉️ Reply sent."
-            // else: fall through — user may have replied to a regular bot message
+
+            // RemoteInput unavailable — try skill-based fallback
+            val rec = NotificationRelay.getRecord(msg.replyToMessageId)
+            if (rec != null) {
+                val contact = rec.lastTitle.takeIf { it.isNotBlank() } ?: "them"
+                val skillId = when {
+                    rec.pkg.contains("whatsapp") -> "whatsapp"
+                    rec.pkg.contains("telegram") -> "whatsapp" // close enough
+                    else -> null
+                }
+                if (skillId != null) {
+                    val params = mapOf(
+                        "action" to "send",
+                        "contact" to contact,
+                        "message" to trimmed,
+                    )
+                    poller.sendTyping(msg.chatId)
+                    // Acquire wake lock for skill execution
+                    if (!wakeLock.isHeld) wakeLock.acquire(120_000L)
+                    return try {
+                        screenAgent.clearStop()
+                        val result = skillRunner.execute(skillId, params, msg.chatId,
+                            msg.username ?: msg.chatId.toString())
+                        when (result) {
+                            is SkillResult.Success -> result.message
+                            is SkillResult.Failure -> "❌ Could not reply: ${result.reason}"
+                            else -> result.toString()
+                        }
+                    } finally {
+                        try { if (wakeLock.isHeld) wakeLock.release() } catch (_: Exception) {}
+                    }
+                }
+            }
+            // No record or unknown app — fall through to normal AI routing
         }
 
         // ── AUTO-STOP: every new message kills the currently running task ─────
@@ -329,6 +363,17 @@ class AgentOrchestrator(
 
             // Wake screen so agent can interact with apps even if phone was sleeping.
             if (!wakeLock.isHeld) wakeLock.acquire(180_000L) // 3 min max; released in finally
+
+            // Dismiss lock screen — swipe up from bottom (swipe-only lock) or navigate home
+            // to land on the actual app. No-op if screen is already unlocked.
+            AgentAccessibilityService.instance?.let { svc ->
+                val km = context.getSystemService(android.app.KeyguardManager::class.java)
+                if (km?.isKeyguardLocked == true) {
+                    kotlinx.coroutines.delay(300) // let screen fully wake
+                    svc.swipeUpToUnlock()
+                    kotlinx.coroutines.delay(400) // let lock screen animate away
+                }
+            }
 
             when (plan.type) {
                 PlanType.RUN_SKILL -> executeSingleSkill(msg, trimmed, plan.skillId!!, plan.params)

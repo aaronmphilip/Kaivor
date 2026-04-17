@@ -103,6 +103,9 @@ class NotificationRelay : NotificationListenerService() {
             } catch (_: Throwable) { false }
         }
 
+        /** Expose the tracked record for a given Telegram message id (for fallback routing). */
+        fun getRecord(telegramMsgId: Long): NotifRecord? = notifMap[telegramMsgId]
+
         fun labelFor(context: Context, pkg: String): String {
             return try {
                 val pm = context.packageManager
@@ -112,16 +115,18 @@ class NotificationRelay : NotificationListenerService() {
         }
     }
 
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
     data class NotifRecord(
         val context: Context,
         val pkg: String,
         val key: String,
         val remoteInput: RemoteInput?,
         val replyPendingIntent: PendingIntent?,
+        val lastTitle: String = "",
+        val lastBody: String = "",
         val timestampMs: Long = System.currentTimeMillis(),
     )
+
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override fun onListenerConnected() {
         super.onListenerConnected()
@@ -187,7 +192,7 @@ class NotificationRelay : NotificationListenerService() {
             append("📩 *").append(escapeMd(label)).append("*")
             if (title.isNotEmpty()) { append("\n*").append(escapeMd(title)).append("*") }
             if (body.isNotEmpty()) { append("\n").append(escapeMd(body)) }
-            if (remoteInput != null) append("\n\n_Reply to this message to respond._")
+            if (remoteInput != null) append("\n\n↩️ *Long\\-press this message → tap Reply* to respond inside ${escapeMd(label)}")
         }
 
         scope.launch {
@@ -199,6 +204,8 @@ class NotificationRelay : NotificationListenerService() {
                 key = sbn.key,
                 remoteInput = remoteInput,
                 replyPendingIntent = replyPi,
+                lastTitle = title,
+                lastBody = body,
             )
             // LRU prune
             if (notifMap.size > MAX_TRACKED) {
