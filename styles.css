@@ -28,6 +28,10 @@ html {
   scroll-behavior: smooth;
 }
 
+[id] {
+  scroll-margin-top: 120px;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -133,6 +137,7 @@ p {
   backdrop-filter: blur(12px);
   position: sticky;
   top: 18px;
+  z-index: 10;
 }
 
 .brand-mark {
@@ -196,15 +201,6 @@ p {
   box-shadow: 0 22px 42px rgba(255, 122, 24, 0.34);
 }
 
-.disabled-button,
-.disabled-button:hover,
-.disabled-button:focus-visible {
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: 0 10px 24px rgba(255, 122, 24, 0.18);
-  opacity: 0.88;
-}
-
 .secondary-button {
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.04);
@@ -248,6 +244,7 @@ p {
 }
 
 .hero-text,
+.hero-download-note,
 .section-lead,
 .copy-card p,
 .problem-card p,
@@ -267,6 +264,15 @@ p {
 .hero-text {
   max-width: 62ch;
   font-size: 1.08rem;
+}
+
+.hero-download-note {
+  max-width: 46ch;
+  color: var(--text-soft);
+}
+
+.hero-download-note strong {
+  color: var(--text);
 }
 
 .cta-row {
@@ -570,6 +576,32 @@ p {
   max-width: 60ch;
 }
 
+.download-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.download-meta-card {
+  padding: 18px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.26);
+}
+
+.download-meta-label {
+  margin-bottom: 10px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+}
+
+.download-meta-card h3 {
+  font-size: 1.08rem;
+  line-height: 1.18;
+}
+
 .download-actions {
   display: flex;
   flex-wrap: wrap;
@@ -608,13 +640,33 @@ p {
   }
 
   .site-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
     border-radius: 26px;
     padding: 18px;
   }
 
   .site-nav {
-    flex-wrap: wrap;
+    grid-column: 1 / -1;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     gap: 14px;
+    margin: 2px -2px 0;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .site-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .site-nav a {
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.03);
   }
 
   .section-heading {
@@ -637,28 +689,45 @@ p {
     position: static;
   }
 
+  .nav-cta {
+    justify-self: end;
+  }
+
   .site-footer {
     gap: 10px;
+  }
+
+  .download-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 720px) {
   .page-shell {
-    padding: 18px 16px 64px;
+    padding: 14px 14px 56px;
   }
 
   .site-header {
     position: static;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .brand-mark {
+    font-size: 1.18rem;
   }
 
   .site-nav {
-    font-size: 0.92rem;
+    font-size: 0.88rem;
+    gap: 10px;
+    margin: 0 -2px;
   }
 
   .nav-cta,
   .primary-button,
   .secondary-button {
     width: 100%;
+    min-height: 52px;
   }
 
   .cta-row,
@@ -668,20 +737,81 @@ p {
   }
 
   .hero-section {
-    padding-top: 44px;
+    gap: 18px;
+    padding-top: 32px;
+  }
+
+  .hero-copy {
+    gap: 18px;
   }
 
   .hero-panel,
   .copy-card,
   .vision-card,
+  .problem-card,
   .process-card,
+  .feature-card,
   .download-section {
-    padding: 22px;
+    padding: 20px;
+  }
+
+  .hero-copy h1 {
+    max-width: 7.5ch;
+    font-size: clamp(2.75rem, 15vw, 4.2rem);
+  }
+
+  .hero-text {
+    font-size: 1rem;
+  }
+
+  .hero-highlights {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .hero-highlights li {
+    text-align: center;
+    padding: 12px 10px;
+  }
+
+  .process-card {
+    padding-block: 6px 10px;
+  }
+
+  .flow-item,
+  .process-step {
+    gap: 12px;
+  }
+
+  .flow-step,
+  .step-number {
+    width: 40px;
+    height: 40px;
+  }
+
+  .content-section {
+    margin-top: 72px;
+  }
+
+  .download-meta {
+    grid-template-columns: 1fr;
   }
 
   .section-intro h2,
   .section-heading h2,
   .download-section h2 {
     max-width: none;
+  }
+
+  .site-footer {
+    text-align: center;
+    justify-items: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero-highlights {
+    grid-template-columns: 1fr;
   }
 }

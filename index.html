@@ -38,7 +38,7 @@
 
         <a
           class="nav-cta"
-          href="https://github.com/aaronmphilip/BharatDroid/tree/codex/mvp-initial"
+          href="https://github.com/aaronmphilip/BharatDroid"
           target="_blank"
           rel="noreferrer"
         >
@@ -58,14 +58,25 @@
             </p>
 
             <div class="cta-row">
-              <button class="primary-button disabled-button" type="button" disabled>
-                APK Coming Soon
-              </button>
+              <a
+                class="primary-button"
+                href="https://github.com/aaronmphilip/BharatDroid/raw/codex/mvp-initial/downloads/BharatDroid-v1.0.apk"
+                target="_blank"
+                rel="noreferrer"
+                download
+              >
+                Download APK v1.0
+              </a>
               <a class="secondary-button" href="#setup">See setup steps</a>
             </div>
+            <p class="hero-download-note">
+              Direct GitHub download for
+              <strong>BharatDroid-v1.0.apk</strong>, ready to install on
+              Android.
+            </p>
 
             <ul class="hero-highlights" aria-label="Highlights">
-              <li>Orange-and-black launch page</li>
+              <li>Real actions across apps</li>
               <li>Works through Telegram</li>
               <li>English + Hindi intent</li>
               <li>Open source and on-device</li>
@@ -406,26 +417,51 @@
 
         <section class="content-section download-section" id="download">
           <p class="section-tag">Download</p>
-          <h2>The APK button is ready, and the file can be added later.</h2>
+          <h2>Install the latest build and get BharatDroid running.</h2>
           <p class="download-copy">
-            The page now shows a launch-ready download area without sending
-            visitors to a missing file. When the APK exists, we can turn this
-            into a real download link in one quick update.
+            Download the current APK directly from GitHub, or dive into the
+            source if you want to build, inspect, and extend BharatDroid
+            yourself.
           </p>
+          <div class="download-meta" aria-label="Current APK details">
+            <article class="download-meta-card">
+              <p class="download-meta-label">File</p>
+              <h3>BharatDroid-v1.0.apk</h3>
+            </article>
+            <article class="download-meta-card">
+              <p class="download-meta-label">Size</p>
+              <h3>7.3 MB</h3>
+            </article>
+            <article class="download-meta-card">
+              <p class="download-meta-label">Source</p>
+              <h3>GitHub branch download</h3>
+            </article>
+          </div>
 
           <div class="download-actions">
-            <button class="primary-button disabled-button" type="button" disabled>
-              Download APK Soon
-            </button>
+            <a
+              class="primary-button"
+              href="https://github.com/aaronmphilip/BharatDroid/raw/codex/mvp-initial/downloads/BharatDroid-v1.0.apk"
+              target="_blank"
+              rel="noreferrer"
+              download
+            >
+              Download APK v1.0
+            </a>
             <a
               class="secondary-button"
-              href="https://github.com/aaronmphilip/BharatDroid/tree/codex/mvp-initial"
+              href="https://github.com/aaronmphilip/BharatDroid"
               target="_blank"
               rel="noreferrer"
             >
               View Source
             </a>
           </div>
+          <p class="download-note">
+            This link points to the tracked APK inside the repo's
+            <strong>downloads/</strong> folder, so the Vercel site sends people
+            straight to the GitHub-hosted package.
+          </p>
         </section>
       </main>
 

@@ -12,6 +12,7 @@ captures/
 *.aab
 *.keystore
 !debug.keystore
+!downloads/*.apk
 
 # Environment / secrets
 .env
