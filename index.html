@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BharatDroid | AI That Operates Your Android Phone</title>
+    <meta
+      name="description"
+      content="BharatDroid is an open-source Android agent that turns plain-language instructions into real actions on your phone."
+    />
+    <meta name="theme-color" content="#ff7a18" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="background-orb background-orb-left"></div>
+    <div class="background-orb background-orb-right"></div>
+
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand-mark" href="#top" aria-label="BharatDroid home">
+          Bharat<span>Droid</span>
+        </a>
+
+        <nav class="site-nav" aria-label="Primary">
+          <a href="#about">What is it</a>
+          <a href="#vision">Vision</a>
+          <a href="#problem">Problem</a>
+          <a href="#solution">Solution</a>
+          <a href="#setup">Setup</a>
+          <a href="#download">Download</a>
+        </nav>
+
+        <a
+          class="nav-cta"
+          href="https://github.com/aaronmphilip/BharatDroid"
+          target="_blank"
+          rel="noreferrer"
+        >
+          GitHub
+        </a>
+      </header>
+
+      <main id="top">
+        <section class="hero-section">
+          <div class="hero-copy">
+            <p class="eyebrow">Android AI agent</p>
+            <h1>Your phone should follow intent, not taps.</h1>
+            <p class="hero-text">
+              BharatDroid turns plain-language instructions into real action on
+              your Android phone. Ask it through Telegram, let it understand the
+              screen, and watch it complete the task for you.
+            </p>
+
+            <div class="cta-row">
+              <button class="primary-button disabled-button" type="button" disabled>
+                APK Coming Soon
+              </button>
+              <a class="secondary-button" href="#setup">See setup steps</a>
+            </div>
+
+            <ul class="hero-highlights" aria-label="Highlights">
+              <li>Orange-and-black launch page</li>
+              <li>Works through Telegram</li>
+              <li>English + Hindi intent</li>
+              <li>Open source and on-device</li>
+            </ul>
+          </div>
+
+          <div class="hero-panel">
+            <div class="panel-topline">
+              <span class="status-dot"></span>
+              Live workflow preview
+            </div>
+
+            <div class="message-card">
+              <p class="message-label">You send</p>
+              <p class="message-text">
+                "Order dinner, tell my family I'm on the way, and play driving
+                music."
+              </p>
+            </div>
+
+            <div class="flow-list">
+              <div class="flow-item">
+                <span class="flow-step">01</span>
+                <div>
+                  <h2>Intent understood</h2>
+                  <p>
+                    BharatDroid reads the request and decides what needs to
+                    happen.
+                  </p>
+                </div>
+              </div>
+
+              <div class="flow-item">
+                <span class="flow-step">02</span>
+                <div>
+                  <h2>Plan built</h2>
+                  <p>
+                    It creates a step-by-step sequence instead of guessing a
+                    single tap.
+                  </p>
+                </div>
+              </div>
+
+              <div class="flow-item">
+                <span class="flow-step">03</span>
+                <div>
+                  <h2>Phone operates</h2>
+                  <p>
+                    The agent reads the UI, taps, types, scrolls, and confirms
+                    the result.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="proof-card">
+              <p class="proof-title">Why it feels different</p>
+              <p class="proof-text">
+                Most assistants answer questions. BharatDroid performs the work.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-section split-section" id="about">
+          <div class="section-intro">
+            <p class="section-tag">What is BharatDroid</p>
+            <h2>A phone-side operator for real Android tasks.</h2>
+          </div>
+
+          <div class="copy-card">
+            <p>
+              BharatDroid is an open-source Android app that acts like an AI
+              operator for your phone. Instead of giving you suggestions and
+              making you finish the work manually, it reads your intent, studies
+              the live screen, and carries out the steps directly on-device.
+            </p>
+            <p>
+              The goal is simple: if you can say it naturally, your phone should
+              be able to do it. Food delivery, messaging, media playback,
+              payments, or routine app navigation should feel closer to asking a
+              capable assistant than poking through menus.
+            </p>
+          </div>
+        </section>
+
+        <section class="content-section" id="vision">
+          <div class="section-heading">
+            <div>
+              <p class="section-tag">The vision</p>
+              <h2>Build an AI that can use the phone the way people do.</h2>
+            </div>
+            <p class="section-lead">
+              BharatDroid is aiming for a future where your Android device can
+              handle chained actions across apps, without shipping your private
+              behavior to a remote control center.
+            </p>
+          </div>
+
+          <div class="vision-card">
+            <p class="vision-quote">
+              "Book the cab. Message my wife. Put on some music."
+            </p>
+            <p class="vision-body">
+              One request, multiple actions, one consistent agent that can plan,
+              execute, and show proof of what it did. That is the shape of the
+              product BharatDroid is growing toward.
+            </p>
+          </div>
+        </section>
+
+        <section class="content-section" id="problem">
+          <div class="section-heading">
+            <div>
+              <p class="section-tag">The problem</p>
+              <h2>Phones are powerful, but the interface is still painfully manual.</h2>
+            </div>
+          </div>
+
+          <div class="problem-grid">
+            <article class="problem-card">
+              <h3>AI talks, but usually stops there</h3>
+              <p>
+                Most assistants can answer or recommend, but they leave the
+                tapping, typing, and app-hopping to you.
+              </p>
+            </article>
+
+            <article class="problem-card">
+              <h3>Mobile tasks break across apps</h3>
+              <p>
+                Real life actions spill across food apps, chat, payments,
+                transport, and media. Existing assistants rarely connect them.
+              </p>
+            </article>
+
+            <article class="problem-card">
+              <h3>Control should stay with the device</h3>
+              <p>
+                A useful assistant needs context and speed, but users should not
+                have to surrender every action to a cloud dashboard.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="content-section" id="solution">
+          <div class="section-heading">
+            <div>
+              <p class="section-tag">The solution</p>
+              <h2>An intent-first system that plans, executes, and confirms.</h2>
+            </div>
+            <p class="section-lead">
+              BharatDroid combines an AI brain, a screen-aware agent, and
+              Android accessibility controls so the phone can understand the UI
+              it is looking at and act with purpose.
+            </p>
+          </div>
+
+          <div class="solution-layout">
+            <div class="process-card">
+              <div class="process-step">
+                <span class="step-number">01</span>
+                <div>
+                  <h3>Receive the intent</h3>
+                  <p>
+                    The user sends a request in natural language through
+                    Telegram.
+                  </p>
+                </div>
+              </div>
+
+              <div class="process-step">
+                <span class="step-number">02</span>
+                <div>
+                  <h3>Create the execution plan</h3>
+                  <p>
+                    The system breaks the task into ordered steps instead of
+                    trying to brute-force a result.
+                  </p>
+                </div>
+              </div>
+
+              <div class="process-step">
+                <span class="step-number">03</span>
+                <div>
+                  <h3>Read the live Android interface</h3>
+                  <p>
+                    The agent checks the current screen and decides where to tap,
+                    type, or scroll next.
+                  </p>
+                </div>
+              </div>
+
+              <div class="process-step">
+                <span class="step-number">04</span>
+                <div>
+                  <h3>Send proof back to the user</h3>
+                  <p>
+                    BharatDroid can confirm the result with screenshots and
+                    replies, so the user stays in control.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="feature-stack">
+              <article class="feature-card feature-card-primary">
+                <p class="feature-kicker">Built for action</p>
+                <h3>One agent across many apps</h3>
+                <p>
+                  Food delivery, messaging, music, transport, and more can live
+                  behind one conversation instead of five separate workflows.
+                </p>
+              </article>
+
+              <article class="feature-card">
+                <p class="feature-kicker">Language aware</p>
+                <h3>Natural requests in English or Hindi</h3>
+                <p>
+                  The experience is meant to feel local, direct, and easy to
+                  use, not locked behind command syntax.
+                </p>
+              </article>
+
+              <article class="feature-card">
+                <p class="feature-kicker">Open source</p>
+                <h3>Visible, extensible, and community-driven</h3>
+                <p>
+                  BharatDroid is designed to be something builders can inspect,
+                  improve, and shape together.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-section" id="setup">
+          <div class="section-heading">
+            <div>
+              <p class="section-tag">Onboarding</p>
+              <h2>How to get BharatDroid working from zero.</h2>
+            </div>
+            <p class="section-lead">
+              The flow is straightforward: create your Telegram bot, collect the
+              token, add it inside the app, enable the Android permissions, and
+              then start messaging your phone.
+            </p>
+          </div>
+
+          <div class="setup-layout">
+            <article class="feature-card setup-card">
+              <p class="feature-kicker">What you need</p>
+              <h3>Four things before the first run</h3>
+              <ul class="requirements-list">
+                <li>An Android phone running Android 11 or newer</li>
+                <li>A Telegram account</li>
+                <li>A bot token created with Telegram BotFather</li>
+                <li>An AI API key to power the agent inside the app</li>
+              </ul>
+            </article>
+
+            <div class="process-card">
+              <div class="process-step">
+                <span class="step-number">01</span>
+                <div>
+                  <h3>Create the Telegram bot</h3>
+                  <p>
+                    Open Telegram, message <strong>@BotFather</strong>, send
+                    <strong>/newbot</strong>, choose a name, and finish with a
+                    username that ends in <strong>bot</strong>.
+                  </p>
+                </div>
+              </div>
+
+              <div class="process-step">
+                <span class="step-number">02</span>
+                <div>
+                  <h3>Copy the bot token</h3>
+                  <p>
+                    BotFather gives you a token string after creation. Keep that
+                    safe because BharatDroid uses it to receive and send your
+                    commands through Telegram.
+                  </p>
+                </div>
+              </div>
+
+              <div class="process-step">
+                <span class="step-number">03</span>
+                <div>
+                  <h3>Add the token and AI key inside the app</h3>
+                  <p>
+                    Open BharatDroid on the phone, paste the Telegram bot token,
+                    paste your AI provider key, and save the setup so the agent
+                    can start understanding requests.
+                  </p>
+                </div>
+              </div>
+
+              <div class="process-step">
+                <span class="step-number">04</span>
+                <div>
+                  <h3>Enable Accessibility Service</h3>
+                  <p>
+                    This is the core permission. Turn on BharatDroid in Android
+                    accessibility settings so it can tap, type, scroll, and
+                    navigate the screen for you.
+                  </p>
+                </div>
+              </div>
+
+              <div class="process-step">
+                <span class="step-number">05</span>
+                <div>
+                  <h3>Enable notification access if you want relays</h3>
+                  <p>
+                    Optional but useful: notification access lets BharatDroid
+                    forward incoming app notifications to Telegram and help you
+                    reply remotely.
+                  </p>
+                </div>
+              </div>
+
+              <div class="process-step">
+                <span class="step-number">06</span>
+                <div>
+                  <h3>Start the agent and send the first task</h3>
+                  <p>
+                    Once the permissions are on, start the agent and message
+                    your bot in Telegram with a real request like searching,
+                    playing media, or opening and using an app.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-section download-section" id="download">
+          <p class="section-tag">Download</p>
+          <h2>The APK button is ready, and the file can be added later.</h2>
+          <p class="download-copy">
+            The page now shows a launch-ready download area without sending
+            visitors to a missing file. When the APK exists, we can turn this
+            into a real download link in one quick update.
+          </p>
+
+          <div class="download-actions">
+            <button class="primary-button disabled-button" type="button" disabled>
+              Download APK Soon
+            </button>
+            <a
+              class="secondary-button"
+              href="https://github.com/aaronmphilip/BharatDroid"
+              target="_blank"
+              rel="noreferrer"
+            >
+              View Source
+            </a>
+          </div>
+
+          <p class="download-note">
+            Android 11+ - Telegram bot setup - accessibility required for full control
+          </p>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <p>BharatDroid</p>
+        <p>Open-source Android automation with an orange-and-black identity.</p>
+      </footer>
+    </div>
+  </body>
+</html>
