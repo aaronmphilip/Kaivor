@@ -23,6 +23,7 @@ class AgentOrchestrator(
     private val userMemory = UserMemory(context)
     private val appKnowledge = AppKnowledgeBase(context)
     private val muteStore = MuteStore(context)
+    private val conversationContext = ConversationContextStore(context)
 
     // Wake lock: keeps the screen on while a skill is executing so the
     // accessibility service can interact with apps even when called from
@@ -47,7 +48,9 @@ class AgentOrchestrator(
     private val taskMutex = Mutex()
 
     private lateinit var poller: TelegramPoller
-    private lateinit var brain: AIBrain
+    private lateinit var actionBrain: AIBrain
+    private lateinit var knowledgeBrain: KnowledgeBrain
+    private lateinit var brainRouter: BrainRouter
     private lateinit var skillRunner: SkillRunner
     private lateinit var screenAgent: ScreenAgent
 
@@ -122,9 +125,19 @@ class AgentOrchestrator(
             }
         }
 
-        brain = AIBrain(
+        actionBrain = AIBrain(
             apiKey = config.claudeApiKey,
             availableSkills = skillRunner.getSkillInfoForAI(),
+            provider = config.aiProvider,
+            model = config.aiModel,
+        )
+        knowledgeBrain = KnowledgeBrain(
+            apiKey = config.claudeApiKey,
+            provider = config.aiProvider,
+            model = config.aiModel,
+        )
+        brainRouter = BrainRouter(
+            apiKey = config.claudeApiKey,
             provider = config.aiProvider,
             model = config.aiModel,
         )
@@ -293,7 +306,9 @@ class AgentOrchestrator(
                 return "🔔 Unmuted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`)."
             }
             trimmed.lowercase() == "/clear" -> {
-                brain.clearHistory(msg.chatId)
+                actionBrain.clearHistory(msg.chatId)
+                knowledgeBrain.clearHistory(msg.chatId)
+                conversationContext.clear(msg.chatId)
                 return "Conversation memory cleared. Fresh start."
             }
             trimmed.lowercase() == "/mode" -> return toggleMode(msg.chatId)
@@ -328,12 +343,71 @@ class AgentOrchestrator(
         // Brain routing is fast (just an API call), so do it outside the lock.
         // Only the actual on-device skill execution is locked — one task at a time.
         poller.sendTyping(msg.chatId)
-        val plan = brain.process(msg.chatId, trimmed)
+        val route = brainRouter.route(trimmed, conversationContext.buildRouterContext(msg.chatId))
+
+        if (route.mode == BrainMode.DIRECT_REPLY) {
+            activityLog.log(trimmed, null, "success", route.reply.take(100))
+            return route.reply.ifBlank { "Okay." }
+        }
+
+        if (route.mode == BrainMode.KNOWLEDGE) {
+            val knowledgeReply = knowledgeBrain.answer(
+                chatId = msg.chatId,
+                userMessage = route.knowledgeQuery.ifBlank { trimmed },
+                contextHint = conversationContext.buildKnowledgeContext(msg.chatId),
+            )
+            conversationContext.rememberKnowledge(
+                chatId = msg.chatId,
+                query = knowledgeReply.query,
+                topic = knowledgeReply.topic,
+                summary = knowledgeReply.summary,
+                sources = knowledgeReply.sources.map { it.url },
+            )
+            activityLog.log(trimmed, "knowledge", "success", knowledgeReply.summary.take(100))
+            return knowledgeReply.reply
+        }
+
+        var hybridKnowledgeReply: KnowledgeReply? = null
+        val actionPrompt = when (route.mode) {
+            BrainMode.HYBRID -> {
+                hybridKnowledgeReply = knowledgeBrain.answer(
+                    chatId = msg.chatId,
+                    userMessage = route.knowledgeQuery.ifBlank { trimmed },
+                    contextHint = conversationContext.buildKnowledgeContext(msg.chatId),
+                )
+                conversationContext.rememberKnowledge(
+                    chatId = msg.chatId,
+                    query = hybridKnowledgeReply!!.query,
+                    topic = hybridKnowledgeReply!!.topic,
+                    summary = hybridKnowledgeReply!!.summary,
+                    sources = hybridKnowledgeReply!!.sources.map { it.url },
+                )
+                route.actionPrompt.ifBlank { trimmed }
+            }
+
+            else -> route.actionPrompt.ifBlank { trimmed }
+        }
+
+        val actionContext = buildString {
+            val storedContext = conversationContext.buildActionContext(msg.chatId)
+            if (storedContext.isNotBlank()) appendLine(storedContext)
+            hybridKnowledgeReply?.let { reply ->
+                appendLine("Fresh web research for this request: ${reply.summary}")
+            }
+        }.trim()
+
+        val plan = actionBrain.process(
+            chatId = msg.chatId,
+            userMessage = actionPrompt,
+            contextHint = actionContext,
+        )
 
         // Direct replies and unknowns don't touch the phone — no lock needed.
         if (plan.type == PlanType.DIRECT_REPLY) {
-            activityLog.log(trimmed, null, "success", plan.directReply?.take(100) ?: "")
-            return plan.directReply ?: "?"
+            val directReply = plan.directReply ?: "?"
+            conversationContext.rememberAction(msg.chatId, actionPrompt, directReply)
+            activityLog.log(trimmed, null, "success", directReply.take(100))
+            return if (hybridKnowledgeReply != null) buildHybridReply(hybridKnowledgeReply!!, directReply) else directReply
         }
         if (plan.type == PlanType.UNKNOWN) {
             activityLog.log(trimmed, null, "failure", "Unknown command")
@@ -375,11 +449,13 @@ class AgentOrchestrator(
                 }
             }
 
-            when (plan.type) {
+            val actionResult = when (plan.type) {
                 PlanType.RUN_SKILL -> executeSingleSkill(msg, trimmed, plan.skillId!!, plan.params)
                 PlanType.MULTI_STEP -> executeMultiStep(msg, trimmed, plan.steps)
                 else -> "?"
             }
+            conversationContext.rememberAction(msg.chatId, actionPrompt, actionResult)
+            if (hybridKnowledgeReply != null) buildHybridReply(hybridKnowledgeReply!!, actionResult) else actionResult
         } finally {
             try { if (wakeLock.isHeld) wakeLock.release() } catch (_: Exception) {}
             if (acquired != null) taskMutex.unlock()
@@ -493,6 +569,29 @@ class AgentOrchestrator(
         return match?.activityInfo?.packageName
     }
 
+    private fun buildHybridReply(knowledge: KnowledgeReply, actionResult: String): String {
+        val sourceLines = knowledge.sources.take(2).mapIndexed { index, source ->
+            "${index + 1}. ${source.title.take(70).sanitizeTelegramText()} (${source.domain.ifBlank { source.url }.sanitizeTelegramText()})"
+        }.joinToString("\n")
+
+        return buildString {
+            append("Research: ${knowledge.summary.sanitizeTelegramText()}")
+            append("\n\nAction: ")
+            append(actionResult.ifBlank { "Done. Screenshot sent above if available." }.sanitizeTelegramText())
+            if (sourceLines.isNotBlank()) {
+                append("\n\nSources:\n")
+                append(sourceLines)
+            }
+        }.take(3500)
+    }
+
+    private fun String.sanitizeTelegramText(): String =
+        replace("*", "")
+            .replace("`", "")
+            .replace("[", "")
+            .replace("]", "")
+            .replace("_", "")
+
     private fun buildMutedListMessage(): String {
         val muted = muteStore.list()
         val granted = NotificationRelay.isPermissionGranted(context)
@@ -582,6 +681,12 @@ Tell me what to do — English or Hindi. I'll do it.
 - "Create a note: buy groceries"
 - "Find contact Mom"
 - "Read what's on screen"
+
+*Web Research:*
+- "Who is Sundar Pichai?"
+- "Tell me about this company"
+- "Find out the latest about Nvidia"
+- "Research this person and then message me a summary"
 
 *More:*
 - "Navigate to Gateway of India"
@@ -679,6 +784,7 @@ Notification relay: ${if (notifGranted) "✅ Active${if (mutedCount > 0) " ($mut
 Skills: ${skillRunner.listSkills().size} loaded
 Mode: $mode
 AI: $providerStr ${if (modelStr.isNotBlank()) "($modelStr)" else ""}
+Brains: Web knowledge + device actions
 Today: $count commands processed
 Apps learned: $knownApps  |  Preferences: $memCount
         """.trimIndent()
