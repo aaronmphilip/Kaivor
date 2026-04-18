@@ -50,7 +50,6 @@ class AgentOrchestrator(
     private lateinit var poller: TelegramPoller
     private lateinit var actionBrain: AIBrain
     private lateinit var knowledgeBrain: KnowledgeBrain
-    private lateinit var brainRouter: BrainRouter
     private lateinit var skillRunner: SkillRunner
     private lateinit var screenAgent: ScreenAgent
 
@@ -132,11 +131,6 @@ class AgentOrchestrator(
             model = config.aiModel,
         )
         knowledgeBrain = KnowledgeBrain(
-            apiKey = config.claudeApiKey,
-            provider = config.aiProvider,
-            model = config.aiModel,
-        )
-        brainRouter = BrainRouter(
             apiKey = config.claudeApiKey,
             provider = config.aiProvider,
             model = config.aiModel,
@@ -256,6 +250,15 @@ class AgentOrchestrator(
                 appKnowledge.clearAll()
                 return "🧹 App knowledge cleared. I'll re-learn as you use me."
             }
+            trimmed.lowercase() == "/info" || trimmed.lowercase() == "/research" -> {
+                return "Use `/info <person, company, place, or topic>` for web research.\nExample: `/info Who is Nikhil Kamath?`"
+            }
+            trimmed.lowercase().startsWith("/info ") -> {
+                return handleInfoCommand(msg.chatId, trimmed.substringAfter("/info ").trim())
+            }
+            trimmed.lowercase().startsWith("/research ") -> {
+                return handleInfoCommand(msg.chatId, trimmed.substringAfter("/research ").trim())
+            }
             trimmed.lowercase().startsWith("/knowledge clear ") -> {
                 val pkg = trimmed.substringAfter("/knowledge clear ").trim()
                 appKnowledge.clearApp(pkg)
@@ -342,8 +345,12 @@ class AgentOrchestrator(
         // ── Normal flow: AI -> Skill ──
         // Brain routing is fast (just an API call), so do it outside the lock.
         // Only the actual on-device skill execution is locked — one task at a time.
+        if (looksLikeInfoQuery(trimmed)) {
+            return buildInfoHint(trimmed)
+        }
+
         poller.sendTyping(msg.chatId)
-        val route = brainRouter.route(trimmed, conversationContext.buildRouterContext(msg.chatId))
+        val route = BrainRoute(mode = BrainMode.ACTION, actionPrompt = trimmed)
 
         if (route.mode == BrainMode.DIRECT_REPLY) {
             activityLog.log(trimmed, null, "success", route.reply.take(100))
@@ -388,13 +395,7 @@ class AgentOrchestrator(
             else -> route.actionPrompt.ifBlank { trimmed }
         }
 
-        val actionContext = buildString {
-            val storedContext = conversationContext.buildActionContext(msg.chatId)
-            if (storedContext.isNotBlank()) appendLine(storedContext)
-            hybridKnowledgeReply?.let { reply ->
-                appendLine("Fresh web research for this request: ${reply.summary}")
-            }
-        }.trim()
+        val actionContext = ""
 
         val plan = actionBrain.process(
             chatId = msg.chatId,
@@ -569,6 +570,54 @@ class AgentOrchestrator(
         return match?.activityInfo?.packageName
     }
 
+    private suspend fun handleInfoCommand(chatId: Long, query: String): String {
+        if (query.isBlank()) {
+            return "Use `/info <person, company, place, or topic>` for web research.\nExample: `/info Who is Nikhil Kamath?`"
+        }
+
+        poller.sendTyping(chatId)
+        val knowledgeReply = knowledgeBrain.answer(
+            chatId = chatId,
+            userMessage = query,
+            contextHint = conversationContext.buildKnowledgeContext(chatId),
+        )
+        conversationContext.rememberKnowledge(
+            chatId = chatId,
+            query = knowledgeReply.query,
+            topic = knowledgeReply.topic,
+            summary = knowledgeReply.summary,
+            sources = knowledgeReply.sources.map { it.url },
+        )
+        activityLog.log("/info $query", "knowledge", "success", knowledgeReply.summary.take(100))
+        return knowledgeReply.reply
+    }
+
+    private fun looksLikeInfoQuery(input: String): Boolean {
+        val trimmed = input.trim()
+        if (trimmed.startsWith("/")) return false
+
+        val lower = trimmed.lowercase()
+        val actionSignals = listOf(
+            "whatsapp", "telegram", "gmail", "calendar", "screen", "phone", "message ",
+            "send ", "reply ", "open ", "launch ", "start ", "play ", "order ", "book ",
+            "call ", "navigate ", "map ", "youtube", "swiggy", "zomato", "zepto",
+            "blinkit", "uber", "ola", "amazon", "flipkart", "paytm", "phonepe", "gpay"
+        )
+        if (actionSignals.any { lower.contains(it) }) return false
+
+        val infoSignals = listOf(
+            "who is", "what is", "tell me about", "look up", "find out about", "research",
+            "background on", "information about", "latest about", "latest on", "net worth of",
+            "biography of", "career of", "where is", "when did", "why did", "how old is"
+        )
+        return infoSignals.any { lower.startsWith(it) || lower.contains(" $it") }
+    }
+
+    private fun buildInfoHint(input: String): String {
+        val clean = input.trim().replace("`", "").take(200)
+        return "For web info, use `/info $clean`.\n\nThat keeps research separate from phone actions, so I do not open apps or send messages by mistake."
+    }
+
     private fun buildHybridReply(knowledge: KnowledgeReply, actionResult: String): String {
         val sourceLines = knowledge.sources.take(2).mapIndexed { index, source ->
             "${index + 1}. ${source.title.take(70).sanitizeTelegramText()} (${source.domain.ifBlank { source.url }.sanitizeTelegramText()})"
@@ -683,10 +732,10 @@ Tell me what to do — English or Hindi. I'll do it.
 - "Read what's on screen"
 
 *Web Research:*
-- "Who is Sundar Pichai?"
-- "Tell me about this company"
-- "Find out the latest about Nvidia"
-- "Research this person and then message me a summary"
+- "/info Who is Sundar Pichai?"
+- "/info Tell me about this company"
+- "/info Find out the latest about Nvidia"
+- "/info Research this person"
 
 *More:*
 - "Navigate to Gateway of India"
