@@ -522,6 +522,8 @@ class AgentAccessibilityService : AccessibilityService() {
             buildElementLabel(node),
             node.viewIdResourceName.orEmpty(),
             node.className?.toString().orEmpty(),
+            node.hintText?.toString().orEmpty(),
+            node.contentDescription?.toString().orEmpty(),
         ).joinToString(" ").lowercase()
 
         val looksLikeInput = node.isEditable ||

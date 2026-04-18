@@ -43,7 +43,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="AI Provider"
+            android:text="Agent AI Provider"
             android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"
@@ -52,7 +52,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Choose the AI that powers your agent"
+            android:text="Choose the AI that powers phone actions"
             android:textColor="#888888"
             android:textSize="12sp"
             android:layout_marginTop="4dp" />
@@ -104,7 +104,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="API Key"
+            android:text="Agent API Key"
             android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"
@@ -139,7 +139,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Model (optional)"
+            android:text="Agent Model (optional)"
             android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"
@@ -159,6 +159,128 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="e.g. gemini-2.5-flash or gpt-4o"
+            android:inputType="text"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555555"
+            android:background="@drawable/input_bg"
+            android:padding="14dp"
+            android:fontFamily="monospace"
+            android:textSize="13sp"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Research AI Provider"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="28dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="This powers /info and /research. Leave the key blank to reuse Agent AI."
+            android:textColor="#888888"
+            android:textSize="12sp"
+            android:layout_marginTop="4dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp">
+
+            <Button
+                android:id="@+id/btnResearchProvGemini"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="Gemini"
+                android:textSize="12sp"
+                android:backgroundTint="#1E1E1E"
+                android:textColor="#AAAAAA"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/btnResearchProvClaude"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="Claude"
+                android:textSize="12sp"
+                android:backgroundTint="#1E1E1E"
+                android:textColor="#AAAAAA"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/btnResearchProvOpenAI"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="ChatGPT"
+                android:textSize="12sp"
+                android:backgroundTint="#1E1E1E"
+                android:textColor="#AAAAAA"
+                android:layout_marginStart="4dp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Research API Key"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="28dp" />
+
+        <TextView
+            android:id="@+id/tvResearchKeyHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Get your free key at aistudio.google.com/apikey"
+            android:textColor="#888888"
+            android:textSize="12sp"
+            android:layout_marginTop="4dp" />
+
+        <EditText
+            android:id="@+id/etResearchApiKey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Paste research API key here"
+            android:inputType="textPassword"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555555"
+            android:background="@drawable/input_bg"
+            android:padding="14dp"
+            android:fontFamily="monospace"
+            android:textSize="13sp"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Research Model (optional)"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="28dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Leave blank for default. This only affects /info and /research."
+            android:textColor="#888888"
+            android:textSize="11sp"
+            android:lineSpacingMultiplier="1.3"
+            android:layout_marginTop="4dp" />
+
+        <EditText
+            android:id="@+id/etResearchModel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="e.g. gemini-2.5-flash or gpt-4o-mini"
             android:inputType="text"
             android:textColor="#FFFFFF"
             android:textColorHint="#555555"

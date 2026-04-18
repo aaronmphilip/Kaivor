@@ -29,34 +29,56 @@ class AgentForegroundService : LifecycleService() {
 
         val prefs = getSharedPreferences("bharatdroid", MODE_PRIVATE)
         val botToken = prefs.getString("bot_token", null)
-        val aiKey = prefs.getString("ai_key", null)
+        val agentKey = prefs.getString("agent_ai_key", null)
+            ?: prefs.getString("ai_key", null)
             ?: prefs.getString("claude_key", null) // Backwards compatible
         val chatId = prefs.getLong("chat_id", -1L)
 
-        if (botToken == null || aiKey == null || chatId == -1L) {
+        if (botToken == null || agentKey == null || chatId == -1L) {
             stopSelf()
             return START_NOT_STICKY
         }
 
         val askPerm = prefs.getBoolean("ask_permission", true)
-        val providerStr = prefs.getString("ai_provider", null) ?: ""
-        val aiModel = prefs.getString("ai_model", "") ?: ""
+        val agentProviderStr = prefs.getString("agent_ai_provider", prefs.getString("ai_provider", null)) ?: ""
+        val agentModel = prefs.getString("agent_ai_model", prefs.getString("ai_model", "")) ?: ""
+        val rawResearchKey = prefs.getString("research_ai_key", null)?.trim().orEmpty()
+        val researchKey = rawResearchKey.ifBlank { agentKey }
+        val researchProviderStr = if (rawResearchKey.isBlank()) {
+            agentProviderStr
+        } else {
+            prefs.getString("research_ai_provider", null) ?: ""
+        }
+        val researchModel = if (rawResearchKey.isBlank()) {
+            agentModel
+        } else {
+            prefs.getString("research_ai_model", "") ?: ""
+        }
 
         // Determine provider: saved preference > auto-detect from key
-        val aiProvider = try {
-            if (providerStr.isNotBlank()) AIProvider.valueOf(providerStr)
-            else AIBrain.detectProvider(aiKey)
+        val agentProvider = try {
+            if (agentProviderStr.isNotBlank()) AIProvider.valueOf(agentProviderStr)
+            else AIBrain.detectProvider(agentKey)
         } catch (_: Exception) {
-            AIBrain.detectProvider(aiKey)
+            AIBrain.detectProvider(agentKey)
+        }
+        val researchProvider = try {
+            if (researchProviderStr.isNotBlank()) AIProvider.valueOf(researchProviderStr)
+            else AIBrain.detectProvider(researchKey)
+        } catch (_: Exception) {
+            AIBrain.detectProvider(researchKey)
         }
 
         val config = AgentConfig(
             telegramBotToken = botToken,
-            claudeApiKey = aiKey,
+            agentApiKey = agentKey,
+            researchApiKey = researchKey,
             authorizedChatIds = setOf(chatId),
             askPermission = askPerm,
-            aiProvider = aiProvider,
-            aiModel = aiModel,
+            agentProvider = agentProvider,
+            agentModel = agentModel,
+            researchProvider = researchProvider,
+            researchModel = researchModel,
         )
 
         orchestrator = AgentOrchestrator(this, config)

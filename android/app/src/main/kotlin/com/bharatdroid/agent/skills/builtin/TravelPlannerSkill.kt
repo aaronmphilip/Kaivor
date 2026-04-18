@@ -21,7 +21,7 @@ class TravelPlannerSkill : Skill {
     override val manifest = SkillManifest(
         id = "travel_planner",
         name = "Travel Planner (Maps + Calendar)",
-        version = "1.0.0",
+        version = "1.2.0",
         description = "Plans trips: gets ETA from Google Maps, adds a calendar event with a 10-15 min buffer to leave on time.",
         author = "bharatdroid-team",
         trusted = true,
@@ -98,32 +98,19 @@ class TravelPlannerSkill : Skill {
         val departAdvice = "Leave ${totalBuffer} min before — $etaText travel + $bufferMinutes min buffer."
 
         // ─── Step 2: Open Google Calendar and create the event ─────────────────
-        runner.openApp("com.google.android.calendar")
-        runner.waitForApp("com.google.android.calendar", timeoutMs = 6000)
-        delay(700)
-        runner.dismissPopups(2)
-        delay(200)
-
-        val calendarGoal = buildString {
-            append("You are in Google Calendar. Create a new event.\n\n")
-            append("EVENT DETAILS:\n")
-            append("- Title: \"$eventTitle\"\n")
-            append("- Date: $date\n")
-            if (eventTime.isNotBlank()) append("- Start time: $eventTime\n")
-            append("- Description: \"$departAdvice Travel to $destination.\"\n\n")
-            append("STEPS:\n")
-            append("1. Tap the '+' or 'Create' button (usually bottom-right floating button).\n")
-            append("2. Choose 'Event' if a menu appears.\n")
-            append("3. In the title field: type \"$eventTitle\".\n")
-            if (eventTime.isNotBlank()) append("4. Set the start time to $eventTime on $date.\n")
-            else append("4. Keep the default date/time ($date).\n")
-            append("5. Scroll down to find the 'Description' or 'Notes' field. Type: \"$departAdvice Travel to $destination.\"\n")
-            append("6. Tap 'Save' (top-right) to create the event.\n")
-            append("7. Call done after you see the event on the calendar grid.\n\n")
-            append("DO NOT invite guests. DO NOT change calendar. DO NOT add attachments.")
+        val calendarResult = createCalendarEventViaIntent(
+            runner = runner,
+            agent = agent,
+            title = eventTitle,
+            date = date,
+            time = eventTime,
+            description = "$departAdvice Travel to $destination.",
+        )
+        val calResult = when (calendarResult) {
+            is SkillResult.Success -> calendarResult.message
+            is SkillResult.Failure -> calendarResult.reason
+            is SkillResult.NeedsConfirmation -> "Calendar creation needs confirmation."
         }
-
-        val calResult = agent.executeGoal(runner, calendarGoal, maxSteps = 20)
 
         return SkillResult.Success(
             "🗓️ *Trip planned to $destination*\n" +

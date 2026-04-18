@@ -380,12 +380,24 @@ class ScreenAgent(
             "ride confirmed", "trip booked", "scheduled", "saved",
         )
         val hasSuccess = successMarkers.any { screen.contains(it, ignoreCase = true) }
+        val rideOptions = extractRideOptions(screen)
 
         val actionPrompts = uniqueLines.filter { line ->
             val l = line.lowercase()
             l.startsWith("confirm") || l.startsWith("choose ") || l.startsWith("book ") ||
                 l.startsWith("schedule") || l.startsWith("pay ") || l == "continue" || l == "next"
         }.take(3)
+
+        if (rideOptions.size >= 2) {
+            return buildString {
+                appendLine("Ride options found before the step limit:")
+                rideOptions.take(5).forEach { appendLine("- $it") }
+                if (actionPrompts.isNotEmpty()) {
+                    appendLine()
+                    appendLine("Next step visible on screen: ${actionPrompts.joinToString(" / ")}")
+                }
+            }.trim()
+        }
 
         return buildString {
             if (hasSuccess) {
@@ -406,6 +418,18 @@ class ScreenAgent(
                 if (preview.isNotBlank()) appendLine("Screen preview: $preview")
             }
         }.trim()
+    }
+
+    private fun extractRideOptions(screen: String): List<String> {
+        val ridePattern = Regex(
+            """([A-Za-z][A-Za-z0-9 +_-]{1,24}):\s*Fare\s*(?:₹|\u20B9|Rs\.?|INR)\s*[\d,]+(?:\.\d+)?(?:,\s*Discounted\s*from\s*(?:₹|\u20B9|Rs\.?|INR)\s*[\d,]+(?:\.\d+)?)?(?:,\s*Estimated\s*drop-?off:\s*[\d:\sapm]+)?(?:,\s*driver\s*is\s*[\d\s\w]+?away)?""",
+            RegexOption.IGNORE_CASE,
+        )
+
+        return ridePattern.findAll(screen)
+            .map { it.value.trim().replace(Regex("""\s+"""), " ") }
+            .distinct()
+            .toList()
     }
 
     /** Quick single action decision (used by tapSmartly callers). */
@@ -568,16 +592,21 @@ class ScreenAgent(
 
                 // Determine the field's role to decide REPLACE vs APPEND behaviour:
                 //
-                //  • SEARCH fields (search bars, query boxes) → REPLACE mode:
-                //    Clear any stale query first, then type the new one fresh.
-                //    Reason: each new search should overwrite the previous query.
+                //  • FORM / SEARCH / LOCATION fields → REPLACE mode:
+                //    Pickup, destination, title, date, time, email, password, OTP, phone,
+                //    recipient, and search fields should overwrite the current value.
                 //
-                //  • ALL OTHER fields (notes, messages, forms, document editors) → APPEND mode:
-                //    Read existing content first, combine, then ACTION_SET_TEXT.
-                //    Reason: ACTION_SET_TEXT alone WIPES the entire field. Without append,
-                //    typing paragraph 2 erases paragraph 1 — the exact bug the user reported.
+                //  • LONG-FORM message/note editors → APPEND mode:
+                //    Message composers and multi-line notes should preserve existing content.
                 val fieldRole = if (typeIdx in elements.indices) elementRole(elements[typeIdx]) else "text-input"
-                val isSearchField = fieldRole == "search-input"
+                val targetElement = elements.getOrNull(typeIdx)
+                val shouldAppend = shouldAppendToField(fieldRole, targetElement)
+                val shouldReplace = !shouldAppend
+                val sanitizedText = FieldTextSanitizer.sanitize(action.text, targetElement, fieldRole)
+                if (action.text.isNotBlank() && sanitizedText.isBlank()) {
+                    val idxLabel = if (typeIdx in elements.indices) "$typeIdx" else "auto"
+                    return "type[$idxLabel] BLOCKED — placeholder-only value"
+                }
 
                 if (typeIdx in elements.indices) {
                     val el = elements[typeIdx]
@@ -587,10 +616,14 @@ class ScreenAgent(
                     // reads existing content and combines before ACTION_SET_TEXT.
                     val hint = el.hint.ifBlank { el.contentDescription }
                     if (hint.isNotBlank()) {
-                        val hintOk = runner.typeInFieldWithHint(hint, action.text, appendToExisting = !isSearchField)
+                        val hintOk = runner.typeInFieldWithHint(
+                            hint,
+                            sanitizedText,
+                            appendToExisting = shouldAppend,
+                        )
                         if (hintOk) {
                             delay(150)
-                            return "type[$typeIdx] '${action.text.take(30)}' → OK (hint${if (!isSearchField) "+append" else ""})"
+                            return "type[$typeIdx] '${sanitizedText.take(30)}' → OK (hint${if (shouldAppend) "+append" else ""})"
                         }
                     }
                     // Tap the specific field the AI chose — establishes focus before typing
@@ -598,20 +631,19 @@ class ScreenAgent(
                     delay(300) // give focus time to settle on Indian phones
                 }
 
-                val ok = if (isSearchField) {
-                    // REPLACE mode: clear stale query then type fresh
-                    // Safe clear via ACTION_SET_TEXT("") — no selection chaos
+                val ok = if (shouldReplace) {
+                    // REPLACE mode: overwrite the field with the new value
                     runner.clearField()
-                    runner.typeReliably(action.text)
+                    runner.typeReliably(sanitizedText)
                 } else {
                     // APPEND mode: read existing content, combine, then ACTION_SET_TEXT
-                    // This preserves existing paragraphs/lines in notes, messages, forms
-                    runner.typeAppending(action.text)
+                    // This preserves existing paragraphs/lines in message or note editors
+                    runner.typeAppending(sanitizedText)
                 }
                 delay(150)
                 val idxLabel = if (typeIdx in elements.indices) "$typeIdx" else "auto"
-                val modeTag = if (isSearchField) "replace" else "append"
-                "type[$idxLabel/$modeTag] '${action.text.take(30)}' → ${if (ok) "OK" else "MISS"}"
+                val modeTag = if (shouldReplace) "replace" else "append"
+                "type[$idxLabel/$modeTag] '${sanitizedText.take(30)}' → ${if (ok) "OK" else "MISS"}"
             }
 
             // Move focus to the next editable field (Tab equivalent)
@@ -829,19 +861,25 @@ class ScreenAgent(
             appendLine("   g) STOP before final payment — report what you found to the user")
             appendLine()
             appendLine("6. MULTI-FIELD FORMS AND MULTI-LINE TEXT:")
-            appendLine("   - For SEPARATE fields (title + body, email + password): each field has its own index.")
-            appendLine("     Type into title field → next_field → type into body field (different indices).")
-            appendLine("   - For MULTI-LINE TEXT inside ONE field (notes, long messages): use \\n in your text.")
+            appendLine("   - For SEPARATE fields (pickup, destination, title, email, password, date, time): each field has its own index.")
+            appendLine("     Type ONLY that field's value. These fields are REPLACED, not appended.")
+            appendLine("   - For MULTI-LINE TEXT inside ONE field (notes, long messages, descriptions): use \\n in your text.")
             appendLine("     Example: type {\"text\": \"Line 1\\nLine 2\\nLine 3\"} in ONE type action — do NOT type each line separately.")
-            appendLine("     The system automatically APPENDS your text to what is already in the field.")
-            appendLine("     You do NOT need to press enter between paragraphs — just include \\n in your text value.")
+            appendLine("     Only long-form message/note fields append to the existing content.")
             appendLine("   - NEVER type the same content twice into the same field.")
-            appendLine("   - For login forms: READ THE PLACEHOLDERS/HINTS on each field to know what goes where.")
+            appendLine("   - For login and form fields: READ THE PLACEHOLDERS/HINTS on each field to know what goes where.")
             appendLine("     role=email-input or hint='Email' → type ONLY the email address.")
             appendLine("     role=password-input or hint='Password' → type ONLY the password (NEVER type email here).")
             appendLine("     role=phone-input or hint='Mobile' → type ONLY the phone number.")
             appendLine("     role=otp-input or hint='OTP/Code' → type ONLY the verification code.")
             appendLine("     role=username-input → type ONLY the username.")
+            appendLine("     role=pickup-input → type ONLY the pickup place.")
+            appendLine("     role=destination-input → type ONLY the destination place.")
+            appendLine("     role=title-input → type ONLY the title text.")
+            appendLine("   - Placeholder text is NOT part of the value.")
+            appendLine("     If the field says 'Enter pickup location' and the real value is 'Koramangala', type ONLY 'Koramangala'.")
+            appendLine("     If the field says 'Where to?' and the real value is 'Airport', type ONLY 'Airport'.")
+            appendLine("     NEVER type labels like 'Enter pickup location', 'Where to?', 'Search destination', 'Starts', or 'Add title'.")
             appendLine("   - NEVER concatenate email+password into one field. Each field gets its OWN value.")
             appendLine("   - If two editable fields are visible, the TOP one is usually email/username, the BOTTOM one is password.")
             appendLine("     Type into field 1 → next_field → type into field 2. Use next_field, do NOT retype the first value.")
@@ -865,8 +903,12 @@ class ScreenAgent(
             appendLine("   Tapping it resets to the app home feed and loses ALL search results = instant loop.")
             appendLine("   Navigate within the current screen using scroll_down, scroll_up, or tap visible results.")
             appendLine("9. If same element failed twice → try scroll_down, or tap a DIFFERENT element.")
-            appendLine("10. done only when you CONFIRM success is visible on screen.")
-            appendLine("11. fail only if truly stuck with absolutely no path forward.")
+            appendLine("10. FINAL USER SUMMARY FORMAT:")
+            appendLine("   - If you are reporting MULTIPLE options/items/rides/results, put ONE option per line.")
+            appendLine("   - Use short labels like 'Pickup', 'Destination', 'Ride', 'Fare', 'ETA'.")
+            appendLine("   - Do NOT merge multiple options into one long paragraph.")
+            appendLine("11. done only when you CONFIRM success is visible on screen.")
+            appendLine("12. fail only if truly stuck with absolutely no path forward.")
             appendLine()
             appendLine("ACTIONS:")
             appendLine("""tap:{"action":"tap","index":N}  type:{"action":"type","index":N,"text":"X"}  enter:{"action":"enter"}""")
@@ -964,6 +1006,9 @@ class ScreenAgent(
             el.isEditable && combined.containsAny("email", "e-mail", "email address") && !combined.contains("password") -> "email-input"
             // Username / login id field
             el.isEditable && combined.containsAny("username", "user name", "user id", "login id", "account id") -> "username-input"
+            el.isEditable && combined.containsAny("pickup", "pick up", "origin", "from") -> "pickup-input"
+            el.isEditable && combined.containsAny("destination", "where to", "drop", "dropoff", "drop off") -> "destination-input"
+            el.isEditable && combined.containsAny("add title", "title", "event title", "subject") -> "title-input"
             el.isEditable && combined.containsAny("search", "find", "query") -> "search-input"
             el.isEditable && combined.containsAny("message", "reply", "chat", "compose") -> "message-input"
             el.isEditable && combined.containsAny("to", "recipient") -> "recipient-input"
@@ -1022,6 +1067,9 @@ class ScreenAgent(
                 val el = elements[i]
                 val role = elementRole(el)
                 var score = 0
+                if (role == "pickup-input") score += 230
+                if (role == "destination-input") score += 230
+                if (role == "title-input") score += 220
                 if (role == "search-input") score += 200
                 if (role == "message-input") score += 180
                 if (role.endsWith("-input")) score += 100
@@ -1039,6 +1087,29 @@ class ScreenAgent(
             el.contentDescription,
             el.viewId.substringAfterLast('/').replace('_', ' '),
         ).firstOrNull { it.isNotBlank() } ?: ""
+    }
+
+    private fun shouldAppendToField(fieldRole: String, target: ScreenElement?): Boolean {
+        if (fieldRole == "message-input") return true
+
+        val combined = target?.let {
+            listOf(it.text, it.hint, it.contentDescription, it.viewId.substringAfterLast('/'))
+                .joinToString(" ")
+                .lowercase()
+        }.orEmpty()
+
+        val isLongForm = combined.containsAny(
+            "description",
+            "details",
+            "notes",
+            "note",
+            "body",
+            "message",
+            "reply",
+            "compose",
+        )
+
+        return isLongForm && target != null && target.height >= 80
     }
 
     private fun posTag(el: ScreenElement): String {

@@ -10,6 +10,15 @@ data class KnowledgeReply(
     val sources: List<ResearchSource>,
 )
 
+enum class ResearchDepth(
+    val resultLimit: Int,
+    val pageFetchLimit: Int,
+    val sourcePreviewCount: Int,
+) {
+    QUICK(resultLimit = 5, pageFetchLimit = 3, sourcePreviewCount = 3),
+    DEEP(resultLimit = 8, pageFetchLimit = 5, sourcePreviewCount = 5),
+}
+
 class KnowledgeBrain(
     apiKey: String,
     provider: AIProvider,
@@ -23,7 +32,12 @@ class KnowledgeBrain(
     )
     private val history = mutableMapOf<Long, ArrayDeque<AIChatMessage>>()
 
-    suspend fun answer(chatId: Long, userMessage: String, contextHint: String = ""): KnowledgeReply {
+    suspend fun answer(
+        chatId: Long,
+        userMessage: String,
+        contextHint: String = "",
+        depth: ResearchDepth = ResearchDepth.QUICK,
+    ): KnowledgeReply {
         val queryPlan = resolveQuery(chatId, userMessage, contextHint)
         if (queryPlan.query.isBlank() && queryPlan.reply.isNotBlank()) {
             rememberTurn(chatId, userMessage, queryPlan.reply)
@@ -37,7 +51,11 @@ class KnowledgeBrain(
         }
         val query = queryPlan.query.ifBlank { userMessage.trim() }
         val topic = queryPlan.topic.ifBlank { query }
-        val research = researcher.research(query)
+        val research = researcher.research(
+            query = query,
+            resultLimit = depth.resultLimit,
+            pageFetchLimit = depth.pageFetchLimit,
+        )
 
         if (research.sources.isEmpty()) {
             val fallback = "I could not find useful web results for that yet. Try rephrasing the person, company, or topic name."
@@ -57,12 +75,14 @@ class KnowledgeBrain(
             query = query,
             topic = topic,
             research = research,
+            depth = depth,
         )
 
         val summary = synthesized.summary.ifBlank { synthesized.answer }.take(800)
         val reply = buildReply(
             answer = synthesized.answer,
             sources = research.sources,
+            depth = depth,
         )
 
         rememberTurn(chatId, userMessage, summary)
@@ -137,7 +157,12 @@ Rules:
         query: String,
         topic: String,
         research: ResearchPacket,
+        depth: ResearchDepth,
     ): SynthesizedAnswer {
+        val answerStyle = when (depth) {
+            ResearchDepth.QUICK -> "Keep the answer concise and useful."
+            ResearchDepth.DEEP -> "Give a deeper answer with the key points, but keep it readable and not bloated."
+        }
         val systemPrompt = """
 You are BharatDroid's knowledge brain.
 Answer the user's question using ONLY the supplied web research.
@@ -148,7 +173,7 @@ Return only JSON:
 Rules:
 1. Do not invent facts that are not in the supplied research.
 2. If sources disagree, mention the uncertainty briefly.
-3. Keep the answer concise and useful.
+3. $answerStyle
 4. "summary" should be a short memory-friendly version of the answer.
 5. Use the same language as the user.
         """.trimIndent()
@@ -157,6 +182,7 @@ Rules:
             appendLine("User question: $userMessage")
             appendLine("Search query: $query")
             appendLine("Topic: $topic")
+            appendLine("Research depth: ${depth.name.lowercase()}")
             if (contextHint.isNotBlank()) {
                 appendLine("Recent context: $contextHint")
             }
@@ -210,8 +236,8 @@ Rules:
         }.trim()
     }
 
-    private fun buildReply(answer: String, sources: List<ResearchSource>): String {
-        val sourceLines = sources.take(3).mapIndexed { index, source ->
+    private fun buildReply(answer: String, sources: List<ResearchSource>, depth: ResearchDepth): String {
+        val sourceLines = sources.take(depth.sourcePreviewCount).mapIndexed { index, source ->
             "${index + 1}. ${source.title.take(70).toTelegramSafeText()} (${source.domain.ifBlank { source.url }.toTelegramSafeText()})"
         }.joinToString("\n")
 

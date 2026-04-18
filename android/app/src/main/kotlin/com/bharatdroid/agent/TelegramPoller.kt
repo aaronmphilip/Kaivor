@@ -8,6 +8,7 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 
 // ─────────────────────────────────────────────
@@ -23,13 +24,39 @@ data class IncomingMessage(
     val chatId: Long,
     val username: String?,
     val text: String,
+    val attachment: TelegramAttachment? = null,
     /** If the user replied to a previous bot message, this is that message's Telegram id. */
     val replyToMessageId: Long? = null,
+)
+
+enum class TelegramAttachmentKind { DOCUMENT, PHOTO }
+
+data class TelegramAttachment(
+    val kind: TelegramAttachmentKind,
+    val fileId: String,
+    val uniqueId: String = "",
+    val fileName: String = "",
+    val mimeType: String = "",
+    val sizeBytes: Long = 0L,
+)
+
+data class DownloadedTelegramAttachment(
+    val attachment: TelegramAttachment,
+    val file: File,
+    val displayName: String,
+    val mimeType: String,
+)
+
+data class TelegramBotCommand(
+    val command: String,
+    val description: String,
 )
 
 class TelegramPoller(
     private val botToken: String,
     private val authorizedChatIds: Set<Long>,
+    private val downloadDir: File,
+    private val commands: List<TelegramBotCommand> = emptyList(),
     private val onMessage: suspend (msg: IncomingMessage) -> String,
 ) {
     private val client = OkHttpClient.Builder()
@@ -39,12 +66,20 @@ class TelegramPoller(
     private val gson = Gson()
     private val baseUrl = "https://api.telegram.org/bot$botToken"
     private var lastUpdateId = 0L
+    private var commandsSynced = false
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    init {
+        downloadDir.mkdirs()
+    }
 
     fun start() {
         scope.launch {
             while (isActive) {
                 try {
+                    if (!commandsSynced) {
+                        commandsSynced = syncCommandMenu()
+                    }
                     val updates = fetchUpdates()
                     for (msg in updates) {
                         lastUpdateId = maxOf(lastUpdateId, msg.updateId)
@@ -80,12 +115,17 @@ class TelegramPoller(
      * (so a user's reply in Telegram can be routed back to the source app).
      * Returns null if the send failed.
      */
-    suspend fun sendMessage(chatId: Long, text: String, parseMode: String = "Markdown"): Long? {
-        val body = gson.toJson(mapOf(
+    suspend fun sendMessage(chatId: Long, text: String, parseMode: String? = "Markdown"): Long? {
+        if (text.isBlank()) return null
+
+        val payload = linkedMapOf<String, Any>(
             "chat_id" to chatId,
-            "text" to text,
-            "parse_mode" to parseMode,
-        ))
+            "text" to text.take(4096),
+        )
+        if (!parseMode.isNullOrBlank()) payload["parse_mode"] = parseMode
+        buildCommandKeyboard()?.let { payload["reply_markup"] = it }
+
+        val body = gson.toJson(payload)
         val request = Request.Builder()
             .url("$baseUrl/sendMessage")
             .post(body.toRequestBody("application/json".toMediaType()))
@@ -132,6 +172,11 @@ class TelegramPoller(
                 .addFormDataPart("caption", caption.take(1024))
                 .addFormDataPart("photo", "result.jpg",
                     bytes.toRequestBody("image/jpeg".toMediaType()))
+                .apply {
+                    buildCommandKeyboard()?.let { replyMarkup ->
+                        addFormDataPart("reply_markup", gson.toJson(replyMarkup))
+                    }
+                }
                 .build()
 
             val request = Request.Builder()
@@ -151,9 +196,243 @@ class TelegramPoller(
         }
     }
 
+    suspend fun downloadAttachment(attachment: TelegramAttachment): DownloadedTelegramAttachment? {
+        val fileInfoRequest = Request.Builder()
+            .url("$baseUrl/getFile?file_id=${attachment.fileId}")
+            .build()
+
+        val filePath = withContext(Dispatchers.IO) {
+            try {
+                client.newCall(fileInfoRequest).execute().use { response ->
+                    val bodyStr = response.body?.string().orEmpty()
+                    if (!response.isSuccessful) return@use null
+                    val json = gson.fromJson(bodyStr, JsonObject::class.java)
+                    if (json?.get("ok")?.asBoolean != true) return@use null
+                    json.getAsJsonObject("result")
+                        ?.get("file_path")
+                        ?.asString
+                }
+            } catch (_: Exception) {
+                null
+            }
+        } ?: return null
+
+        val targetFile = File(downloadDir, buildLocalFileName(attachment, filePath))
+        val downloadRequest = Request.Builder()
+            .url("https://api.telegram.org/file/bot$botToken/$filePath")
+            .build()
+
+        val downloaded = withContext(Dispatchers.IO) {
+            try {
+                client.newCall(downloadRequest).execute().use { response ->
+                    if (!response.isSuccessful) return@use false
+                    val body = response.body ?: return@use false
+                    targetFile.outputStream().use { output ->
+                        body.byteStream().use { input -> input.copyTo(output) }
+                    }
+                    true
+                }
+            } catch (_: Exception) {
+                false
+            }
+        }
+        if (!downloaded) return null
+
+        return DownloadedTelegramAttachment(
+            attachment = attachment,
+            file = targetFile,
+            displayName = attachment.fileName.ifBlank { targetFile.name },
+            mimeType = attachment.mimeType.ifBlank { inferMimeType(targetFile.name) },
+        )
+    }
+
     fun stop() = scope.cancel()
 
     // ── Internal ──────────────────────────────
+
+    private fun buildCommandKeyboard(): Map<String, Any>? {
+        if (commands.isEmpty()) return null
+
+        val priorityOrder = listOf(
+            "help", "info", "research",
+            "summarize",
+            "status", "skills", "history",
+            "memory", "knowledge", "mode",
+            "muted", "clear"
+        )
+
+        val byName = commands.associateBy { it.command }
+        val orderedButtons = priorityOrder
+            .mapNotNull { byName[it] }
+            .map { "/${it.command}" } +
+            commands
+                .map { it.command }
+                .filterNot { it in priorityOrder }
+                .map { "/$it" }
+
+        if (orderedButtons.isEmpty()) return null
+
+        val rows = orderedButtons.chunked(3)
+        return mapOf(
+            "keyboard" to rows.map { row -> row.map { command -> mapOf("text" to command) } },
+            "resize_keyboard" to true,
+            "is_persistent" to true,
+            "one_time_keyboard" to false,
+            "input_field_placeholder" to "Choose a BharatDroid command",
+        )
+    }
+
+    private suspend fun syncCommandMenu(): Boolean {
+        if (commands.isEmpty()) return true
+
+        fun commandMaps(): List<Map<String, String>> = commands.map { command ->
+            mapOf(
+                "command" to command.command,
+                "description" to command.description,
+            )
+        }
+
+        var synced = postJson(
+            "$baseUrl/setMyCommands",
+            mapOf("commands" to commandMaps())
+        )
+
+        synced = postJson(
+            "$baseUrl/setMyCommands",
+            mapOf(
+                "scope" to mapOf("type" to "all_private_chats"),
+                "commands" to commandMaps(),
+            )
+        ) && synced
+
+        authorizedChatIds.forEach { chatId ->
+            synced = postJson(
+                "$baseUrl/setMyCommands",
+                mapOf(
+                    "scope" to mapOf(
+                        "type" to "chat",
+                        "chat_id" to chatId,
+                    ),
+                    "commands" to commandMaps(),
+                )
+            ) && synced
+        }
+
+        val menuPayload = mapOf(
+            "menu_button" to mapOf("type" to "commands")
+        )
+        synced = postJson("$baseUrl/setChatMenuButton", menuPayload) && synced
+
+        authorizedChatIds.forEach { chatId ->
+            synced = postJson(
+                "$baseUrl/setChatMenuButton",
+                mapOf(
+                    "chat_id" to chatId,
+                    "menu_button" to mapOf("type" to "commands")
+                )
+            ) && synced
+        }
+
+        return synced
+    }
+
+    private suspend fun postJson(url: String, payload: Any): Boolean {
+        val request = Request.Builder()
+            .url(url)
+            .post(gson.toJson(payload).toRequestBody("application/json".toMediaType()))
+            .build()
+
+        return withContext(Dispatchers.IO) {
+            try {
+                client.newCall(request).execute().use { response ->
+                    val bodyStr = response.body?.string().orEmpty()
+                    if (!response.isSuccessful) return@use false
+                    val json = gson.fromJson(bodyStr, JsonObject::class.java)
+                    json?.get("ok")?.asBoolean == true
+                }
+            } catch (_: Exception) {
+                false
+            }
+        }
+    }
+
+    suspend fun sendLongMessage(chatId: Long, text: String, parseMode: String? = null) {
+        val chunks = splitMessage(text)
+        chunks.forEachIndexed { index, chunk ->
+            val prefix = if (chunks.size > 1) "Part ${index + 1}/${chunks.size}\n\n" else ""
+            sendMessage(chatId, prefix + chunk, parseMode)
+        }
+    }
+
+    private fun splitMessage(text: String, maxChars: Int = 3500): List<String> {
+        val cleaned = text.trim()
+        if (cleaned.isBlank()) return emptyList()
+        if (cleaned.length <= maxChars) return listOf(cleaned)
+
+        val chunks = mutableListOf<String>()
+        var remaining = cleaned
+        while (remaining.length > maxChars) {
+            val splitAt = listOf(
+                remaining.lastIndexOf("\n\n", maxChars),
+                remaining.lastIndexOf('\n', maxChars),
+                remaining.lastIndexOf(' ', maxChars),
+            ).firstOrNull { it >= maxChars / 2 } ?: maxChars
+            chunks += remaining.substring(0, splitAt).trim()
+            remaining = remaining.substring(splitAt).trim()
+        }
+        if (remaining.isNotBlank()) chunks += remaining
+        return chunks
+    }
+
+    private fun buildLocalFileName(attachment: TelegramAttachment, filePath: String): String {
+        val originalName = attachment.fileName.ifBlank { filePath.substringAfterLast('/') }
+        val safeName = originalName
+            .replace(Regex("[^A-Za-z0-9._-]"), "_")
+            .ifBlank { attachment.uniqueId.ifBlank { "telegram_file" } }
+        val prefix = attachment.uniqueId.ifBlank { attachment.fileId.takeLast(8) }
+        return "${prefix}_${safeName}"
+    }
+
+    private fun inferMimeType(fileName: String): String {
+        return when (fileName.substringAfterLast('.', "").lowercase()) {
+            "pdf" -> "application/pdf"
+            "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "txt", "md", "csv", "json", "xml", "log" -> "text/plain"
+            "html", "htm" -> "text/html"
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "webp" -> "image/webp"
+            else -> "application/octet-stream"
+        }
+    }
+
+    private fun parseDocumentAttachment(message: JsonObject): TelegramAttachment? {
+        val document = message.getAsJsonObject("document") ?: return null
+        return TelegramAttachment(
+            kind = TelegramAttachmentKind.DOCUMENT,
+            fileId = document.get("file_id")?.asString ?: return null,
+            uniqueId = document.get("file_unique_id")?.asString.orEmpty(),
+            fileName = document.get("file_name")?.asString.orEmpty(),
+            mimeType = document.get("mime_type")?.asString.orEmpty(),
+            sizeBytes = document.get("file_size")?.asLong ?: 0L,
+        )
+    }
+
+    private fun parsePhotoAttachment(message: JsonObject): TelegramAttachment? {
+        val photos = message.getAsJsonArray("photo") ?: return null
+        val bestPhoto = photos
+            .map { it.asJsonObject }
+            .maxByOrNull { it.get("file_size")?.asLong ?: 0L }
+            ?: return null
+        return TelegramAttachment(
+            kind = TelegramAttachmentKind.PHOTO,
+            fileId = bestPhoto.get("file_id")?.asString ?: return null,
+            uniqueId = bestPhoto.get("file_unique_id")?.asString.orEmpty(),
+            fileName = "photo_${bestPhoto.get("file_unique_id")?.asString.orEmpty()}.jpg",
+            mimeType = "image/jpeg",
+            sizeBytes = bestPhoto.get("file_size")?.asLong ?: 0L,
+        )
+    }
 
     private suspend fun fetchUpdates(): List<IncomingMessage> {
         // Long-poll: Telegram holds the connection for up to 30s if no updates
@@ -170,8 +449,13 @@ class TelegramPoller(
                     val update = element.asJsonObject
                     val message = update.getAsJsonObject("message") ?: return@mapNotNull null
                     val chat = message.getAsJsonObject("chat")
-                    val text = message.get("text")?.asString ?: return@mapNotNull null
+                    val text = message.get("text")?.asString
+                        ?: message.get("caption")?.asString
+                        ?: ""
                     val from = message.getAsJsonObject("from")
+                    val attachment = parseDocumentAttachment(message)
+                        ?: parsePhotoAttachment(message)
+                    if (text.isBlank() && attachment == null) return@mapNotNull null
 
                     val replyTo = message.getAsJsonObject("reply_to_message")
                         ?.get("message_id")?.asLong
@@ -181,6 +465,7 @@ class TelegramPoller(
                         chatId = chat.get("id").asLong,
                         username = from?.get("username")?.asString,
                         text = text,
+                        attachment = attachment,
                         replyToMessageId = replyTo,
                     )
                 }

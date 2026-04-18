@@ -45,6 +45,9 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.gson)
     implementation(libs.jsoup)
+    implementation(libs.pdfbox.android)
     implementation(libs.datastore.preferences)
     implementation(libs.lifecycle.service)
+
+    testImplementation("junit:junit:4.13.2")
 }

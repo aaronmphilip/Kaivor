@@ -120,8 +120,14 @@ class MainActivity : AppCompatActivity() {
 
         val mode = prefs.getBoolean("ask_permission", true)
         val modeText = if (mode) "Ask Permission" else "Just Do It"
-        val providerStr = prefs.getString("ai_provider", "GEMINI") ?: "GEMINI"
-        skillCount.text = "${allSkills.size} skills  |  $modeText  |  $providerStr"
+        val agentProvider = prefs.getString("agent_ai_provider", prefs.getString("ai_provider", "GEMINI")) ?: "GEMINI"
+        val researchKey = prefs.getString("research_ai_key", "")?.trim().orEmpty()
+        val researchProvider = if (researchKey.isBlank()) {
+            "$agentProvider fallback"
+        } else {
+            prefs.getString("research_ai_provider", agentProvider) ?: agentProvider
+        }
+        skillCount.text = "${allSkills.size} skills  |  $modeText  |  Agent: $agentProvider  |  Research: $researchProvider"
         todayCount.text = "${activityLog.todayCount()} commands today"
 
         // Notification relay card

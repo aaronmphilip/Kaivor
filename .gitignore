@@ -20,6 +20,14 @@ captures/
 .env*.local
 *.vars
 .dev.vars
+.claude/
+.claire/
+.vercel/
+.write-test
+codex-write-probe.tmp
+git-temp-index .lock
+git-temp-index.lock
+__push_tmp/
 .wrangler/
 
 # Logs

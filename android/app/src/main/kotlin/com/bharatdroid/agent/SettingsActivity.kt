@@ -2,13 +2,17 @@ package com.bharatdroid.agent
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.*
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 
 class SettingsActivity : AppCompatActivity() {
 
-    private var selectedProvider = AIProvider.GEMINI
+    private var selectedAgentProvider = AIProvider.GEMINI
+    private var selectedResearchProvider = AIProvider.GEMINI
     private var askPermission = true
     private var learningEnabled = true
 
@@ -18,47 +22,76 @@ class SettingsActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("bharatdroid", MODE_PRIVATE)
 
-        // Load current settings
-        val providerStr = prefs.getString("ai_provider", "GEMINI") ?: "GEMINI"
-        selectedProvider = try { AIProvider.valueOf(providerStr) } catch (_: Exception) { AIProvider.GEMINI }
+        val agentProviderStr = prefs.getString("agent_ai_provider", prefs.getString("ai_provider", "GEMINI")) ?: "GEMINI"
+        val researchProviderStr = prefs.getString("research_ai_provider", agentProviderStr) ?: agentProviderStr
+        selectedAgentProvider = parseProvider(agentProviderStr, AIProvider.GEMINI)
+        selectedResearchProvider = parseProvider(researchProviderStr, selectedAgentProvider)
         askPermission = prefs.getBoolean("ask_permission", true)
         learningEnabled = getSharedPreferences("bharatdroid_memory", MODE_PRIVATE)
             .getBoolean("learning_enabled", true)
-        val currentKey = prefs.getString("ai_key", "") ?: ""
-        val currentModel = prefs.getString("ai_model", "") ?: ""
 
-        val keyField = findViewById<EditText>(R.id.etApiKey)
-        val modelField = findViewById<EditText>(R.id.etModel)
-        keyField.setText(currentKey)
-        modelField.setText(currentModel)
+        val agentKeyField = findViewById<EditText>(R.id.etApiKey)
+        val agentModelField = findViewById<EditText>(R.id.etModel)
+        val researchKeyField = findViewById<EditText>(R.id.etResearchApiKey)
+        val researchModelField = findViewById<EditText>(R.id.etResearchModel)
 
-        setupProviderButtons()
+        agentKeyField.setText(prefs.getString("agent_ai_key", prefs.getString("ai_key", "")) ?: "")
+        agentModelField.setText(prefs.getString("agent_ai_model", prefs.getString("ai_model", "")) ?: "")
+        researchKeyField.setText(prefs.getString("research_ai_key", "") ?: "")
+        researchModelField.setText(prefs.getString("research_ai_model", "") ?: "")
+
+        setupProviderSection(
+            initialProvider = selectedAgentProvider,
+            geminiButtonId = R.id.btnProvGemini,
+            claudeButtonId = R.id.btnProvClaude,
+            openAiButtonId = R.id.btnProvOpenAI,
+            keyHintId = R.id.tvKeyHint,
+            keyFieldId = R.id.etApiKey,
+        ) { provider ->
+            selectedAgentProvider = provider
+        }
+        setupProviderSection(
+            initialProvider = selectedResearchProvider,
+            geminiButtonId = R.id.btnResearchProvGemini,
+            claudeButtonId = R.id.btnResearchProvClaude,
+            openAiButtonId = R.id.btnResearchProvOpenAI,
+            keyHintId = R.id.tvResearchKeyHint,
+            keyFieldId = R.id.etResearchApiKey,
+        ) { provider ->
+            selectedResearchProvider = provider
+        }
         setupPermissionToggle()
         setupLearningToggle()
 
-        // Back
         findViewById<Button>(R.id.btnBack).setOnClickListener { finish() }
 
-        // Save
         findViewById<Button>(R.id.btnSave).setOnClickListener {
-            val key = keyField.text.toString().trim()
-            if (key.isBlank()) {
-                Toast.makeText(this, "API key cannot be empty.", Toast.LENGTH_SHORT).show()
+            val agentKey = agentKeyField.text.toString().trim()
+            val researchKey = researchKeyField.text.toString().trim()
+            val agentModel = agentModelField.text.toString().trim()
+            val researchModel = researchModelField.text.toString().trim()
+
+            if (agentKey.isBlank()) {
+                Toast.makeText(this, "Agent API key cannot be empty.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             prefs.edit()
-                .putString("ai_key", key)
-                .putString("ai_provider", selectedProvider.name)
-                .putString("ai_model", modelField.text.toString().trim())
+                .putString("agent_ai_key", agentKey)
+                .putString("agent_ai_provider", selectedAgentProvider.name)
+                .putString("agent_ai_model", agentModel)
+                .putString("research_ai_key", researchKey)
+                .putString("research_ai_provider", selectedResearchProvider.name)
+                .putString("research_ai_model", researchModel)
+                .putString("ai_key", agentKey)
+                .putString("ai_provider", selectedAgentProvider.name)
+                .putString("ai_model", agentModel)
                 .putBoolean("ask_permission", askPermission)
                 .apply()
 
-            // Save learning preference to its own prefs file (same as UserMemory uses)
             getSharedPreferences("bharatdroid_memory", MODE_PRIVATE)
                 .edit().putBoolean("learning_enabled", learningEnabled).apply()
 
-            // Restart agent service
             stopService(Intent(this, AgentForegroundService::class.java))
             startForegroundService(Intent(this, AgentForegroundService::class.java))
 
@@ -66,11 +99,10 @@ class SettingsActivity : AppCompatActivity() {
             finish()
         }
 
-        // Reset App
         findViewById<Button>(R.id.btnReset).setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("Reset BharatDroid?")
-                .setMessage("This will erase all settings and take you back to setup. You will need to re-enter your bot token and API key.")
+                .setMessage("This will erase all settings and take you back to setup. You will need to re-enter your bot token, agent AI key, and research AI key.")
                 .setPositiveButton("Reset") { _, _ ->
                     stopService(Intent(this, AgentForegroundService::class.java))
                     prefs.edit().clear().apply()
@@ -84,17 +116,24 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupProviderButtons() {
-        val btnGemini = findViewById<Button>(R.id.btnProvGemini)
-        val btnClaude = findViewById<Button>(R.id.btnProvClaude)
-        val btnOpenAI = findViewById<Button>(R.id.btnProvOpenAI)
-        val keyHint = findViewById<TextView>(R.id.tvKeyHint)
-        val keyField = findViewById<EditText>(R.id.etApiKey)
+    private fun setupProviderSection(
+        initialProvider: AIProvider,
+        geminiButtonId: Int,
+        claudeButtonId: Int,
+        openAiButtonId: Int,
+        keyHintId: Int,
+        keyFieldId: Int,
+        onSelected: (AIProvider) -> Unit,
+    ) {
+        val btnGemini = findViewById<Button>(geminiButtonId)
+        val btnClaude = findViewById<Button>(claudeButtonId)
+        val btnOpenAI = findViewById<Button>(openAiButtonId)
+        val keyHint = findViewById<TextView>(keyHintId)
+        val keyField = findViewById<EditText>(keyFieldId)
 
         fun selectProvider(provider: AIProvider) {
-            selectedProvider = provider
+            onSelected(provider)
 
-            // Reset all buttons
             listOf(btnGemini, btnClaude, btnOpenAI).forEach { btn ->
                 btn.setBackgroundColor(0xFF1E1E1E.toInt())
                 btn.setTextColor(0xFFAAAAAA.toInt())
@@ -126,8 +165,7 @@ class SettingsActivity : AppCompatActivity() {
         btnClaude.setOnClickListener { selectProvider(AIProvider.CLAUDE) }
         btnOpenAI.setOnClickListener { selectProvider(AIProvider.OPENAI) }
 
-        // Set initial state
-        selectProvider(selectedProvider)
+        selectProvider(initialProvider)
     }
 
     private fun setupPermissionToggle() {
@@ -167,7 +205,7 @@ class SettingsActivity : AppCompatActivity() {
                 btnOff.setBackgroundColor(0xFF1E1E1E.toInt())
                 btnOff.setTextColor(0xFFAAAAAA.toInt())
             } else {
-                btnOff.setBackgroundColor(0xFF5500AA.toInt()) // purple = privacy mode
+                btnOff.setBackgroundColor(0xFF5500AA.toInt())
                 btnOff.setTextColor(0xFFFFFFFF.toInt())
                 btnOn.setBackgroundColor(0xFF1E1E1E.toInt())
                 btnOn.setTextColor(0xFFAAAAAA.toInt())
@@ -178,5 +216,13 @@ class SettingsActivity : AppCompatActivity() {
         btnOff.setOnClickListener { selectLearning(false) }
 
         selectLearning(learningEnabled)
+    }
+
+    private fun parseProvider(raw: String, fallback: AIProvider): AIProvider {
+        return try {
+            AIProvider.valueOf(raw)
+        } catch (_: Exception) {
+            fallback
+        }
     }
 }

@@ -281,6 +281,12 @@ class OnboardingActivity : AppCompatActivity() {
 
             getSharedPreferences("bharatdroid", MODE_PRIVATE).edit()
                 .putString("bot_token", botToken)
+                .putString("agent_ai_key", key)
+                .putString("agent_ai_provider", selectedProvider.name)
+                .putString("agent_ai_model", "")
+                .putString("research_ai_key", "")
+                .putString("research_ai_provider", selectedProvider.name)
+                .putString("research_ai_model", "")
                 .putString("ai_key", key)
                 .putString("ai_provider", selectedProvider.name)
                 .putLong("chat_id", chatId)

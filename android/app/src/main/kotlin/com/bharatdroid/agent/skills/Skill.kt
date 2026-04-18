@@ -42,8 +42,16 @@ data class SkillContext(
     val agent: ScreenAgent? = null,
 )
 
+enum class DeliveryMode {
+    SCREENSHOT_OR_TEXT,
+    LONG_TEXT,
+}
+
 sealed class SkillResult {
-    data class Success(val message: String) : SkillResult()
+    data class Success(
+        val message: String,
+        val delivery: DeliveryMode = DeliveryMode.SCREENSHOT_OR_TEXT,
+    ) : SkillResult()
     data class Failure(val reason: String) : SkillResult()
     data class NeedsConfirmation(
         val prompt: String,

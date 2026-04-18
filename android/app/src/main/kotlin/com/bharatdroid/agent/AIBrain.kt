@@ -70,7 +70,7 @@ Rules:
 6. If no specific skill matches, use "general" skill with a "goal" param.
 7. App opening requests like "open X", "launch X", "start X" should use the "general" skill unless X clearly belongs to a specific skill.
 8. Use YouTube only for explicit YouTube/video/music intents.
-9. WhatsApp send requests must include exact "contact" and "message".
+9. WhatsApp text send requests must include exact "contact" and "message".
 10. Chrome should handle general web tasks with action="search" or action="goal".
 11. Match the app intent precisely.
 12. Gmail can read, compose, or search.
@@ -79,11 +79,24 @@ Rules:
 15. Contacts can search or call.
 16. Files can browse, search, open, or show downloads.
 17. Settings should target a section when possible.
-18. Screen skill is for reading or finding on-screen content.
-19. Reading screens, documents, or invoices means the "screen" skill.
+18. Screen skill is for reading or finding on-screen content already visible.
+19. If the user wants a PDF, document, invoice, or article opened, scrolled, understood, and summarized from WhatsApp, Chrome, or another app, prefer the "reading_concierge" skill.
 20. Unknown apps should go through the "general" skill.
 21. Instagram, Swiggy, Zomato, Maps and similar apps can use action="goal" for complex multi-step intents.
 22. Multi-step requests should become ordered "steps".
+23. Ride tasks that compare Uber/Ola, honor an explicit pickup, book a ride, tell the ETA, and message someone should prefer the "ride_concierge" skill.
+24. If the user specifies a pickup location, pass it as "pickup" and do not replace it with current location.
+25. If the user specifies "via Uber" or "via Ola", pass it as "via". If the user specifies cab/auto/bike, pass it as "transport".
+26. For WhatsApp PDFs/documents use action="whatsapp_pdf" unless the request clearly says article/link.
+27. For WhatsApp article links use action="whatsapp_article". For browser article reads use action="article".
+28. If a reading/summarizing request mentions a contact, file, article topic, or desired output length like one paragraph/one page/two pages/detailed, pass those as "contact", "query", and "instruction" for "reading_concierge".
+29. If the user wants to send or share a PDF, document, invoice, resume, or other file through WhatsApp, use the "whatsapp" skill with action="send_file". Pass the recipient in "contact", the file name or topic in "file" (or "query"), any folder hint in "folder", and any covering text in "caption".
+30. If the user is following up on a recent food or shopping shortlist with phrases like "first one", "second one", "that one", "this one", "go ahead", or "place order", reuse the same app skill from context and pass action="continue" with the follow-up in "query".
+31. For Zomato and Swiggy food requests, the first pass should usually use action="search" so the skill can search, compare options, and ask which one to order before adding anything.
+32. When the user gives a budget like under Rs X, below X, or within X, pass maxPrice as a number.
+33. For Calendar create/add/new event requests, include action="create" and extract title, date, time, and description whenever the user mentions them.
+34. Preserve explicit date/time phrases such as "18th April", "tomorrow", weekdays, "4 pm", "4:30 pm", "430pm", "noon", or "midnight" instead of dropping them.
+35. If a ride pickup should use GPS/current location/my location/right now location, set pickup to "current location" rather than inventing or guessing an address.
 
 Do NOT return anything outside JSON.
             """.trimIndent()
