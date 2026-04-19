@@ -271,15 +271,6 @@ Quick ways to contribute:
 
 ---
 
-## 👥 Built By
-
-| | Role |
-|---|---|
-| **[@aaronmphilip](https://github.com/aaronmphilip)** | Creator & Lead Developer |
-| **[Codex](https://openai.com/codex) (OpenAI)** | AI pair programmer — architecture, skills, and agent logic |
-
----
-
 ## 📄 License
 
 MIT — free to use, modify, and distribute. See [LICENSE](LICENSE).
