@@ -19,6 +19,16 @@ class FlipkartSkill : Skill {
         ),
         allowedPackages = setOf("com.flipkart.android"),
         exampleParamsHint = """{"action": "search", "query": "boAt Airdopes 141", "maxPrice": 1500}""",
+        uiKnowledge = """
+Flipkart UI guide:
+- Home screen: blue header at the top; search bar reads "Search for Products, Brands and More"; cart icon (bag) at the top right
+- Search results: product list/grid — each card shows product image, title, price (₹), discount percentage (e.g. "40% off"), star rating, and number of reviews
+- Filter / Sort bar: appears just below search results — "Sort" button and "Filter" button; tap to apply filters like Price Range, Brand, Rating, Discount
+- Product page: image carousel at top; full product title; price with strikethrough MRP and discount; "ADD TO CART" button (white with blue border); "BUY NOW" button (solid yellow); scroll down for specs, reviews, seller info
+- Cart: tap the bag icon at the top right → lists all added items with quantity selectors and prices; "PLACE ORDER" blue button at the bottom
+- Order flow: after PLACE ORDER → address selection → payment (UPI/card/EMI/COD) → Order Confirmed screen
+- My Orders: hamburger or profile menu → "My Orders" → list of past orders with product name, status, and return/review options
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

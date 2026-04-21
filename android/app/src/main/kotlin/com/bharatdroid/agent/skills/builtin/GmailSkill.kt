@@ -19,6 +19,18 @@ class GmailSkill : Skill {
         ),
         allowedPackages = setOf("com.google.android.gm"),
         exampleParamsHint = """{"action": "compose", "to": "boss@company.com", "subject": "Update", "body": "Hi team..."}""",
+        uiKnowledge = """
+Gmail UI guide:
+- Inbox: vertical list of emails; each row shows sender name (left), subject line (bold if unread), preview snippet, and timestamp (right); unread emails are bold
+- Compose: red pencil FAB at the bottom right → full compose screen with To / CC / Subject / Body fields; Send button (paper plane) at top right
+- Search: tap the search bar or magnifying glass icon at the top right of inbox
+- Sidebar / navigation drawer: tap the hamburger menu (three lines) at the top left → shows Inbox, Starred, Sent, Drafts, Spam, All Mail, Labels
+- Email thread view: tap an email to open it; Reply, Reply All, Forward buttons appear at the bottom of the message; three-dot overflow for more options
+- Star: tap the star icon on an email row to star/unstar it
+- Labels: coloured chips shown below subject line for labelled emails
+- Swipe gestures: swipe left to archive, swipe right to delete (depends on settings)
+- Account switcher: tap your avatar/profile picture at the top right to switch Google accounts
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

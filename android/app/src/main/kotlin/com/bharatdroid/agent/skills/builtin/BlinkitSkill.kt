@@ -19,6 +19,16 @@ class BlinkitSkill : Skill {
         ),
         allowedPackages = setOf("com.grofers.customerapp"),
         exampleParamsHint = """{"action": "search", "item": "amul butter 500g"}""",
+        uiKnowledge = """
+Blinkit UI guide:
+- Home screen: green header at the top showing delivery address and ETA; search bar reads "Search for items"; category tiles (Dairy, Fruits, Snacks, Beverages, etc.) in a grid below
+- Search results: product cards with image, brand name, weight/size variant, price (₹), and an ADD button (green, right side of card)
+- Product page: larger image, name, weight options, price, quantity selector (- 0 +), and "Add to cart" green button
+- Cart: floating cart panel slides up from the bottom OR a dedicated Cart tab in the bottom nav; shows items, quantities, subtotal
+- Delivery address: shown in the green header at the top with a "Change" link to update
+- Checkout: "Proceed to pay" button at the bottom of cart → payment options (UPI, card, COD) → order confirmation screen
+- Category filter: horizontal scroll row of category chips below the search bar on the home/search screen
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

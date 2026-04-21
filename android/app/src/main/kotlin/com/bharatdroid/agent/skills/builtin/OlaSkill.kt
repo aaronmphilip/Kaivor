@@ -19,6 +19,16 @@ class OlaSkill : Skill {
         ),
         allowedPackages = setOf("com.olacabs.customer"),
         exampleParamsHint = """{"destination": "Mumbai Airport", "action": "book"}""",
+        uiKnowledge = """
+Ola Cabs UI guide:
+- Home screen: map fills most of the screen; "Where are you going?" or "Pick-up / Drop" search bar at the bottom
+- Destination entry: two stacked text fields — FROM (current location, top) and TO (destination, below it) — each with a pin icon on the left
+- Ride type cards: horizontal scrolling row after destination is set — Ola Mini, Ola Sedan, Ola Prime, Ola Auto — each card shows vehicle type, capacity, estimated fare, and ETA
+- Book button: large orange button at the very bottom reading "Book Ola [type]" (e.g. "Book Ola Mini")
+- Searching for driver: spinner animation with "Looking for nearby drivers" message
+- Driver card: appears after booking — shows driver photo, name, star rating, vehicle number, ETA countdown, and "Cancel ride" option
+- Promo/coupon field: below ride cards, "Have a promo code?" expandable row
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

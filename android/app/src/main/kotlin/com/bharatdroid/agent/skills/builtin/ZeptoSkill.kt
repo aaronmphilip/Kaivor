@@ -19,6 +19,18 @@ class ZeptoSkill : Skill {
         ),
         allowedPackages = setOf("com.zepto.app"),
         exampleParamsHint = """{"action": "search", "item": "milk 1 litre"}""",
+        uiKnowledge = """
+Zepto UI guide:
+- Home screen: purple-themed header with delivery address and countdown ETA; search bar at the top reads "Search products"
+- Category tiles: row of category shortcuts below the search bar — Fruits & Vegetables, Dairy, Snacks, Beverages, Personal Care, etc.
+- Product cards: show product image, name, weight/size, price (₹), and an ADD button (purple, on the card)
+- Search results: grid of product cards after typing in the search bar; tap a card to see product details
+- Product detail: larger image, full name, weight options, price, quantity selector (- qty +), "Add to Cart" purple button
+- Cart: bottom bar shows item count and "View Cart" purple button; tap to open full cart panel
+- Cart panel / Cart screen: lists all added items with name, quantity controls, price; "Proceed to Checkout" button at the bottom
+- Checkout flow: delivery address confirmation → payment selection (UPI, card, COD, Zepto credits) → order placed confirmation
+- Filters: after search, filter chips appear — Brands, Price Range, Discount, Category
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

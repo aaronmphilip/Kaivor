@@ -19,6 +19,18 @@ class InstagramSkill : Skill {
         ),
         allowedPackages = setOf("com.instagram.android"),
         exampleParamsHint = """{"action": "search", "query": "virat kohli"}""",
+        uiKnowledge = """
+Instagram UI guide:
+- Bottom navigation bar (left to right): Home (house), Search (magnifying glass), Reels (clapperboard), Shop (bag), Profile (person)
+- Home feed: vertical scroll of posts; double-tap or tap heart to like; tap speech bubble to comment; tap paper airplane to share
+- Story bar: row of circular profile pictures at the top of the home feed; tap a circle to view that user's story
+- Post camera / Create: tap the + icon in the center of the bottom nav bar to create a new post, reel, or story
+- Search screen: tap the magnifying glass icon; a search text field appears at the top; results show profiles, hashtags, places
+- DMs (Direct Messages): tap the paper airplane icon at the top right of the home screen; shows conversation list
+- Profile screen: tap the person icon (rightmost in bottom nav); shows your grid of posts, follower/following count, bio
+- Reels tab: tap the clapperboard icon (third in bottom nav); full-screen vertical video feed
+- Notification bell: top right of home screen next to DM icon; shows likes, comments, follows
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

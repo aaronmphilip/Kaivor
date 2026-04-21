@@ -19,6 +19,16 @@ class ChromeSkill : Skill {
         ),
         allowedPackages = setOf("com.android.chrome"),
         exampleParamsHint = """{"action": "search", "query": "weather in Mumbai today"}""",
+        uiKnowledge = """
+Google Chrome UI guide:
+- Address bar: at the very top of the screen; tap it to type a URL or search query; shows current domain when on a page
+- New tab: tap the + button at the bottom right, or tap the tab-count square (e.g. "3") to open the tab switcher then tap +
+- Tab switcher: grid of open tab cards, each showing a page thumbnail and title with an X to close; tap a card to switch to it
+- Three-dot menu: top right corner — opens Bookmarks, History, Downloads, Settings, Share, Find in page
+- Incognito mode: black/dark header replaces the white header when an incognito tab is active; Incognito icon (spy hat) shown in tab switcher
+- Bottom toolbar: back arrow, forward arrow, share, bookmark, tab switcher, three-dot menu (left to right)
+- Page loading: circular spinner in address bar while loading; tap X in address bar to cancel
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

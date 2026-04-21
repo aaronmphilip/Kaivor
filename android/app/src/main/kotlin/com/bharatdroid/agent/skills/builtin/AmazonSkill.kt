@@ -27,6 +27,17 @@ class AmazonSkill : Skill {
         ),
         allowedPackages = setOf("in.amazon.mShop.android.shopping"),
         exampleParamsHint = """{"action":"search","query":"noise cancelling headphones","maxPrice":2000}""",
+        uiKnowledge = """
+Amazon India UI guide:
+- Home screen: orange header at the top; search bar reads "Search Amazon.in" in the center of the header; cart icon (shopping trolley) at the top right; mic icon and camera icon are on the FAR RIGHT of the search bar — do NOT tap them
+- Search results: vertical list/grid of product cards — each shows product image, title (truncated), price (₹), star rating, review count, Prime badge (blue), and sometimes a discount label
+- Product page: image carousel at the top (swipe left/right); full title; price in large text; "Add to Cart" yellow button; "Buy Now" orange button; scroll down for description, reviews, specifications
+- Cart: tap the trolley icon at the top right → shows list of items with quantities (- qty +) and prices; "Proceed to Buy" yellow button at the bottom
+- Address page: appears after Proceed to Buy — shows saved addresses; "Deliver to this address" button
+- Payment page: shows saved cards/UPI/COD options; "Place your order" button at the bottom
+- Orders: hamburger menu (three lines) top left → "Your Orders" → list of past orders with product name, date, status (Delivered/Shipped)
+- Filters: after search, "Sort" and filter options appear at the top of results — Avg. Customer Review, Price: Low to High, Featured, etc.
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

@@ -19,6 +19,16 @@ class PhonePeSkill : Skill {
         ),
         allowedPackages = setOf("com.phonepe.app"),
         exampleParamsHint = """{"action": "recharge", "mobile": "9876543210", "amount": 239}""",
+        uiKnowledge = """
+PhonePe UI guide:
+- Home screen: UPI-linked bank balance shown at the top; large circular icon grid below — Send Money, Mobile Recharge, Electricity, DTH, Credit Card, etc.
+- Send Money flow: tap "Send Money" → enter phone number or UPI ID in the search/recipient field → contacts list appears below search bar → tap contact → enter amount on keypad → "Proceed to Pay" green button
+- Amount entry screen: large rupee (₹) keypad; quick-select amount chips (₹100, ₹200, ₹500); "Proceed to Pay" green button at the bottom
+- UPI PIN screen: 4–6 digit numeric keypad with individual PIN dot boxes at the top; fingerprint/biometric option shown on compatible devices; STOP here — do not enter PIN
+- Mobile Recharge flow: tap "Mobile Recharge" → enter mobile number → operator auto-detected → browse plan cards (validity, data, price) → select plan → "Proceed to Pay"
+- Transaction History: tap "History" tab (bottom nav or home screen) → list of all past transactions with recipient/sender name, amount, date, success/failure badge
+- Balance check: tap bank account card or "Check Balance" → UPI PIN required to reveal balance
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

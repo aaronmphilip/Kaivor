@@ -19,6 +19,17 @@ class MapsSkill : Skill {
         ),
         allowedPackages = setOf("com.google.android.apps.maps"),
         exampleParamsHint = """{"action": "navigate", "destination": "Connaught Place, Delhi"}""",
+        uiKnowledge = """
+Google Maps UI guide:
+- Home screen: search bar at top reads "Search here"; blue dot on map = your current location
+- After typing destination: autocomplete suggestions appear below the search bar; tap the most relevant one
+- Place detail card: shows after tapping a result — name, address, rating, hours; blue "Directions" button at bottom
+- Directions screen: shows route options (car/transit/walk tabs), estimated time and distance; blue "Start" button at bottom right
+- Navigation mode: turn-by-turn arrow at top with street name and distance; speed limit badge on right; "Exit navigation" button at top left
+- Search results: vertical list of places with name, address, distance, and rating below the search bar
+- Layers button: bottom left corner, opens map type selector (satellite, terrain, etc.)
+- My Location FAB: circular button bottom right, re-centres map on blue dot
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

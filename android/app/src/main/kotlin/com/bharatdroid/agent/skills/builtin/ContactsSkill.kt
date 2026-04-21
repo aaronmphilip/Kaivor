@@ -24,6 +24,17 @@ class ContactsSkill : Skill {
             "com.android.dialer",
         ),
         exampleParamsHint = """{"action": "search", "query": "Mom"}""",
+        uiKnowledge = """
+Contacts UI guide:
+- Home screen: alphabetical list of contacts; each row shows a coloured avatar/initials circle, the contact's full name, and optionally their phone number or label
+- Alphabetical index: a vertical A–Z fast-scroll bar on the right edge; drag it to jump to a letter
+- Search: magnifying glass icon at the top right; tap to open a search field; type name, phone, or email to filter contacts
+- Contact detail screen: large avatar at the top; contact name; action buttons — "Call", "Message", "Video", "Email" — below the name; scroll down for all phone numbers, emails, addresses, notes
+- Edit contact: tap the pencil (Edit) icon at the top right of the contact detail screen → editable fields for name, phone, email, address, company, etc.; Save button at the top right
+- Create new contact: FAB (+) button at the bottom right of the contacts list → new contact form with Name, Phone, Email fields; Save at top right
+- Favourites: "Starred" or "Favourites" section may appear at the top of the contacts list for starred contacts
+- Labels/groups: accessible via the three-dot menu or navigation drawer — contacts can be grouped (Family, Work, etc.)
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

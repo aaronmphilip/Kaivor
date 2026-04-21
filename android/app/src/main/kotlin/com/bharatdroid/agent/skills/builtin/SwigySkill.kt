@@ -19,6 +19,17 @@ class SwigySkill : Skill {
         ),
         allowedPackages = setOf("in.swiggy.android"),
         exampleParamsHint = """{"query":"biryani","maxPrice":200,"filter":"fastest","action":"order"}""",
+        uiKnowledge = """
+Swiggy UI guide:
+- Home screen: delivery address shown top left with a down-arrow to change; search icon top right; promotional banners in the middle; category shortcuts (Biryani, Pizza, etc.) below
+- Search bar: reads "Search for restaurants and food"; appears after tapping the search icon or the home search field
+- Restaurant cards: each card shows restaurant name, cuisine tags, star rating, delivery time (mins), and minimum order amount; scroll vertically to browse
+- Restaurant menu: item name on left, price below name, veg (green dot) or non-veg (brown dot) indicator beside name; ADD button on the right of each item
+- Cart floating bar: orange/green bar at the very bottom of the menu screen — shows item count and total price; tap it to view full cart
+- Cart screen: lists all added items with quantity controls (- qty +) and item prices; "Proceed to checkout" button at the bottom
+- Checkout flow: address confirmation → tip option → payment selection (UPI, card, COD) → Place Order
+- Filters: after searching, filter chips appear below the search bar — Sort, Rating, Delivery Time, Offers, Pure Veg
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

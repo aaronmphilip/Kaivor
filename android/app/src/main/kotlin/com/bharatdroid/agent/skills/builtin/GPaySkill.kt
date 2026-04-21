@@ -19,6 +19,17 @@ class GPaySkill : Skill {
         ),
         allowedPackages = setOf("com.google.android.apps.nbu.paisa.user"),
         exampleParamsHint = """{"action": "send", "contact": "Priya", "amount": "200", "note": "lunch"}""",
+        uiKnowledge = """
+Google Pay UI guide:
+- Home screen: search/pay bar at the top reads "Pay phone number or UPI ID"; "New payment" button below it; recent contacts shown as circular avatars in a row
+- Recent contacts: tappable circles with the contact's name below each; tap to go straight to the payment screen for that person
+- New payment flow: tap "New payment" → type phone number or UPI ID in the search field → tap the matching contact or verify UPI ID → enter amount → optional note field → "Pay" button
+- Amount entry: large numpad with rupee display; "Pay" button becomes active once amount is entered
+- UPI PIN screen: row of 4–6 PIN entry dots at the top; numeric keypad below; STOP here — do not enter PIN
+- Businesses / Pay bills: "Pay bills" section on the home screen with category icons — Electricity, Gas, Water, Broadband, etc.
+- Transaction history / Profile: tap your avatar/profile picture top right → shows recent transactions and linked bank accounts
+- QR scanner: camera icon in the search bar or dedicated "Scan QR" option on home screen
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {
