@@ -27,6 +27,7 @@ data class SkillManifest(
     val allowedPackages: Set<String> = emptySet(),
     // Human-readable example params shown to the AI in its system prompt
     val exampleParamsHint: String = "{}",
+    val uiKnowledge: String = "",  // Per-skill UI knowledge injected into every goal
 )
 
 interface Skill {

@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.BharatDroid" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">#FF4500</item>
-        <item name="colorPrimaryVariant">#CC3700</item>
+        <item name="colorPrimary">#FF5C00</item>
+        <item name="colorPrimaryVariant">#CC4A00</item>
         <item name="colorOnPrimary">#FFFFFF</item>
         <item name="colorSecondary">#00CC88</item>
-        <item name="colorSurface">#0D0D0D</item>
-        <item name="android:colorBackground">#0D0D0D</item>
-        <item name="android:statusBarColor">#0D0D0D</item>
-        <item name="android:navigationBarColor">#0D0D0D</item>
+        <item name="colorSecondaryVariant">#009966</item>
+        <item name="colorSurface">#0A0A0A</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="android:colorBackground">#0A0A0A</item>
+        <item name="android:statusBarColor">#0A0A0A</item>
+        <item name="android:navigationBarColor">#0A0A0A</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="android:fontFamily">@font/bricolage_grotesque</item>
     </style>
 </resources>

@@ -30,6 +30,7 @@ class WhatsAppSkill : Skill {
         ),
         allowedPackages = setOf("com.whatsapp"),
         exampleParamsHint = """{"action":"send_file","contact":"Mom","file":"invoice.pdf","caption":"Please review this"}""",
+        uiKnowledge = "WhatsApp home shows a list of recent chats. There is a search icon at top-right (magnifying glass). Tap the search icon to search for a contact by name. Tap the contact in search results to open the chat. The message input field is at the BOTTOM of the screen (below the chat bubbles). The attachment button is a paperclip or '+' icon to the LEFT of the message field. Tapping it shows: Document, Camera, Gallery, Audio, Location, Contact options. To send a file, tap attachment → Document → navigate to file → tap it. For multiple files, long-press the first file, then tap others to multi-select, then tap Send.",
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

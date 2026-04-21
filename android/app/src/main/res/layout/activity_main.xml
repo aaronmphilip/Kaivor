@@ -2,214 +2,251 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0D0D0D"
-    android:padding="20dp">
+    android:background="#0A0A0A"
+    android:padding="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Header -->
-        <LinearLayout
+        <!-- Top orange accent strip -->
+        <View
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="16dp">
+            android:layout_height="3dp"
+            android:background="#FF5C00"/>
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="BharatDroid"
-                android:textColor="#FFFFFF"
-                android:textSize="28sp"
-                android:textStyle="bold" />
-
-            <Button
-                android:id="@+id/btnSettings"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:text="Settings"
-                android:backgroundTint="#1E1E1E"
-                android:textColor="#AAAAAA"
-                android:textSize="12sp" />
-        </LinearLayout>
-
-        <!-- Status Card -->
         <LinearLayout
-            android:id="@+id/cardStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:background="@drawable/card_bg"
-            android:padding="20dp"
-            android:layout_marginTop="24dp">
+            android:padding="20dp">
 
+            <!-- Header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:layout_marginTop="16dp">
 
-                <View
-                    android:id="@+id/statusDot"
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:background="@drawable/dot_green" />
-
-                <TextView
-                    android:id="@+id/tvAgentStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Agent Running"
-                    android:textColor="#FFFFFF"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:layout_marginStart="10dp" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/tvAccessibilityStatus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Accessibility: Connected"
-                android:textColor="#888888"
-                android:textSize="13sp"
-                android:layout_marginTop="8dp" />
-
-            <TextView
-                android:id="@+id/tvSkillCount"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="17 skills loaded"
-                android:textColor="#888888"
-                android:textSize="13sp"
-                android:layout_marginTop="2dp" />
-
-            <TextView
-                android:id="@+id/tvTodayCount"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="0 commands today"
-                android:textColor="#888888"
-                android:textSize="13sp"
-                android:layout_marginTop="2dp" />
-
-            <Button
-                android:id="@+id/btnToggleAgent"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:text="Stop Agent"
-                android:backgroundTint="#331111"
-                android:textColor="#FF6B6B"
-                android:layout_marginTop="16dp" />
-        </LinearLayout>
-
-        <!-- Notification Relay Card -->
-        <LinearLayout
-            android:id="@+id/cardNotifRelay"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/card_bg"
-            android:padding="20dp"
-            android:layout_marginTop="16dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
+                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="🔔 Notification Relay"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/tvNotifRelayBadge"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="BharatDroid"
+                        android:textColor="#FFFFFF"
+                        android:textSize="32sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/bricolage_grotesque"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="AI Phone Agent"
+                        android:textColor="#FF5C00"
+                        android:textSize="12sp"
+                        android:fontFamily="@font/bricolage_grotesque"
+                        android:layout_marginTop="1dp"/>
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnSettings"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="OFF"
-                    android:textColor="#FF6B6B"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:background="#331111"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:paddingTop="3dp"
-                    android:paddingBottom="3dp" />
+                    android:layout_height="40dp"
+                    android:text="Settings"
+                    android:backgroundTint="#111111"
+                    android:textColor="#AAAAAA"
+                    android:textSize="12sp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"/>
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/tvNotifRelayDesc"
+            <!-- Status Card — orange border, most important card -->
+            <LinearLayout
+                android:id="@+id/cardStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Every app notification → forwarded to your Telegram bot. Reply in Telegram → reply lands in the app."
-                android:textColor="#888888"
-                android:textSize="13sp"
-                android:lineSpacingMultiplier="1.4"
-                android:layout_marginTop="8dp" />
+                android:orientation="vertical"
+                android:background="@drawable/card_orange_accent"
+                android:padding="20dp"
+                android:layout_marginTop="20dp">
 
-            <Button
-                android:id="@+id/btnEnableNotifRelay"
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <View
+                        android:id="@+id/statusDot"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:background="@drawable/dot_green"/>
+
+                    <TextView
+                        android:id="@+id/tvAgentStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Agent Running"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/bricolage_grotesque"
+                        android:layout_marginStart="10dp"/>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvAccessibilityStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Accessibility: Connected"
+                    android:textColor="#666666"
+                    android:textSize="13sp"
+                    android:layout_marginTop="10dp"/>
+
+                <TextView
+                    android:id="@+id/tvSkillCount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Skills loaded"
+                    android:textColor="#666666"
+                    android:textSize="13sp"
+                    android:layout_marginTop="3dp"/>
+
+                <TextView
+                    android:id="@+id/tvTodayCount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0 commands today"
+                    android:textColor="#666666"
+                    android:textSize="13sp"
+                    android:layout_marginTop="3dp"/>
+
+                <Button
+                    android:id="@+id/btnToggleAgent"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="Stop Agent"
+                    android:backgroundTint="#1A0800"
+                    android:textColor="#FF5C00"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="16dp"/>
+            </LinearLayout>
+
+            <!-- Notification Relay Card -->
+            <LinearLayout
+                android:id="@+id/cardNotifRelay"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:text="Enable in Settings → Notification Access"
-                android:backgroundTint="#1E1E1E"
-                android:textColor="#00AAFF"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/card_premium"
+                android:padding="20dp"
+                android:layout_marginTop="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="🔔  Notification Relay"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/bricolage_grotesque"/>
+
+                    <TextView
+                        android:id="@+id/tvNotifRelayBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="OFF"
+                        android:textColor="#FF6B6B"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:background="#331111"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp"/>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvNotifRelayDesc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Every app notification → your Telegram. Reply in Telegram → reply in the app."
+                    android:textColor="#666666"
+                    android:textSize="12sp"
+                    android:lineSpacingMultiplier="1.4"
+                    android:layout_marginTop="8dp"/>
+
+                <Button
+                    android:id="@+id/btnEnableNotifRelay"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:text="Enable Notification Access"
+                    android:backgroundTint="#111111"
+                    android:textColor="#FF5C00"
+                    android:textSize="12sp"
+                    android:layout_marginTop="12dp"/>
+            </LinearLayout>
+
+            <!-- Skills -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Skills"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/bricolage_grotesque"
+                android:layout_marginTop="28dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Control any app via Telegram commands"
+                android:textColor="#555555"
                 android:textSize="12sp"
-                android:layout_marginTop="12dp" />
+                android:layout_marginTop="4dp"/>
+
+            <LinearLayout
+                android:id="@+id/skillsGrid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="12dp"/>
+
+            <!-- Recent Activity -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Recent Activity"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/bricolage_grotesque"
+                android:layout_marginTop="28dp"/>
+
+            <LinearLayout
+                android:id="@+id/activityList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="40dp"/>
+
         </LinearLayout>
-
-        <!-- Quick Actions -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Skills"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginTop="28dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Send commands via Telegram. These are the apps your agent can control:"
-            android:textColor="#888888"
-            android:textSize="13sp"
-            android:layout_marginTop="4dp" />
-
-        <LinearLayout
-            android:id="@+id/skillsGrid"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="12dp" />
-
-        <!-- Recent Activity -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Recent Activity"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginTop="28dp" />
-
-        <LinearLayout
-            android:id="@+id/activityList"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="12dp"
-            android:layout_marginBottom="40dp" />
-
     </LinearLayout>
 </ScrollView>

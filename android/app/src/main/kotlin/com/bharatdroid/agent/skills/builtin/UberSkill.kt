@@ -19,6 +19,7 @@ class UberSkill : Skill {
         ),
         allowedPackages = setOf("com.ubercab"),
         exampleParamsHint = """{"action":"book","pickup":"Indiranagar","destination":"Bangalore Airport"}""",
+        uiKnowledge = "Uber home screen has a 'Where to?' search bar in the center. Tapping it opens location picker with TWO fields: TOP field = PICKUP (pre-filled as 'Current location'), BOTTOM field = DESTINATION. Always type destination in the BOTTOM field. After selecting locations, a map screen may appear for 'Confirm pickup' — tap that button. Then the ride options screen shows UberGo, Premier, Auto etc with estimated fares and ETAs. Tap the desired ride type, then 'Confirm' or 'Request' to book. Never enter payment PIN.",
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

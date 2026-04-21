@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0D0D0D"
+    android:background="#0A0A0A"
     android:padding="24dp">
 
     <LinearLayout
@@ -11,13 +11,18 @@
         android:orientation="vertical"
         android:gravity="center_horizontal">
 
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:background="#FF5C00"/>
+
         <!-- Step indicator -->
         <TextView
             android:id="@+id/tvStepIndicator"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Step 1 of 4"
-            android:textColor="#666666"
+            android:text="Step 1 of 5"
+            android:textColor="#FF5C00"
             android:textSize="12sp"
             android:layout_marginTop="20dp" />
 
@@ -39,7 +44,8 @@
                 android:text="BharatDroid"
                 android:textColor="#FFFFFF"
                 android:textSize="40sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:fontFamily="@font/bricolage_grotesque" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -78,7 +84,7 @@
                 android:text="Get Started"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                android:backgroundTint="#FF4500"
+                android:backgroundTint="#FF5C00"
                 android:textColor="#FFFFFF"
                 android:layout_marginTop="40dp" />
         </LinearLayout>
@@ -156,7 +162,7 @@
                 android:layout_height="52dp"
                 android:text="Verify Token"
                 android:textSize="15sp"
-                android:backgroundTint="#FF4500"
+                android:backgroundTint="#FF5C00"
                 android:textColor="#FFFFFF"
                 android:layout_marginTop="16dp" />
         </LinearLayout>
@@ -223,7 +229,7 @@
                 android:layout_height="52dp"
                 android:text="Continue"
                 android:textSize="15sp"
-                android:backgroundTint="#FF4500"
+                android:backgroundTint="#FF5C00"
                 android:textColor="#FFFFFF"
                 android:layout_marginTop="16dp"
                 android:visibility="gone" />
@@ -392,7 +398,7 @@
                 android:layout_height="52dp"
                 android:text="Continue"
                 android:textSize="15sp"
-                android:backgroundTint="#FF4500"
+                android:backgroundTint="#FF5C00"
                 android:textColor="#FFFFFF"
                 android:layout_marginTop="20dp" />
         </LinearLayout>
@@ -498,7 +504,7 @@
                 android:text="Launch Agent"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:backgroundTint="#FF4500"
+                android:backgroundTint="#FF5C00"
                 android:textColor="#FFFFFF"
                 android:layout_marginTop="32dp" />
 

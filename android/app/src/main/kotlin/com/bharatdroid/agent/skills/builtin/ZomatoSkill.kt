@@ -27,6 +27,7 @@ class ZomatoSkill : Skill {
         ),
         allowedPackages = setOf("com.application.zomato"),
         exampleParamsHint = """{"query":"pizza","maxPrice":300,"filter":"rating","action":"order"}""",
+        uiKnowledge = "Zomato home has a search bar at top labeled 'Search for restaurant, cuisine or dish'. Tapping it opens a full-screen search. Results show restaurant cards with name, rating (e.g. 4.2★), delivery time (e.g. 28 min), and price range. Tap a restaurant to open its menu. Menu has sections like 'Recommended', 'Bestsellers'. Each item has a green 'ADD' button on the right side. Tapping ADD may show a 'Customise?' bottom sheet — pick first option, tap 'Add to cart'. Common popups to dismiss: 'Allow location', 'Login', 'Rate us', 'Get 50% off' promo banners, 'Refer a friend'. Always dismiss ALL popups before doing anything else.",
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {
@@ -51,7 +52,21 @@ class ZomatoSkill : Skill {
             runner.waitForApp("com.application.zomato", timeoutMs = 6000)
             delay(400)
             runner.dismissPopups(2)
-            delay(200)
+            // Zomato has many aggressive popups — kill them before proceeding
+            delay(500)
+            val zomatoPopupTexts = listOf(
+                "Later", "Not now", "Allow", "Skip", "Close", "Cancel",
+                "Maybe later", "No thanks", "Got it", "Remind me later",
+                "Sign in with Google", "Continue as Guest", "Use without login",
+            )
+            for (popup in zomatoPopupTexts) {
+                if (runner.screenContains(popup)) {
+                    runner.tapByText(popup)
+                    delay(300)
+                }
+            }
+            runner.dismissPopups(3)
+            delay(300)
 
             // Direct search: type into Zomato's search field before AI takes over
             if (query.isNotBlank() && action != "goal" && action != "continue") {
@@ -131,6 +146,8 @@ class ZomatoSkill : Skill {
                 append("1. If no results yet: find the search bar and type \"$query\"\n")
                 append("2. Scroll through the restaurant list\n")
                 append(priceNote).append(filterNote).appendLine()
+                append("   🧠 SMART PICK: Choose restaurant with rating ≥ 4.0 AND delivery ≤ 35 min.\n")
+                append("   If multiple qualify, pick highest rating. Mention the trade-off if none qualify.\n")
                 append("3. TAP the best matching restaurant to open its menu\n")
                 append("4. Scroll the menu to find \"$query\"\n")
                 append("5. TAP the ADD button (green '+' or 'ADD' text) next to the item\n")

@@ -20,6 +20,7 @@ class YouTubeSkill : Skill {
         ),
         allowedPackages = setOf("com.google.android.youtube"),
         exampleParamsHint = """{"action": "play", "query": "Arijit Singh Tum Hi Ho"}""",
+        uiKnowledge = "YouTube home screen has a search icon (magnifying glass) at top-right. Tapping it opens a search field. After searching, results appear as a scrollable list — each result shows a thumbnail, title, channel name, view count, and duration. Full videos show duration like '4:22' in thumbnail corner. Shorts show a vertical phone icon or say 'Shorts'. Channel results show a round avatar with subscriber count. The bottom navigation has: Home, Shorts, +, Subscriptions, Library tabs — NEVER tap these during a search task.",
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {
