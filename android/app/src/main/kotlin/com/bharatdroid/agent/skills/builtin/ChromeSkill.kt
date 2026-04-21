@@ -8,8 +8,8 @@ class ChromeSkill : Skill {
     override val manifest = SkillManifest(
         id = "chrome",
         name = "Chrome Web Browser",
-        version = "5.0.0",
-        description = "Search the web, open URLs, fill forms, read pages, do any multi-step web task",
+        version = "6.0.0",
+        description = "Search the web, open URLs, fill forms, read pages, incognito, bookmarks — any Chrome task",
         author = "bharatdroid-team",
         trusted = true,
         permissions = setOf(
@@ -24,10 +24,11 @@ Google Chrome UI guide:
 - Address bar: at the very top of the screen; tap it to type a URL or search query; shows current domain when on a page
 - New tab: tap the + button at the bottom right, or tap the tab-count square (e.g. "3") to open the tab switcher then tap +
 - Tab switcher: grid of open tab cards, each showing a page thumbnail and title with an X to close; tap a card to switch to it
-- Three-dot menu: top right corner — opens Bookmarks, History, Downloads, Settings, Share, Find in page
-- Incognito mode: black/dark header replaces the white header when an incognito tab is active; Incognito icon (spy hat) shown in tab switcher
+- Three-dot menu: top right corner — opens Bookmarks, History, Downloads, Settings, Share, Find in page, New incognito tab
+- Incognito mode: black/dark header replaces the white header when an incognito tab is active
 - Bottom toolbar: back arrow, forward arrow, share, bookmark, tab switcher, three-dot menu (left to right)
-- Page loading: circular spinner in address bar while loading; tap X in address bar to cancel
+- Page loading: circular spinner in address bar while loading; tap X to cancel
+- Find in page: three-dot menu → "Find in page" → search field appears at the bottom of the screen
 """.trimIndent(),
     )
 
@@ -40,31 +41,94 @@ Google Chrome UI guide:
         val url = params["url"] as? String ?: ""
 
         runner.openApp("com.android.chrome")
-        runner.waitForApp("com.android.chrome", timeoutMs = 6000)
+        runner.waitForApp("com.android.chrome", timeoutMs = 7000)
         delay(600)
         runner.dismissPopups(2)
         delay(200)
 
+        // For search/open: type directly into the address bar before AI takes over
+        val inputText = url.ifBlank { query }
+        if (inputText.isNotBlank() && action in setOf("search", "open", "navigate")) {
+            // Chrome address bar is at the top ~7% of the screen
+            val (w, h) = runner.getScreenSize()
+            val typed = runner.typeInFieldWithHint("Search or type URL", inputText)
+                || runner.typeInFieldWithHint("Search or type web address", inputText)
+                || runner.typeInFieldWithHint("Address", inputText)
+            if (typed) {
+                delay(300)
+                runner.pressEnter()
+                delay(2000) // wait for page to start loading
+            } else {
+                runner.tapAtPoint(w * 0.5f, h * 0.055f)
+                delay(400)
+                runner.typeReliably(inputText)
+                delay(200)
+                runner.pressEnter()
+                delay(2000)
+            }
+        }
+
         val goal = when (action) {
             "search" ->
-                """You are in Chrome browser. Search for "$query".
-                STEPS: 1) Tap the address bar at the very top of Chrome. 2) Clear it and type "$query". 3) Press enter. 4) Wait for the page to fully load. 5) Read the results."""
+                """You are in Chrome. The search "${query}" has been submitted — page is loading or already showing.
+STEPS:
+1. Wait for the page to fully load
+2. Scroll through the search results or page
+3. Read and summarize the key information found
+4. Report the answer clearly"""
 
-            "open" ->
-                """You are in Chrome browser. Open the URL "$url".
-                STEPS: 1) Tap the address bar at the top. 2) Clear it and type "$url". 3) Press enter. 4) Wait for the page to load."""
+            "open", "navigate" ->
+                """You are in Chrome. The URL "${url.ifBlank { query }}" has been entered — page should be loading.
+STEPS:
+1. Wait for the page to load completely
+2. Read the page title and key content
+3. Summarize what the page shows"""
 
             "read" -> {
                 val screen = runner.readScreen()
-                return SkillResult.Success("Current page:\n```\n${screen.take(800)}\n```")
+                return SkillResult.Success("Current page content:\n```\n${screen.take(1000)}\n```")
             }
 
-            else -> // goal or any complex task
-                params["goal"] as? String
-                    ?: """You are in Chrome browser. Do this: $action $query $url""".trim()
+            "incognito" ->
+                """You are in Chrome. Open a new incognito tab.
+STEPS:
+1. Tap the three-dot menu (⋮) at the top right
+2. Tap "New Incognito tab"
+3. Confirm the dark/black incognito tab is open${if (query.isNotBlank()) "\n4. Tap the address bar and type \"$query\"\n5. Press Enter" else ""}"""
+
+            "bookmark" ->
+                """You are in Chrome. Bookmark the current page.
+STEPS:
+1. Tap the three-dot menu (⋮) at the top right
+2. Tap the star/bookmark icon or "Bookmark this page"
+3. Confirm the bookmark was saved"""
+
+            "history" ->
+                """You are in Chrome. Open browsing history.
+STEPS:
+1. Tap the three-dot menu (⋮) at the top right
+2. Tap "History"
+3. Read the last 5-10 visited sites — URL and title"""
+
+            "find" ->
+                """You are in Chrome. Find "${query}" on the current page.
+STEPS:
+1. Tap the three-dot menu (⋮)
+2. Tap "Find in page"
+3. Type "$query" in the search field that appears at the bottom
+4. Report how many matches were found and what context they appear in"""
+
+            "new_tab" ->
+                """You are in Chrome. Open a new tab.
+STEPS:
+1. Tap the tab count button (shows number like "1" or "2") at the top right
+2. Tap the + button to open a new tab${if (query.isNotBlank()) "\n3. Type \"$query\" in the address bar\n4. Press Enter" else ""}"""
+
+            else ->
+                params["goal"] as? String ?: "Do this in Chrome: $action $query $url".trim()
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 20)
+        val result = agent.executeGoal(runner, goal, maxSteps = 22)
         return SkillResult.Success(result)
     }
 }

@@ -8,8 +8,8 @@ class GPaySkill : Skill {
     override val manifest = SkillManifest(
         id = "gpay",
         name = "Google Pay UPI",
-        version = "5.0.0",
-        description = "Send money, pay bills, scan QR codes via Google Pay",
+        version = "6.0.0",
+        description = "Send money, pay bills, request money, scan QR codes via Google Pay",
         author = "bharatdroid-team",
         trusted = true,
         permissions = setOf(
@@ -22,13 +22,14 @@ class GPaySkill : Skill {
         uiKnowledge = """
 Google Pay UI guide:
 - Home screen: search/pay bar at the top reads "Pay phone number or UPI ID"; "New payment" button below it; recent contacts shown as circular avatars in a row
-- Recent contacts: tappable circles with the contact's name below each; tap to go straight to the payment screen for that person
-- New payment flow: tap "New payment" → type phone number or UPI ID in the search field → tap the matching contact or verify UPI ID → enter amount → optional note field → "Pay" button
+- Recent contacts: tappable circles with the contact's name; tap to go straight to the payment screen
+- New payment flow: tap "New payment" → type phone number or UPI ID → tap matching contact → enter amount → optional note → "Pay" button
 - Amount entry: large numpad with rupee display; "Pay" button becomes active once amount is entered
-- UPI PIN screen: row of 4–6 PIN entry dots at the top; numeric keypad below; STOP here — do not enter PIN
-- Businesses / Pay bills: "Pay bills" section on the home screen with category icons — Electricity, Gas, Water, Broadband, etc.
-- Transaction history / Profile: tap your avatar/profile picture top right → shows recent transactions and linked bank accounts
-- QR scanner: camera icon in the search bar or dedicated "Scan QR" option on home screen
+- UPI PIN screen: row of 4–6 PIN dots at the top; numeric keypad below — STOP here, do NOT enter PIN
+- Businesses / Pay bills: "Pay bills" section with category icons — Electricity, Gas, Water, Broadband, etc.
+- Transaction history: tap your avatar/profile picture top right → recent transactions and linked bank accounts
+- QR scanner: camera icon in the search bar or dedicated "Scan QR" option
+- Request money: tap "Request" or "Split" option to ask someone to pay you
 """.trimIndent(),
     )
 
@@ -37,33 +38,91 @@ Google Pay UI guide:
         val agent = context.agent ?: return SkillResult.Failure("Agent not available.")
 
         val action = (params["action"] as? String)?.lowercase() ?: "home"
-        val contact = params["contact"] as? String ?: params["upiId"] as? String ?: ""
-        val amount = (params["amount"] as? String) ?: (params["amount"] as? Number)?.toLong()?.toString() ?: ""
+        val contact = params["contact"] as? String ?: params["upiId"] as? String
+            ?: params["to"] as? String ?: ""
+        val amount = (params["amount"] as? String)
+            ?: (params["amount"] as? Number)?.toLong()?.toString() ?: ""
         val note = params["note"] as? String ?: ""
 
         runner.openApp("com.google.android.apps.nbu.paisa.user")
-        runner.waitForApp("com.google.android.apps.nbu.paisa.user", timeoutMs = 6000)
+        runner.waitForApp("com.google.android.apps.nbu.paisa.user", timeoutMs = 7000)
         delay(800)
         runner.dismissPopups(2)
         delay(200)
 
+        // For send/pay: try to type the contact directly into the search/pay bar
+        if (contact.isNotBlank() && action in setOf("send", "pay", "request")) {
+            val typed = runner.typeInFieldWithHint("Pay phone number or UPI ID", contact)
+                || runner.typeInFieldWithHint("Pay", contact)
+                || runner.typeInFieldWithHint("Search", contact)
+            if (typed) {
+                delay(1200) // wait for contact suggestions
+            }
+        }
+
         val goal = when (action) {
-            "send", "pay" ->
-                """You are in Google Pay. Send Rs $amount to "$contact"${if (note.isNotBlank()) " with note '$note'" else ""}.
-                STEPS: 1) Tap 'New Payment' or search people icon. 2) Search for "$contact". 3) Tap the correct contact. 4) Enter amount Rs $amount. 5) ${if (note.isNotBlank()) "Add note '$note'. 6)" else ""} Tap 'Pay'. IMPORTANT: Stop before UPI PIN entry — user will enter PIN manually."""
+            "send", "pay" -> {
+                if (contact.isBlank()) return SkillResult.Failure("Who should I send money to? Provide a contact name, phone number, or UPI ID.")
+                if (amount.isBlank()) return SkillResult.Failure("How much money should I send?")
+                """You are in Google Pay. Send ₹$amount to "$contact"${if (note.isNotBlank()) " with note \"$note\"" else ""}.
+STEPS:
+1. The contact search field may already have "$contact" typed. If not, tap "New payment" and type "$contact"
+2. Tap the most relevant contact or UPI ID from the suggestions
+3. Verify the recipient name shown on screen matches "$contact"
+4. On the amount screen, enter ₹$amount using the number pad
+5. ${if (note.isNotBlank()) "Tap the 'Add a note' or 'Message' field and type \"$note\"\n6. " else ""}Tap the "Pay" button
+7. STOP at the UPI PIN entry screen — do NOT enter the PIN
+8. Report: recipient name verified, amount ₹$amount, and that PIN screen is waiting for user
+
+⚠️ NEVER enter the UPI PIN — this is a sensitive action
+⚠️ If the contact is not found by name, ask the user for their phone number or UPI ID"""
+            }
+
+            "request" -> {
+                if (contact.isBlank()) return SkillResult.Failure("Who should I request money from?")
+                if (amount.isBlank()) return SkillResult.Failure("How much money should I request?")
+                """You are in Google Pay. Request ₹$amount from "$contact".
+STEPS:
+1. Look for a "Request" or "Split" option on the home screen
+2. If found, tap it; otherwise tap "New payment" then look for a "Request" tab at the top
+3. Type "$contact" in the search field
+4. Tap the matching contact
+5. Enter ₹$amount
+6. ${if (note.isNotBlank()) "Add note \"$note\"\n7. " else ""}Tap "Request"
+7. Confirm the request was sent — report back"""
+            }
 
             "history", "transactions" ->
-                "You are in Google Pay. Show recent transaction history. Tap your profile or history section and read the last 5 transactions."
+                """You are in Google Pay. Show recent transaction history.
+STEPS:
+1. Tap your profile picture/avatar at the top right
+2. Look for "Transaction history" or scroll to see recent transactions
+3. Read the last 5–7 transactions — recipient/sender, amount, date, success/failure"""
 
             "balance" ->
-                "You are in Google Pay. Check linked bank account balance. Find and tap 'Check Balance' option."
+                """You are in Google Pay. Check linked bank account balance.
+STEPS:
+1. Tap your profile picture or look for a bank account card on the home screen
+2. Tap "Check balance" or the bank account
+3. STOP before the UPI PIN screen — do NOT enter PIN
+4. Report what information is visible about the account without needing PIN"""
 
             "scan", "qr" ->
-                "You are in Google Pay. Open QR code scanner. Tap the scan/camera icon to scan a QR code."
+                """You are in Google Pay. Open the QR code scanner.
+STEPS:
+1. Look for a camera or QR scan icon in the search bar or on the home screen
+2. Tap "Scan QR code" or the camera icon
+3. The camera viewfinder opens — report that it is ready to scan"""
 
-            "request" ->
-                """You are in Google Pay. Request Rs $amount from "$contact".
-                STEPS: 1) Tap 'Request' option. 2) Search for "$contact". 3) Tap the contact. 4) Enter amount Rs $amount. 5) Tap 'Request'."""
+            "bill", "bills" -> {
+                val billType = note.ifBlank { "electricity" }
+                """You are in Google Pay. Pay a $billType bill.
+STEPS:
+1. Scroll down on the home screen to find the "Pay bills" or "Businesses" section
+2. Tap the relevant category icon (${billType.replaceFirstChar { it.uppercase() }})
+3. Look for the biller or operator
+4. STOP before payment entry — report what billers are available and what information is needed (account number, consumer ID, etc.)"""
+            }
 
             else ->
                 params["goal"] as? String ?: "Do this in Google Pay: $action $contact $amount".trim()
