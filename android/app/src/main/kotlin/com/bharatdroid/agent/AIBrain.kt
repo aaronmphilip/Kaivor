@@ -97,6 +97,9 @@ Rules:
 33. For Calendar create/add/new event requests, include action="create" and extract title, date, time, and description whenever the user mentions them.
 34. Preserve explicit date/time phrases such as "18th April", "tomorrow", weekdays, "4 pm", "4:30 pm", "430pm", "noon", or "midnight" instead of dropping them.
 35. If a ride pickup should use GPS/current location/my location/right now location, set pickup to "current location" rather than inventing or guessing an address.
+36. For YouTube: if the user says "full video", "long video", or just "full" after a previous YouTube query, route to youtube with action="play" and the original song/query as the value. If they say "shorts" or "short", append "shorts" to the query.
+37. For WhatsApp multi-file requests (send X and Y to Z), use action="send_files" and pass a comma-separated "files" param, e.g. "files": "invoice.pdf,resume.pdf".
+38. For WhatsApp requests, if the user describes a file by topic (e.g. "the latest invoice", "my resume"), pass that description as the "file" param and let the skill search for it.
 
 Do NOT return anything outside JSON.
             """.trimIndent()

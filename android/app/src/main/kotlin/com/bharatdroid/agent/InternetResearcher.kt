@@ -55,10 +55,18 @@ class InternetResearcher {
 
     private suspend fun searchDuckDuckGo(query: String, resultLimit: Int): List<SearchResult> {
         val encoded = URLEncoder.encode(query, Charsets.UTF_8.name())
-        val html = getText("https://html.duckduckgo.com/html/?q=$encoded") ?: ""
-        val document = Jsoup.parse(html)
 
-        val parsed = document.select(".result, .web-result").mapNotNull { block ->
+        // Try DuckDuckGo Lite first — simpler HTML, more scraping-stable
+        val liteResults = parseLiteHtml(
+            getText("https://lite.duckduckgo.com/lite/?q=$encoded") ?: "",
+            resultLimit,
+        )
+        if (liteResults.isNotEmpty()) return liteResults
+
+        // Fall back to full HTML version
+        val fullHtml = getText("https://html.duckduckgo.com/html/?q=$encoded") ?: ""
+        val doc = Jsoup.parse(fullHtml)
+        val fullResults = doc.select(".result, .web-result").mapNotNull { block ->
             val anchor = block.selectFirst("a.result__a, a[data-testid=result-title-a], .result__title a")
                 ?: return@mapNotNull null
             val url = decodeDuckDuckGoUrl(anchor.attr("href")) ?: return@mapNotNull null
@@ -70,12 +78,39 @@ class InternetResearcher {
                     block.selectFirst(".result__snippet, .result-snippet, .result__extras__url")
                         ?.text()
                         .orEmpty()
-                    ).cleanForPrompt(280),
+                ).cleanForPrompt(280),
             )
         }.distinctBy { it.url }.take(resultLimit)
 
-        if (parsed.isNotEmpty()) return parsed
+        if (fullResults.isNotEmpty()) return fullResults
         return fallbackInstantAnswer(query).take(resultLimit)
+    }
+
+    private fun parseLiteHtml(html: String, resultLimit: Int): List<SearchResult> {
+        if (html.isBlank()) return emptyList()
+        val doc = Jsoup.parse(html)
+        // DuckDuckGo Lite uses a simple <table> layout: result links are <a class="result-link">
+        // followed by a <td class="result-snippet"> in the same row group.
+        val results = mutableListOf<SearchResult>()
+        val rows = doc.select("table tr")
+        var i = 0
+        while (i < rows.size && results.size < resultLimit) {
+            val row = rows[i]
+            val link = row.selectFirst("a.result-link") ?: run { i++; continue }
+            val rawHref = link.attr("href")
+            val url = decodeDuckDuckGoUrl(rawHref) ?: run { i++; continue }
+            if (!url.startsWith("http")) { i++; continue }
+            val title = link.text().cleanForPrompt(180)
+            // Snippet is typically in the next row
+            val snippet = rows.getOrNull(i + 1)
+                ?.selectFirst(".result-snippet, td")
+                ?.text()
+                .orEmpty()
+                .cleanForPrompt(280)
+            results.add(SearchResult(title = title, url = url, snippet = snippet))
+            i += 2
+        }
+        return results.distinctBy { it.url }
     }
 
     private suspend fun fallbackInstantAnswer(query: String): List<SearchResult> {

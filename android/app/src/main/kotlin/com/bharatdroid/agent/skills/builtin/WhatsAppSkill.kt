@@ -45,6 +45,9 @@ class WhatsAppSkill : Skill {
             params["query"] as? String,
             params["title"] as? String,
         )
+        // Multi-file: "files" param is comma-separated, e.g. "invoice.pdf,resume.pdf"
+        val filesParam = params["files"] as? String ?: ""
+        val fileList = filesParam.split(",").map { it.trim() }.filter { it.isNotBlank() }
         val folder = params["folder"] as? String ?: ""
         val caption = firstNonBlank(params["caption"] as? String, message)
         val shouldSend = (params["send"] as? Boolean) ?: false
@@ -80,15 +83,27 @@ class WhatsAppSkill : Skill {
                 shouldSend = shouldSend,
             )
 
-            in fileActions -> sendFile(
-                runner = runner,
-                agent = agent,
-                contact = contact,
-                fileQuery = fileQuery,
-                folder = folder,
-                caption = caption,
-                shouldSend = shouldSend,
-            )
+            in fileActions -> if (fileList.size > 1) {
+                sendMultipleFiles(
+                    runner = runner,
+                    agent = agent,
+                    contact = contact,
+                    fileList = fileList,
+                    folder = folder,
+                    caption = caption,
+                    shouldSend = shouldSend,
+                )
+            } else {
+                sendFile(
+                    runner = runner,
+                    agent = agent,
+                    contact = contact,
+                    fileQuery = fileQuery,
+                    folder = folder,
+                    caption = caption,
+                    shouldSend = shouldSend,
+                )
+            }
 
             else -> {
                 val goal = params["goal"] as? String
@@ -299,6 +314,107 @@ class WhatsAppSkill : Skill {
 
         if (!tapped) return false
         return waitForPickerToClose(runner)
+    }
+
+    private suspend fun sendMultipleFiles(
+        runner: SandboxedRunner,
+        agent: ScreenAgent,
+        contact: String,
+        fileList: List<String>,
+        folder: String,
+        caption: String,
+        shouldSend: Boolean,
+    ): SkillResult {
+        val chatOpened = openContactChat(runner, agent, contact)
+        if (!chatOpened) return SkillResult.Failure("I couldn't open the chat for $contact.")
+
+        val pickerOpened = openDocumentPicker(runner, agent)
+        if (!pickerOpened) return SkillResult.Failure("I reached $contact's chat but couldn't open the file picker.")
+
+        if (!waitForFilePicker(runner)) return SkillResult.Failure("File picker didn't appear.")
+
+        // Long-press first file to enter multi-select mode, then tap the rest
+        val firstEl = findFileElement(runner, fileList[0])
+            ?: return SkillResult.Failure("Couldn't find file: ${fileList[0]}")
+
+        runner.longPressAt(firstEl.centerX.toFloat(), firstEl.centerY.toFloat())
+        delay(700)
+
+        for (filename in fileList.drop(1)) {
+            val el = findFileElement(runner, filename)
+            if (el != null) {
+                runner.tapAtPoint(el.centerX.toFloat(), el.centerY.toFloat())
+                delay(400)
+            }
+        }
+
+        // Tap the floating "Open" / checkmark / send button that appears after multi-select
+        val confirmed = runner.tapByText("Open")
+            || runner.tapByText("Done")
+            || runner.tapByText("Select")
+            || runner.getClickableElements().firstOrNull { el ->
+                val cd = el.contentDescription.lowercase()
+                (cd.contains("open") || cd.contains("done") || cd.contains("select"))
+                    && el.centerY > runner.getScreenSize().second * 0.80f
+            }?.let { el ->
+                runner.tapAtPoint(el.centerX.toFloat(), el.centerY.toFloat())
+            } != null
+
+        if (!confirmed) return SkillResult.Failure("Files selected but I couldn't confirm the selection.")
+        delay(800)
+
+        if (caption.isNotBlank()) typeAttachmentCaption(runner, caption)
+
+        val fileDesc = "${fileList.size} files (${fileList.joinToString(", ")})"
+        return if (shouldSend) {
+            if (!tapSendButton(runner)) {
+                SkillResult.Failure("Files ready for $contact but I couldn't find the send button.")
+            } else {
+                delay(600)
+                SkillResult.Success("Sent $fileDesc to *$contact* on WhatsApp.")
+            }
+        } else {
+            SkillResult.NeedsConfirmation(
+                prompt = "$fileDesc ready for *$contact*.\n\nReply *YES* to send, *NO* to cancel.",
+                onConfirm = {
+                    if (!tapSendButton(runner)) {
+                        SkillResult.Failure("Files attached but couldn't find the send button.")
+                    } else {
+                        delay(600)
+                        SkillResult.Success("Sent $fileDesc to *$contact* on WhatsApp.")
+                    }
+                },
+            )
+        }
+    }
+
+    private fun findFileElement(runner: SandboxedRunner, filename: String): ScreenElement? {
+        if (filename.isBlank()) return null
+        val tokens = filename.split(Regex("[^A-Za-z0-9._-]+"))
+            .filter { it.length >= 2 }
+            .map { it.lowercase() }
+        if (tokens.isEmpty()) return null
+
+        val blocked = setOf("search", "recent", "recents", "downloads", "documents",
+            "images", "videos", "audio", "files", "cancel", "back", "browse")
+
+        return runner.getClickableElements()
+            .asSequence()
+            .filter { it.isClickable && it.centerY > 120 }
+            .filter { el ->
+                val text = (el.text + " " + el.contentDescription).trim()
+                text.isNotBlank() && blocked.none { b -> text.equals(b, ignoreCase = true) }
+            }
+            .maxByOrNull { el ->
+                val text = (el.text + " " + el.contentDescription).lowercase()
+                val matches = tokens.count { t -> text.contains(t) }
+                val fileBoost = if (text.contains(".")) 2 else 0
+                matches * 10 + fileBoost
+            }
+            ?.takeIf { el ->
+                val text = (el.text + " " + el.contentDescription).lowercase()
+                tokens.any { t -> text.contains(t) }
+            }
     }
 
     private suspend fun prepareChatsTab(runner: SandboxedRunner) {
@@ -770,6 +886,7 @@ Stop only when the chat is open and the bottom message field says "Type a messag
         val messageActions = setOf("send", "message")
         val fileActions = setOf(
             "send_file",
+            "send_files",
             "send_document",
             "send_doc",
             "send_pdf",

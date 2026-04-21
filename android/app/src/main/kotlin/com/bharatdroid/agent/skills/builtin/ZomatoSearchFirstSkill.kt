@@ -52,6 +52,8 @@ class ZomatoSearchFirstSkill : Skill {
 
         runner.dismissPopups(2)
         delay(200)
+        dismissZomatoSpecificPopups(runner)
+        delay(200)
 
         val shouldContinueFromCurrentScreen =
             action == "continue" || (alreadyInZomato && looksLikeSelectionFollowUp(query))
@@ -90,6 +92,8 @@ class ZomatoSearchFirstSkill : Skill {
             action == "goal" -> params["goal"] as? String ?: query
 
             shouldContinueFromCurrentScreen -> buildString {
+                appendLine(zomatoUiContext)
+                appendLine()
                 appendLine("TASK: Continue the current Zomato flow and order the user's chosen option: \"$query\".")
                 appendLine()
                 appendLine("You are already inside Zomato. Continue from the CURRENT screen.")
@@ -117,6 +121,8 @@ class ZomatoSearchFirstSkill : Skill {
             }
 
             action == "search" || action == "order" || action == "add_to_cart" -> buildString {
+                appendLine(zomatoUiContext)
+                appendLine()
                 appendLine("TASK: Search Zomato for \"$query\" and shortlist the best options.")
                 appendLine()
                 appendLine("ALWAYS start with APP-LEVEL search for \"$query\".")
@@ -273,6 +279,49 @@ class ZomatoSearchFirstSkill : Skill {
             )
             .firstOrNull()
     }
+
+    // Dismiss Zomato-specific modal dialogs that runner.dismissPopups() may miss.
+    // Zomato shows these on app start: location permission, notification nudge,
+    // update dialog, address confirmation sheet, "New on Zomato" interstitials.
+    private suspend fun dismissZomatoSpecificPopups(runner: SandboxedRunner) {
+        val screen = runner.readScreen().lowercase()
+        val popupSignals = listOf(
+            "turn on notifications", "enable notifications", "allow notifications",
+            "update zomato", "update app", "new version available",
+            "rate us", "rate the app",
+            "what's new", "new on zomato",
+            "confirm your address", "is your address correct",
+        )
+        val hasBotherPopup = popupSignals.any { screen.contains(it) }
+        if (!hasBotherPopup) return
+
+        // Try the safe dismiss buttons in order
+        val dismissWords = listOf(
+            "Later", "Not now", "Maybe later", "Skip", "Dismiss",
+            "Close", "Cancel", "Remind me later", "No thanks",
+        )
+        for (word in dismissWords) {
+            if (runner.tapByText(word)) {
+                delay(400)
+                return
+            }
+        }
+    }
+
+    // Shared UI knowledge injected into every Zomato goal so the AI doesn't waste
+    // steps discovering what popups look like or where the search bar is.
+    private val zomatoUiContext = """
+Zomato UI knowledge:
+- Main search bar is near the top, labelled "Search for restaurant, cuisine or a dish".
+- If a bottom sheet appears with "Turn on notifications" or "Update", tap "Later" or "Not now".
+- If an address confirmation sheet appears ("Is your address correct?"), tap "Yes" or "Confirm".
+- If a location permission dialog appears, dismiss it with "Not now" — do not grant.
+- Delivery time shows as "X mins" next to each restaurant card.
+- Restaurant rating shows as a green/yellow badge (e.g. "4.2").
+- To add an item tap the green "ADD" button; if a customisation sheet appears, pick the first option and tap "Add Item".
+- The cart icon is at the bottom-right; tap it to open View Cart.
+- Do NOT tap the microphone icon — use text search only.
+    """.trimIndent()
 
     private fun looksLikeSelectionFollowUp(query: String): Boolean {
         val lower = query.trim().lowercase()

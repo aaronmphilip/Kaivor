@@ -41,6 +41,19 @@ class YouTubeSkill : Skill {
 
             "play", "search", "lyrics" -> {
                 if (query.isBlank()) return SkillResult.Failure("What do you want to play or search on YouTube?")
+
+                // If the play request is vague (just a short title with no format hint),
+                // ask the user before opening YouTube so we search the right thing.
+                if (action == "play" && isVaguePlayQuery(query)) {
+                    return SkillResult.Success(
+                        message = "🎬 *\"${query.trim()}\"* on YouTube — which format?\n\n" +
+                            "• Full video → reply: *play ${query.trim()} full video*\n" +
+                            "• Shorts → reply: *play ${query.trim()} shorts*\n" +
+                            "• Lyrics → reply: *play ${query.trim()} lyrics*",
+                        delivery = DeliveryMode.LONG_TEXT,
+                    )
+                }
+
                 val searchQuery = if (action == "lyrics" && !query.contains("lyrics", ignoreCase = true))
                     "$query lyrics" else query
                 playVideo(runner, agent, searchQuery)
@@ -188,7 +201,15 @@ class YouTubeSkill : Skill {
         }
 
         if (videoEls.isNotEmpty()) {
-            val target = videoEls.first()
+            // Prefer full-length videos unless the query explicitly asks for Shorts.
+            val wantShorts = searchQuery.contains("shorts", ignoreCase = true)
+            val target = if (wantShorts) {
+                videoEls.firstOrNull { it.text.contains("shorts", ignoreCase = true) }
+                    ?: videoEls.first()
+            } else {
+                videoEls.firstOrNull { !it.text.contains("shorts", ignoreCase = true) }
+                    ?: videoEls.first()
+            }
             val ok = runner.tapAtPoint(target.centerX.toFloat(), target.centerY.toFloat())
             if (ok) {
                 delay(2000)
@@ -312,6 +333,21 @@ class YouTubeSkill : Skill {
         val lower = screen.lowercase()
         return lower.contains("subscribers") ||
             (lower.contains("videos") && lower.contains("shorts") && lower.contains("playlists"))
+    }
+
+    // ── Detect vague play queries that need format clarification ─────────────
+    // A query is "vague" if it's a short title/name with no format or intent signal.
+    // Examples: "faded", "shape of you", "believer"
+    // Not vague: "faded shorts", "alan walker faded official", "faded lyrics"
+    private fun isVaguePlayQuery(query: String): Boolean {
+        val words = query.trim().split(Regex("\\s+"))
+        if (words.size > 4) return false
+        val formatHints = listOf(
+            "shorts", "short", "full", "lyrics", "live", "official", "cover",
+            "remix", "audio", "video", "song", "music", "ft", "feat", "acoustic",
+            "playlist", "album", "latest", "new", "channel",
+        )
+        return formatHints.none { query.contains(it, ignoreCase = true) }
     }
 
     // ── Build a precise goal string — do EXACTLY what was asked, nothing more ──
