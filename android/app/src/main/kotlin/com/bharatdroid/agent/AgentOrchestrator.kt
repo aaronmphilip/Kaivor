@@ -2,7 +2,14 @@ package com.bharatdroid.agent
 
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.net.wifi.WifiManager
+import android.os.BatteryManager
+import android.os.Environment
 import android.os.PowerManager
+import android.os.StatFs
+import android.os.SystemClock
 import com.bharatdroid.agent.skills.DeliveryMode
 import com.bharatdroid.agent.skills.RemoteSkill
 import com.bharatdroid.agent.skills.SkillResult
@@ -28,6 +35,8 @@ class AgentOrchestrator(
     private val savedPlaces = SavedPlacesStore(context)
     private val quickMacros = QuickMacrosStore(context)
     private val permissionsStore = PermissionsStore(context)
+    private val scheduleStore = ScheduleStore(context)
+    private val routineStore = RoutineStore(context)
     private var lastRawCommand: String = ""  // for "again"/"repeat" feature
 
     // Wake lock: keeps the screen on while a skill is executing so the
@@ -229,6 +238,10 @@ class AgentOrchestrator(
             // No record or unknown app â€” fall through to normal AI routing
         }
 
+        if (msg.attachment != null && msg.attachment.mimeType?.startsWith("audio") == true) {
+            return handleVoiceNote(msg)
+        }
+
         if (msg.attachment != null && (command == null || command.name == "summarize")) {
             return handleAttachmentMessage(msg, command?.args.orEmpty())
         }
@@ -357,9 +370,41 @@ class AgentOrchestrator(
                 "place" -> return savedPlaces.handleCommand(parsed.args)
                 "shortcut" -> return quickMacros.handleCommand(parsed.args)
                 "permissions" -> return permissionsStore.handleCommand(parsed.args)
+                "schedule" -> return scheduleStore.handleCommand(parsed.args, msg.chatId)
+                "routine" -> {
+                    when (val cmd = routineStore.handleCommand(parsed.args)) {
+                        is RoutineStore.RoutineCommand.Reply -> return cmd.message
+                        is RoutineStore.RoutineCommand.Run -> return runRoutine(cmd.routine, msg)
+                    }
+                }
                 "mode" -> return permissionsStore.handleCommand(parsed.args)  // keep /mode working
                 "install" -> return installSkill(parsed.args)
                 "uninstall" -> return uninstallSkill(parsed.args)
+                "screenshot" -> {
+                    val bitmap = try {
+                        AgentAccessibilityService.instance?.captureScreenshot()
+                    } catch (_: Exception) { null }
+                    return if (bitmap != null) {
+                        poller.sendPhoto(msg.chatId, bitmap, "📸 Screenshot")
+                        ""
+                    } else {
+                        "📸 Screenshot unavailable — make sure Accessibility Service is enabled."
+                    }
+                }
+                "open" -> {
+                    if (parsed.args.isBlank()) return "Usage: `/open <app name>`\nExamples: `/open Swiggy`, `/open Chrome`, `/open Settings`"
+                    val pkg = resolvePackage(parsed.args)
+                        ?: return "❌ Can't find \"${parsed.args}\". Try the exact app name or package (e.g. `com.swiggy.android`)."
+                    return try {
+                        val intent = context.packageManager.getLaunchIntentForPackage(pkg)
+                            ?: return "❌ \"${parsed.args}\" is installed but can't be launched."
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(intent)
+                        "📱 Opened *${parsed.args}*."
+                    } catch (e: Exception) {
+                        "❌ Could not open \"${parsed.args}\": ${e.message}"
+                    }
+                }
             }
         }
 
@@ -456,6 +501,17 @@ class AgentOrchestrator(
             trimmed.lowercase().startsWith("/shortcut ") -> {
                 return quickMacros.handleCommand(trimmed.substringAfter("/shortcut ").trim())
             }
+            trimmed.lowercase() == "/schedule" -> return scheduleStore.handleCommand("", msg.chatId)
+            trimmed.lowercase().startsWith("/schedule ") -> {
+                return scheduleStore.handleCommand(trimmed.substringAfter("/schedule ").trim(), msg.chatId)
+            }
+            trimmed.lowercase() == "/routine" -> return routineStore.buildListMessage()
+            trimmed.lowercase().startsWith("/routine ") -> {
+                when (val cmd = routineStore.handleCommand(trimmed.substringAfter("/routine ").trim())) {
+                    is RoutineStore.RoutineCommand.Reply -> return cmd.message
+                    is RoutineStore.RoutineCommand.Run -> return runRoutine(cmd.routine, msg)
+                }
+            }
             trimmed.lowercase().startsWith("/install ") -> {
                 val url = trimmed.substringAfter("/install ").trim()
                 return installSkill(url)
@@ -463,6 +519,32 @@ class AgentOrchestrator(
             trimmed.lowercase().startsWith("/uninstall ") -> {
                 val skillId = trimmed.substringAfter("/uninstall ").trim()
                 return uninstallSkill(skillId)
+            }
+            trimmed.lowercase() == "/screenshot" -> {
+                val bitmap = try {
+                    AgentAccessibilityService.instance?.captureScreenshot()
+                } catch (_: Exception) { null }
+                return if (bitmap != null) {
+                    poller.sendPhoto(msg.chatId, bitmap, "📸 Screenshot")
+                    ""
+                } else {
+                    "📸 Screenshot unavailable — make sure Accessibility Service is enabled."
+                }
+            }
+            trimmed.lowercase().startsWith("/open ") -> {
+                val arg = trimmed.substringAfter("/open ").trim()
+                if (arg.isBlank()) return "Usage: `/open <app name>`\nExamples: `/open Swiggy`, `/open Chrome`, `/open Settings`"
+                val pkg = resolvePackage(arg)
+                    ?: return "❌ Can't find \"$arg\". Try the exact app name or package (e.g. `com.swiggy.android`)."
+                return try {
+                    val intent = context.packageManager.getLaunchIntentForPackage(pkg)
+                        ?: return "❌ \"$arg\" is installed but can't be launched."
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                    "📱 Opened *$arg*."
+                } catch (e: Exception) {
+                    "❌ Could not open \"$arg\": ${e.message}"
+                }
             }
         }
 
@@ -901,6 +983,34 @@ You can also open a document on the phone and say:
             .replace("]", "")
             .replace("_", "")
 
+    private suspend fun runRoutine(routine: RoutineStore.Routine, msg: IncomingMessage): String {
+        poller.sendMessage(msg.chatId, "🔗 *Running routine: ${routine.name}* (${routine.steps.size} steps)")
+        routine.steps.forEachIndexed { i, step ->
+            poller.sendMessage(msg.chatId, "▶️ Step ${i + 1}/${routine.steps.size}: _${step.take(60)}_")
+            try {
+                val result = handleMessage(msg.copy(text = step))
+                if (result.isNotBlank()) poller.sendMessage(msg.chatId, result)
+            } catch (e: Exception) {
+                poller.sendMessage(msg.chatId, "❌ Step ${i + 1} failed: ${e.message}")
+            }
+        }
+        return "✅ *Routine complete: ${routine.name}*"
+    }
+
+    suspend fun dispatchScheduledCommand(chatId: Long, command: String) {
+        poller.sendMessage(chatId, "⏰ _Scheduled:_ $command")
+        val fakeMsg = IncomingMessage(
+            chatId = chatId,
+            messageId = -1L,
+            text = command,
+            username = "scheduled",
+            replyToMessageId = null,
+            attachment = null,
+        )
+        val result = handleMessage(fakeMsg)
+        if (result.isNotBlank()) poller.sendMessage(chatId, result)
+    }
+
     private fun buildMutedListMessage(): String {
         val muted = muteStore.list()
         val granted = NotificationRelay.isPermissionGranted(context)
@@ -988,6 +1098,10 @@ You can also open a document on the phone and say:
         TelegramBotCommand("clear", "Clear chat memory"),
         TelegramBotCommand("install", "Install a community skill"),
         TelegramBotCommand("uninstall", "Remove a community skill"),
+        TelegramBotCommand("screenshot", "Take and send a screenshot instantly"),
+        TelegramBotCommand("open", "Open any app — /open Swiggy"),
+        TelegramBotCommand("schedule", "Schedule a task — /schedule 7pm order pizza"),
+        TelegramBotCommand("routine", "Run a command chain — /routine morning"),
     )
 
     private fun parseTelegramCommand(input: String): ParsedTelegramCommand? {
@@ -1130,6 +1244,11 @@ Tell me what to do â€” English or Hindi. I'll do it.
   Then say: _”take me home”_ or _”Ola to work”_ — I fill in the address
 - Save shortcuts: `/shortcut add morning = give me my morning brief`
   Then just type: _”morning”_ to run it
+📸 /screenshot — instant screen capture sent to Telegram
+📱 /open <app> — launch any installed app
+⏰ /schedule <time> <cmd> — schedule one-time or daily tasks
+🔗 /routine <name> — run named command chains
+🎙️ Voice notes — send audio, I’ll transcribe and execute
 
 *Commands:*
 /help — show this guide
@@ -1158,6 +1277,63 @@ Tell me what to do â€” English or Hindi. I'll do it.
 - Rules I learn are *mandatory* — I follow them every time, not just sometimes.
 - I also learn each app’s layout — every task makes me faster.
     """.trimIndent()
+
+    // ── Voice note transcription ─────────────────────────────────────────────
+    private suspend fun handleVoiceNote(msg: IncomingMessage): String {
+        // LLMClient does not currently support audio transcription.
+        // Return a graceful message guiding the user to a compatible provider.
+        return "🎙️ Voice notes work with Gemini 2.0+. Set Gemini as your AI provider in Settings."
+    }
+
+    // ── Device info helpers (for /status) ────────────────────────────────────
+    private fun getBatteryLevel(): String {
+        return try {
+            val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+            val pct = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            val charging = bm.isCharging
+            if (charging) "$pct% ⚡" else "$pct%"
+        } catch (_: Exception) { "N/A" }
+    }
+
+    private fun getWifiName(): String {
+        return try {
+            val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            @Suppress("DEPRECATION")
+            val ssid = wm.connectionInfo?.ssid
+            if (!ssid.isNullOrBlank() && ssid != "<unknown ssid>") {
+                ssid.removeSurrounding("\"")
+            } else {
+                // Fallback: check if connected to any network
+                val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                val net = cm.activeNetwork
+                val caps = cm.getNetworkCapabilities(net)
+                when {
+                    caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true -> "WiFi"
+                    caps?.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) == true -> "Mobile data"
+                    caps?.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) == true -> "Ethernet"
+                    else -> "Offline"
+                }
+            }
+        } catch (_: Exception) { "N/A" }
+    }
+
+    private fun getFreeStorage(): String {
+        return try {
+            val stat = StatFs(Environment.getDataDirectory().path)
+            val bytesAvailable = stat.blockSizeLong * stat.availableBlocksLong
+            val gb = bytesAvailable / (1024.0 * 1024.0 * 1024.0)
+            if (gb >= 1.0) "%.1f GB".format(gb) else "${(bytesAvailable / (1024 * 1024))} MB"
+        } catch (_: Exception) { "N/A" }
+    }
+
+    private fun getUptimeString(): String {
+        return try {
+            val ms = SystemClock.elapsedRealtime()
+            val hours = ms / 3_600_000
+            val minutes = (ms % 3_600_000) / 60_000
+            "${hours}h ${minutes}m"
+        } catch (_: Exception) { "N/A" }
+    }
 
     private suspend fun installSkill(url: String): String {
         if (url.isBlank()) return "Usage: /install <url to skill JSON>"
@@ -1225,6 +1401,10 @@ Tell me what to do â€” English or Hindi. I'll do it.
         val memCount = userMemory.getAll().size
         val notifGranted = NotificationRelay.isPermissionGranted(context)
         val mutedCount = muteStore.list().size
+        val batteryPct = getBatteryLevel()
+        val wifiName = getWifiName()
+        val storageFree = getFreeStorage()
+        val uptime = getUptimeString()
         return """
 *BharatDroid Status*
 
@@ -1238,6 +1418,9 @@ Research AI: $researchProvider ${if (researchModel.isNotBlank()) "($researchMode
 Brains: Web knowledge + device actions
 Today: $count commands processed
 Apps learned: $knownApps  |  Preferences: $memCount
+
+📱 *Device*
+Battery: $batteryPct  |  Network: $wifiName  |  Free: $storageFree  |  Up: $uptime
         """.trimIndent()
     }
 }

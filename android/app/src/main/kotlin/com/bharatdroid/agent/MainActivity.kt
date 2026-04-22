@@ -3,6 +3,7 @@ package com.bharatdroid.agent
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.Settings
 import android.view.Gravity
 import android.view.View
@@ -14,6 +15,7 @@ class MainActivity : AppCompatActivity() {
 
     private val activityLog by lazy { ActivityLog(this) }
     private var isAgentRunning = false
+    private var agentStartElapsed: Long = 0L  // SystemClock.elapsedRealtime() when agent last started
 
     // All skill metadata for the dashboard grid
     private val allSkills = listOf(
@@ -69,6 +71,7 @@ class MainActivity : AppCompatActivity() {
         // Auto-start agent if not already running
         startForegroundService(Intent(this, AgentForegroundService::class.java))
         isAgentRunning = true
+        agentStartElapsed = SystemClock.elapsedRealtime()
     }
 
     override fun onResume() {
@@ -83,6 +86,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Format elapsed milliseconds as "1h 23m" or "45m" or "—" */
+    private fun formatUptime(elapsedMs: Long): String {
+        if (elapsedMs <= 0L) return "—"
+        val totalMinutes = (elapsedMs / 60_000).toInt()
+        val hours = totalMinutes / 60
+        val minutes = totalMinutes % 60
+        return if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m"
+    }
+
     private fun refreshStatus() {
         val prefs = getSharedPreferences("bharatdroid", MODE_PRIVATE)
         val serviceOk = AgentAccessibilityService.isConnected
@@ -93,6 +105,14 @@ class MainActivity : AppCompatActivity() {
         val skillCount = findViewById<TextView>(R.id.tvSkillCount)
         val todayCount = findViewById<TextView>(R.id.tvTodayCount)
         val toggleBtn = findViewById<Button>(R.id.btnToggleAgent)
+
+        // Populate stat strip
+        val todayCnt = activityLog.todayCount()
+        findViewById<TextView>(R.id.tvCommandCount).text = todayCnt.toString()
+        findViewById<TextView>(R.id.tvStatSkills).text = allSkills.size.toString()
+        val elapsedMs = if (isAgentRunning && agentStartElapsed > 0L)
+            SystemClock.elapsedRealtime() - agentStartElapsed else 0L
+        findViewById<TextView>(R.id.tvUptime).text = formatUptime(elapsedMs)
 
         if (isAgentRunning) {
             dot.setBackgroundResource(R.drawable.dot_green)
@@ -128,7 +148,7 @@ class MainActivity : AppCompatActivity() {
             prefs.getString("research_ai_provider", agentProvider) ?: agentProvider
         }
         skillCount.text = "${allSkills.size} skills  |  $modeText  |  Agent: $agentProvider  |  Research: $researchProvider"
-        todayCount.text = "${activityLog.todayCount()} commands today"
+        todayCount.text = "$todayCnt commands today"
 
         // Notification relay card
         val notifGranted = NotificationRelay.isPermissionGranted(this)
@@ -155,9 +175,11 @@ class MainActivity : AppCompatActivity() {
             if (isAgentRunning) {
                 stopService(Intent(this, AgentForegroundService::class.java))
                 isAgentRunning = false
+                agentStartElapsed = 0L
             } else {
                 startForegroundService(Intent(this, AgentForegroundService::class.java))
                 isAgentRunning = true
+                agentStartElapsed = SystemClock.elapsedRealtime()
             }
             refreshStatus()
         }

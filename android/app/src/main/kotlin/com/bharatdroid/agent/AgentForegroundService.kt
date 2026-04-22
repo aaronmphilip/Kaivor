@@ -14,9 +14,15 @@ class AgentForegroundService : LifecycleService() {
     companion object {
         const val CHANNEL_ID = "bharatdroid_agent"
         const val NOTIFICATION_ID = 1
+
+        var orchestratorInstance: AgentOrchestrator? = null
+        var serviceScope: kotlinx.coroutines.CoroutineScope? = null
     }
 
     private lateinit var orchestrator: AgentOrchestrator
+    private val scope = kotlinx.coroutines.CoroutineScope(
+        kotlinx.coroutines.Dispatchers.IO + kotlinx.coroutines.SupervisorJob()
+    )
 
     override fun onCreate() {
         super.onCreate()
@@ -83,6 +89,8 @@ class AgentForegroundService : LifecycleService() {
 
         orchestrator = AgentOrchestrator(this, config)
         orchestrator.start()
+        orchestratorInstance = orchestrator
+        serviceScope = scope
 
         // Kick the notification listener to rebind after service restarts / boot.
         NotificationRelay.rebind(this)
@@ -91,6 +99,8 @@ class AgentForegroundService : LifecycleService() {
     }
 
     override fun onDestroy() {
+        orchestratorInstance = null
+        serviceScope = null
         if (::orchestrator.isInitialized) orchestrator.stop()
         super.onDestroy()
     }

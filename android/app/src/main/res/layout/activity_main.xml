@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#0A0A0A"
-    android:padding="0dp">
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -20,54 +20,172 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="40dp">
 
-            <!-- Header -->
+            <!-- ── Header row ── -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginTop="16dp">
+                android:layout_marginTop="20dp">
 
+                <!-- Logo + wordmark -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-                    <TextView
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_logo_mark"
+                        android:contentDescription="BharatDroid logo"/>
+
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="BharatDroid"
-                        android:textColor="#FFFFFF"
-                        android:textSize="32sp"
+                        android:orientation="vertical"
+                        android:layout_marginStart="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="BharatDroid"
+                            android:textColor="#FFFFFF"
+                            android:textSize="22sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="AI Phone Agent"
+                            android:textColor="#FF5C00"
+                            android:textSize="11sp"
+                            android:fontFamily="@font/bricolage_grotesque"
+                            android:layout_marginTop="1dp"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnSettings"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="Settings"
+                    android:backgroundTint="#111111"
+                    android:textColor="#888888"
+                    android:textSize="12sp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"/>
+            </LinearLayout>
+
+            <!-- ── Stat strip (3 cards) ── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="16dp">
+
+                <!-- Commands today -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/card_stat"
+                    android:padding="12dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/tvCommandCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="#FF5C00"
+                        android:textSize="24sp"
                         android:textStyle="bold"
                         android:fontFamily="@font/bricolage_grotesque"/>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="AI Phone Agent"
-                        android:textColor="#FF5C00"
-                        android:textSize="12sp"
-                        android:fontFamily="@font/bricolage_grotesque"
-                        android:layout_marginTop="1dp"/>
+                        android:text="Commands"
+                        android:textColor="#555555"
+                        android:textSize="10sp"
+                        android:layout_marginTop="2dp"/>
                 </LinearLayout>
 
-                <Button
-                    android:id="@+id/btnSettings"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:text="Settings"
-                    android:backgroundTint="#111111"
-                    android:textColor="#AAAAAA"
-                    android:textSize="12sp"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"/>
+                <!-- Spacer -->
+                <View android:layout_width="8dp" android:layout_height="1dp"/>
+
+                <!-- Skills active -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/card_stat"
+                    android:padding="12dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/tvStatSkills"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="25"
+                        android:textColor="#FF5C00"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/bricolage_grotesque"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Skills"
+                        android:textColor="#555555"
+                        android:textSize="10sp"
+                        android:layout_marginTop="2dp"/>
+                </LinearLayout>
+
+                <!-- Spacer -->
+                <View android:layout_width="8dp" android:layout_height="1dp"/>
+
+                <!-- Uptime -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/card_stat"
+                    android:padding="12dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/tvUptime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="—"
+                        android:textColor="#FF5C00"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/bricolage_grotesque"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Uptime"
+                        android:textColor="#555555"
+                        android:textSize="10sp"
+                        android:layout_marginTop="2dp"/>
+                </LinearLayout>
             </LinearLayout>
 
-            <!-- Status Card — orange border, most important card -->
+            <!-- ── Status Card (orange border) ── -->
             <LinearLayout
                 android:id="@+id/cardStatus"
                 android:layout_width="match_parent"
@@ -75,7 +193,7 @@
                 android:orientation="vertical"
                 android:background="@drawable/card_orange_accent"
                 android:padding="20dp"
-                android:layout_marginTop="20dp">
+                android:layout_marginTop="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -91,11 +209,12 @@
 
                     <TextView
                         android:id="@+id/tvAgentStatus"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:text="Agent Running"
                         android:textColor="#FFFFFF"
-                        android:textSize="18sp"
+                        android:textSize="17sp"
                         android:textStyle="bold"
                         android:fontFamily="@font/bricolage_grotesque"
                         android:layout_marginStart="10dp"/>
@@ -107,7 +226,7 @@
                     android:layout_height="wrap_content"
                     android:text="Accessibility: Connected"
                     android:textColor="#666666"
-                    android:textSize="13sp"
+                    android:textSize="12sp"
                     android:layout_marginTop="10dp"/>
 
                 <TextView
@@ -116,7 +235,7 @@
                     android:layout_height="wrap_content"
                     android:text="Skills loaded"
                     android:textColor="#666666"
-                    android:textSize="13sp"
+                    android:textSize="12sp"
                     android:layout_marginTop="3dp"/>
 
                 <TextView
@@ -125,29 +244,29 @@
                     android:layout_height="wrap_content"
                     android:text="0 commands today"
                     android:textColor="#666666"
-                    android:textSize="13sp"
+                    android:textSize="12sp"
                     android:layout_marginTop="3dp"/>
 
                 <Button
                     android:id="@+id/btnToggleAgent"
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
+                    android:layout_height="48dp"
                     android:text="Stop Agent"
                     android:backgroundTint="#1A0800"
                     android:textColor="#FF5C00"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
-                    android:layout_marginTop="16dp"/>
+                    android:layout_marginTop="14dp"/>
             </LinearLayout>
 
-            <!-- Notification Relay Card -->
+            <!-- ── Notification Relay Card ── -->
             <LinearLayout
                 android:id="@+id/cardNotifRelay"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/card_premium"
-                android:padding="20dp"
+                android:padding="18dp"
                 android:layout_marginTop="12dp">
 
                 <LinearLayout
@@ -162,7 +281,7 @@
                         android:layout_weight="1"
                         android:text="🔔  Notification Relay"
                         android:textColor="#FFFFFF"
-                        android:textSize="15sp"
+                        android:textSize="14sp"
                         android:textStyle="bold"
                         android:fontFamily="@font/bricolage_grotesque"/>
 
@@ -174,7 +293,7 @@
                         android:textColor="#FF6B6B"
                         android:textSize="10sp"
                         android:textStyle="bold"
-                        android:background="#331111"
+                        android:background="@drawable/chip_bg"
                         android:paddingStart="10dp"
                         android:paddingEnd="10dp"
                         android:paddingTop="4dp"
@@ -186,7 +305,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Every app notification → your Telegram. Reply in Telegram → reply in the app."
-                    android:textColor="#666666"
+                    android:textColor="#555555"
                     android:textSize="12sp"
                     android:lineSpacingMultiplier="1.4"
                     android:layout_marginTop="8dp"/>
@@ -194,58 +313,71 @@
                 <Button
                     android:id="@+id/btnEnableNotifRelay"
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
+                    android:layout_height="42dp"
                     android:text="Enable Notification Access"
                     android:backgroundTint="#111111"
                     android:textColor="#FF5C00"
                     android:textSize="12sp"
-                    android:layout_marginTop="12dp"/>
+                    android:layout_marginTop="10dp"/>
             </LinearLayout>
 
-            <!-- Skills -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Skills"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:fontFamily="@font/bricolage_grotesque"
-                android:layout_marginTop="28dp"/>
-
-            <TextView
+            <!-- ── Skills section ── -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Control any app via Telegram commands"
-                android:textColor="#555555"
-                android:textSize="12sp"
-                android:layout_marginTop="4dp"/>
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="28dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Skills"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/bricolage_grotesque"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Control any app via Telegram"
+                    android:textColor="#444444"
+                    android:textSize="11sp"/>
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/skillsGrid"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="12dp"/>
+                android:layout_marginTop="10dp"/>
 
-            <!-- Recent Activity -->
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- ── Recent Activity section ── -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Recent Activity"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:fontFamily="@font/bricolage_grotesque"
-                android:layout_marginTop="28dp"/>
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="28dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Recent Activity"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/bricolage_grotesque"/>
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/activityList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="40dp"/>
+                android:layout_marginTop="10dp"/>
 
         </LinearLayout>
     </LinearLayout>

@@ -10,6 +10,9 @@
     <!-- Wake screen when a Telegram command arrives so the agent can control apps -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
     <!-- Needed so we can detect and launch any installed app -->
     <queries>
@@ -87,6 +90,15 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Fires scheduled commands when their alarm goes off -->
+        <receiver
+            android:name=".ScheduledCommandReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.bharatdroid.agent.RUN_SCHEDULED" />
             </intent-filter>
         </receiver>
 

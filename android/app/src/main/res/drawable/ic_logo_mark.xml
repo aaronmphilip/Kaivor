@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+
+    <!-- Background rounded rect -->
+    <path
+        android:pathData="M12,0 L28,0 Q40,0 40,12 L40,28 Q40,40 28,40 L12,40 Q0,40 0,28 L0,12 Q0,0 12,0 Z"
+        android:fillColor="#111111"/>
+
+    <!-- Gradient border (top-left orange fade) — simulate with a thin arc path -->
+    <path
+        android:pathData="M12,0.5 L28,0.5 Q39.5,0.5 39.5,12 L39.5,28 Q39.5,39.5 28,39.5 L12,39.5 Q0.5,39.5 0.5,28 L0.5,12 Q0.5,0.5 12,0.5 Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF5C00"
+        android:strokeWidth="0.8"
+        android:strokeAlpha="0.5"/>
+
+    <!-- Circuit spine (vertical line) -->
+    <path
+        android:pathData="M11,8 L11,32"
+        android:strokeColor="#FF5C00"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"/>
+
+    <!-- Top B-arc -->
+    <path
+        android:pathData="M11,12 Q22,12 22,17 Q22,21 11,21"
+        android:strokeColor="#FF6A20"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"/>
+
+    <!-- Bottom B-arc (wider) -->
+    <path
+        android:pathData="M11,21 Q25,21 25,26.5 Q25,32 11,32"
+        android:strokeColor="#FF5C00"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"/>
+
+    <!-- Node at top arc tip -->
+    <path
+        android:pathData="M24,17 A2,2 0 1 1 23.9999,17 Z"
+        android:fillColor="#FF7A2F"/>
+
+    <!-- Node at bottom arc tip -->
+    <path
+        android:pathData="M27.5,26.5 A2.5,2.5 0 1 1 27.4999,26.5 Z"
+        android:fillColor="#FF5C00"/>
+
+    <!-- Node at spine top -->
+    <path
+        android:pathData="M13,8 A2,2 0 1 1 12.9999,8 Z"
+        android:fillColor="#FF5C00"/>
+
+    <!-- Micro circuit line (faint) -->
+    <path
+        android:pathData="M22,17 L28,12"
+        android:strokeColor="#FF5C00"
+        android:strokeWidth="0.9"
+        android:strokeAlpha="0.4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"/>
+
+    <!-- Micro circuit endpoint dot -->
+    <path
+        android:pathData="M29,12 A1,1 0 1 1 28.9999,12 Z"
+        android:fillColor="#FF5C00"
+        android:fillAlpha="0.4"/>
+
+</vector>
