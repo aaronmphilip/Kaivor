@@ -584,6 +584,17 @@ class AgentOrchestrator(
             return handleMessage(msg.copy(text = macroResolved))
         }
 
+        // ── Natural Command Detection — slash-free intent recognition ────────────
+        // Spots phrases like "remind me at 7pm to order pizza", "run my morning routine",
+        // "take a screenshot", "open Swiggy", "turn off payment confirmations" etc.
+        // and internally re-dispatches them as the equivalent slash command.
+        // The user never needs to type "/" — the system understands plain language.
+        if (!trimmed.startsWith("/")) {
+            NaturalCommandDetector.detect(trimmed)?.let { resolved ->
+                return handleMessage(msg.copy(text = resolved))
+            }
+        }
+
         // ── Saved Places expansion — resolve "home", "work" etc. in command ────
         val expandedCommand = savedPlaces.expandInCommand(trimmed)
 
