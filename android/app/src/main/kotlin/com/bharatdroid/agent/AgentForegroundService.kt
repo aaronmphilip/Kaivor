@@ -88,9 +88,10 @@ class AgentForegroundService : LifecycleService() {
         )
 
         orchestrator = AgentOrchestrator(this, config)
-        orchestrator.start()
+        // Expose refs BEFORE start() so ScheduledCommandReceiver can dispatch immediately
         orchestratorInstance = orchestrator
         serviceScope = scope
+        orchestrator.start()
 
         // Kick the notification listener to rebind after service restarts / boot.
         NotificationRelay.rebind(this)

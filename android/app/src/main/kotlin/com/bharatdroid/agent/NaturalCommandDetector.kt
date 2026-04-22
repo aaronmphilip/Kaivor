@@ -60,7 +60,7 @@ object NaturalCommandDetector {
         val patterns = listOf(
             Regex("""(take|grab|send|get|capture|show)(?: me)?(?: a| the| my)? (?:screenshot|screen shot|screencap|screen cap|screen)"""),
             Regex("""(?:what(?:'s| is)(?: on)? (?:my |the )?screen)"""),
-            Regex("""(?:screenshot|screenshottingit|screengrab)"""),
+            Regex("""(?:screenshot|screengrab|screenrecord)"""),
         )
         return if (patterns.any { it.containsMatchIn(l) }) "/screenshot" else null
     }
