@@ -25,6 +25,9 @@ class AgentOrchestrator(
     private val appKnowledge = AppKnowledgeBase(context)
     private val muteStore = MuteStore(context)
     private val conversationContext = ConversationContextStore(context)
+    private val savedPlaces = SavedPlacesStore(context)
+    private val quickMacros = QuickMacrosStore(context)
+    private var lastRawCommand: String = ""  // for "again"/"repeat" feature
 
     // Wake lock: keeps the screen on while a skill is executing so the
     // accessibility service can interact with apps even when called from
@@ -351,6 +354,8 @@ class AgentOrchestrator(
                     return "Conversation memory cleared. Fresh start."
                 }
                 "mode" -> return toggleMode(msg.chatId)
+                "place" -> return savedPlaces.handleCommand(parsed.args)
+                "shortcut" -> return quickMacros.handleCommand(parsed.args)
                 "install" -> return installSkill(parsed.args)
                 "uninstall" -> return uninstallSkill(parsed.args)
             }
@@ -437,6 +442,14 @@ class AgentOrchestrator(
                 return "Conversation memory cleared. Fresh start."
             }
             trimmed.lowercase() == "/mode" -> return toggleMode(msg.chatId)
+            trimmed.lowercase() == "/place" -> return savedPlaces.handleCommand("")
+            trimmed.lowercase().startsWith("/place ") -> {
+                return savedPlaces.handleCommand(trimmed.substringAfter("/place ").trim())
+            }
+            trimmed.lowercase() == "/shortcut" -> return quickMacros.handleCommand("")
+            trimmed.lowercase().startsWith("/shortcut ") -> {
+                return quickMacros.handleCommand(trimmed.substringAfter("/shortcut ").trim())
+            }
             trimmed.lowercase().startsWith("/install ") -> {
                 val url = trimmed.substringAfter("/install ").trim()
                 return installSkill(url)
@@ -464,11 +477,50 @@ class AgentOrchestrator(
             }
         }
 
-        // â”€â”€ Normal flow: AI -> Skill â”€â”€
+        // ── "Again" / "Repeat" — re-run the last command ────────────────────
+        val isAgainCommand = lower in setOf(
+            "again", "repeat", "do it again", "redo", "same", "once more",
+            "फिर से", "dobara", "phir se", "wahi karo", "ek baar aur",
+        )
+        if (isAgainCommand) {
+            val lastCmd = lastRawCommand
+            if (lastCmd.isBlank()) return "Nothing to repeat — I haven't run any command yet this session."
+            poller.sendMessage(msg.chatId, "🔁 Repeating: _" + lastCmd.take(80) + "_")
+            return handleMessage(msg.copy(text = lastCmd))
+        }
+
+        // ── Quick Macro resolution — check user-defined shortcuts first ────────
+        val macroResolved = quickMacros.resolve(lower)
+        if (macroResolved != null) {
+            poller.sendMessage(msg.chatId, "⚡ Running shortcut: _" + macroResolved.take(80) + "_")
+            return handleMessage(msg.copy(text = macroResolved))
+        }
+
+        // ── Saved Places expansion — resolve "home", "work" etc. in command ────
+        val expandedCommand = savedPlaces.expandInCommand(trimmed)
+
+        // ── Compound command: "X and Y" → run both sequentially ───────────────
+        val andParts = splitCompoundCommand(expandedCommand)
+        if (andParts != null) {
+            lastRawCommand = trimmed
+            poller.sendMessage(msg.chatId, "🔄 Running compound command in two steps...")
+            val result1 = handleMessage(msg.copy(text = andParts.first))
+            val result2 = handleMessage(msg.copy(text = andParts.second))
+            return "1️⃣ *" + andParts.first.take(55) + "*
+" + result1 + "
+
+2️⃣ *" + andParts.second.take(55) + "*
+" + result2
+        }
+
+        // Save raw command for "again" feature (never save meta-commands)
+        lastRawCommand = trimmed
+
+        // ── Normal flow: AI -> Skill ──
         // Brain routing is fast (just an API call), so do it outside the lock.
-        // Only the actual on-device skill execution is locked â€” one task at a time.
+        // Only the actual on-device skill execution is locked — one task at a time.
         poller.sendTyping(msg.chatId)
-        val route = BrainRoute(mode = BrainMode.ACTION, actionPrompt = trimmed)
+        val route = BrainRoute(mode = BrainMode.ACTION, actionPrompt = expandedCommand)
 
         if (route.mode == BrainMode.DIRECT_REPLY) {
             activityLog.log(trimmed, null, "success", route.reply.take(100))
@@ -920,6 +972,8 @@ You can also open a document on the phone and say:
         TelegramBotCommand("memory", "Show saved rules"),
         TelegramBotCommand("remember", "Save a new rule"),
         TelegramBotCommand("forget", "Delete rules or clear them all"),
+        TelegramBotCommand("place", "Saved places — /place save home <address>"),
+        TelegramBotCommand("shortcut", "Quick shortcuts — /shortcut add morning = ..."),
         TelegramBotCommand("knowledge", "Show learned app knowledge"),
         TelegramBotCommand("knowledge_clear", "Clear all or one app's knowledge"),
         TelegramBotCommand("muted", "Show muted notification apps"),
@@ -972,6 +1026,30 @@ You can also open a document on the phone and say:
         }
 
         return null
+    }
+
+    /**
+     * Detects compound commands like "order biryani from Swiggy and pay Priya 200".
+     * Returns a Pair of the two sub-commands if both look actionable, null otherwise.
+     */
+    private fun splitCompoundCommand(input: String): Pair<String, String>? {
+        val actionVerbs = setOf(
+            "order", "book", "search", "find", "send", "pay", "open", "play",
+            "navigate", "go to", "call", "message", "dm", "share", "post",
+            "buy", "add", "create", "set", "read", "check", "show", "recharge",
+            "transfer", "download", "install", "remind", "track", "compare",
+        )
+        val andIndex = input.lowercase().indexOf(" and ")
+        if (andIndex < 3) return null
+        val part1 = input.substring(0, andIndex).trim()
+        val part2 = input.substring(andIndex + 5).trim()
+        if (part1.length < 5 || part2.length < 5) return null
+        fun isActionable(s: String): Boolean {
+            val l = s.lowercase()
+            return actionVerbs.any { l.startsWith(it) || l.contains(" $it ") }
+        }
+        if (!isActionable(part1) || !isActionable(part2)) return null
+        return Pair(part1, part2)
     }
 
     private fun normalizeIncomingTelegramText(input: String): String =
@@ -1033,41 +1111,47 @@ Tell me what to do â€” English or Hindi. I'll do it.
 - "/research Research this person deeply"
 
 *More:*
-- "Navigate to Gateway of India"
-- "Message mom on WhatsApp: coming home"
-- "Send the latest PDF to HR on WhatsApp"
-- "Play Alan Walker Faded on YouTube"
-- "Earbuds under 1000 on Amazon"
-- "Open calculator and compute 25 * 4"
+- “Navigate to Gateway of India”
+- “Message mom on WhatsApp: coming home”
+- “Send the latest PDF to HR on WhatsApp”
+- “Play Alan Walker Faded on YouTube”
+- “Earbuds under 1000 on Amazon”
+- “Open calculator and compute 25 * 4”
+
+*Power Features:*
+- “again” or “repeat” — re-run the last command instantly
+- “order pizza and pay Priya 200” — compound commands (runs both)
+- Save places: `/place save home Koramangala, Bangalore`
+  Then say: _”take me home”_ or _”Ola to work”_ — I fill in the address
+- Save shortcuts: `/shortcut add morning = give me my morning brief`
+  Then just type: _”morning”_ to run it
 
 *Commands:*
-/help â€” show this guide
-/skills â€” list all skills
-/status â€” agent health check
-/history â€” recent activity
-/info <topic> â€” quick web research without opening Chrome
-/research <topic> â€” deeper web research without opening Chrome
-/summarize â€” summarize an attached document
-/memory â€” see your saved rules
-/remember <rule> â€” add a rule directly
-/forget 3 â€” delete rule #3
-/forget 1,3,5 â€” delete rules 1, 3 and 5
-/forget 2-5 â€” delete rules 2 through 5
-/forget â€” clear all rules
-/knowledge â€” see what I've learned per app
-/knowledge_clear â€” clear all app knowledge
-/muted â€” notification relay status + muted apps
-/mute <app> â€” stop forwarding notifications from that app
-/unmute <app> â€” re-enable notifications from that app
-/mode â€” toggle Ask Permission / Just Do It
-/clear â€” reset conversation memory
-/install <url> â€” add community skill
+/help — show this guide
+/skills — list all skills
+/status — agent health check
+/history — recent activity
+/info <topic> — quick web research without opening Chrome
+/research <topic> — deeper web research without opening Chrome
+/summarize — summarize an attached document
+/memory — see your saved rules
+/remember <rule> — add a rule directly
+/forget 3 — delete rule #3
+/place — manage saved places (home, work, gym…)
+/shortcut — manage quick shortcuts
+/knowledge — see what I’ve learned per app
+/muted — notification relay status + muted apps
+/mute <app> — stop forwarding notifications from that app
+/unmute <app> — re-enable notifications from that app
+/mode — toggle Ask Permission / Just Do It
+/clear — reset conversation memory
+/install <url> — add community skill
 
-ðŸ’¡ *Tips:*
-- Teach me naturally: _"next time always confirm before sending"_
+💡 *Tips:*
+- Teach me naturally: _”next time always confirm before sending”_
 - Or add a rule directly: `/remember Always sort Amazon results by rating`
-- Rules I learn are *mandatory* â€” I follow them every time, not just sometimes.
-- I also learn each app's layout â€” every task makes me faster.
+- Rules I learn are *mandatory* — I follow them every time, not just sometimes.
+- I also learn each app’s layout — every task makes me faster.
     """.trimIndent()
 
     private suspend fun installSkill(url: String): String {
