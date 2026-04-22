@@ -64,7 +64,7 @@ Google Pay UI guide:
             "send", "pay" -> {
                 if (contact.isBlank()) return SkillResult.Failure("Who should I send money to? Provide a contact name, phone number, or UPI ID.")
                 if (amount.isBlank()) return SkillResult.Failure("How much money should I send?")
-                """You are in Google Pay. Send ₹$amount to "$contact"${if (note.isNotBlank()) " with note \"$note\"" else ""}.
+                val goal = """You are in Google Pay. Send ₹$amount to "$contact"${if (note.isNotBlank()) " with note \"$note\"" else ""}.
 STEPS:
 1. The contact search field may already have "$contact" typed. If not, tap "New payment" and type "$contact"
 2. Tap the most relevant contact or UPI ID from the suggestions
@@ -76,6 +76,13 @@ STEPS:
 
 ⚠️ NEVER enter the UPI PIN — this is a sensitive action
 ⚠️ If the contact is not found by name, ask the user for their phone number or UPI ID"""
+                return SkillResult.NeedsConfirmation(
+                    prompt = "💸 *Send via Google Pay*\n\nAmount: *₹$amount*\nTo: *$contact*${if (note.isNotBlank()) "\nNote: _${note}_" else ""}\n\n⚠️ You will need to enter your UPI PIN on the phone.\n\nReply *YES* to proceed.",
+                    onConfirm = {
+                        val result = agent.executeGoal(runner, goal, maxSteps = 20)
+                        SkillResult.Success(result)
+                    }
+                )
             }
 
             "request" -> {

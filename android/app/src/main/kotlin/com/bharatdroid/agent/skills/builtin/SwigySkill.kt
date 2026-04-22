@@ -105,6 +105,15 @@ Swiggy UI guide:
             }
         }
 
+        if (action in setOf("order", "add_to_cart")) {
+            return SkillResult.NeedsConfirmation(
+                prompt = "🍽️ *Order via Swiggy*\n\nItem: *$query*${if (maxPrice != null) "\nMax price: ₹$maxPrice" else ""}${if (filterNote.isNotBlank()) "\nFilter: $filterNote" else ""}\n\nReply *YES* to search and add to cart.",
+                onConfirm = {
+                    val result = agent.executeGoal(runner, goal, maxSteps = 25)
+                    SkillResult.Success(result)
+                }
+            )
+        }
         val result = agent.executeGoal(runner, goal, maxSteps = 25)
         return SkillResult.Success(result)
     }

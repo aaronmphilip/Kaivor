@@ -82,7 +82,7 @@ ${if (searchDone) "3." else "5."} Report the best option — which brand/size of
 
             "order", "add" -> {
                 if (item.isBlank()) return SkillResult.Failure("What do you want to order from Zepto?")
-                """You are in Zepto. ${if (searchDone) "Search results for \"$item\" are on screen." else "Find and add \"$item\" to cart."}
+                val goal = """You are in Zepto. ${if (searchDone) "Search results for \"$item\" are on screen." else "Find and add \"$item\" to cart."}
 STEPS:
 ${if (!searchDone) "1. Tap the search bar\n2. Type \"$item\"\n3. Wait for results\n4." else "1."} Find the best matching product — skip any SOLD OUT items
 ${if (searchDone) "2." else "5."} Tap ADD next to the correct product (or tap the product to open its detail page, then tap Add to Cart)
@@ -91,6 +91,13 @@ ${if (searchDone) "4." else "7."} Check the purple cart bar at the bottom — co
 ${if (searchDone) "5." else "8."} Report: what was added, weight, price, quantity, and cart total
 ⚠️ STOP before checkout — do NOT tap Proceed to Checkout
 ⚠️ If a variant picker appears (size/weight), choose the best available option"""
+                return SkillResult.NeedsConfirmation(
+                    prompt = "🛒 *Order via Zepto*\n\nItem: *$item*\nQuantity: $quantity\n\nReply *YES* to search and add to cart.",
+                    onConfirm = {
+                        val result = agent.executeGoal(runner, goal, maxSteps = 22)
+                        SkillResult.Success(result)
+                    }
+                )
             }
 
             "checkout" ->

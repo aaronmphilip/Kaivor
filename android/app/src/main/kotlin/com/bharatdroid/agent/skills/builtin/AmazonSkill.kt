@@ -93,22 +93,31 @@ Amazon India UI guide:
             "goal" -> params["goal"] as? String ?: query
 
             // ADD TO CART / BUY: search already done above — now find product and tap Add to Cart
-            "buy", "add_to_cart", "order", "purchase" -> buildString {
-                append("TASK: Find \"$query\" on Amazon and ADD IT TO CART.\n\n")
-                append("⚠️ Search results for \"$query\" are ALREADY ON SCREEN. Do not re-search.\n")
-                append("⚠️ DO NOT tap the search bar, camera (📷), or mic (🎤) icons at the top.\n\n")
-                append("STEPS:\n")
-                append("1. SCROLL DOWN through the product list to see results\n")
-                if (maxPrice != null) append("2. Look for a product UNDER Rs $maxPrice — check the price shown on each card\n")
-                else append("2. Look for a well-rated product (4+ stars, good review count)\n")
-                append("3. TAP the best product card to open its detail page\n")
-                append("4. On the detail page: scroll down until you see the YELLOW 'Add to Cart' button\n")
-                append("5. TAP 'Add to Cart' — this is the required action\n")
-                append("6. Wait for confirmation, then say 'Added [product name] to cart'\n\n")
-                append("⚠️ STOP after 'Add to Cart' succeeds. Do NOT tap 'Proceed to Buy'.\n")
-                append("⚠️ Do NOT enter payment or address details.\n")
-                append("⚠️ If a variant picker appears (size/color), tap the FIRST option shown.\n")
-                append("⚠️ Do NOT press back — you will lose the product page.")
+            "buy", "add_to_cart", "order", "purchase" -> {
+                val goal = buildString {
+                    append("TASK: Find \"$query\" on Amazon and ADD IT TO CART.\n\n")
+                    append("⚠️ Search results for \"$query\" are ALREADY ON SCREEN. Do not re-search.\n")
+                    append("⚠️ DO NOT tap the search bar, camera (📷), or mic (🎤) icons at the top.\n\n")
+                    append("STEPS:\n")
+                    append("1. SCROLL DOWN through the product list to see results\n")
+                    if (maxPrice != null) append("2. Look for a product UNDER Rs $maxPrice — check the price shown on each card\n")
+                    else append("2. Look for a well-rated product (4+ stars, good review count)\n")
+                    append("3. TAP the best product card to open its detail page\n")
+                    append("4. On the detail page: scroll down until you see the YELLOW 'Add to Cart' button\n")
+                    append("5. TAP 'Add to Cart' — this is the required action\n")
+                    append("6. Wait for confirmation, then say 'Added [product name] to cart'\n\n")
+                    append("⚠️ STOP after 'Add to Cart' succeeds. Do NOT tap 'Proceed to Buy'.\n")
+                    append("⚠️ Do NOT enter payment or address details.\n")
+                    append("⚠️ If a variant picker appears (size/color), tap the FIRST option shown.\n")
+                    append("⚠️ Do NOT press back — you will lose the product page.")
+                }
+                return SkillResult.NeedsConfirmation(
+                    prompt = "🛒 *Add to Cart on Amazon*\n\nItem: *$query*${if (maxPrice != null) "\nMax price: ₹$maxPrice" else ""}\n\nI'll search, find the best match, and add it to your cart.\n\nReply *YES* to proceed.",
+                    onConfirm = {
+                        val result = agent.executeGoal(runner, goal, maxSteps = 22)
+                        SkillResult.Success(result)
+                    }
+                )
             }
 
             "search" -> buildString {

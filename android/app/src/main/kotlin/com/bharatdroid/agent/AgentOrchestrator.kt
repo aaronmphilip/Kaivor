@@ -27,6 +27,7 @@ class AgentOrchestrator(
     private val conversationContext = ConversationContextStore(context)
     private val savedPlaces = SavedPlacesStore(context)
     private val quickMacros = QuickMacrosStore(context)
+    private val permissionsStore = PermissionsStore(context)
     private var lastRawCommand: String = ""  // for "again"/"repeat" feature
 
     // Wake lock: keeps the screen on while a skill is executing so the
@@ -71,7 +72,7 @@ class AgentOrchestrator(
 
         skillRunner = SkillRunner(
             context = context,
-            askPermission = config.askPermission,
+            permissionsStore = permissionsStore,
             requestConfirmation = { chatId, question ->
                 if (!config.askPermission) {
                     true
@@ -353,9 +354,10 @@ class AgentOrchestrator(
                     conversationContext.clear(msg.chatId)
                     return "Conversation memory cleared. Fresh start."
                 }
-                "mode" -> return toggleMode(msg.chatId)
                 "place" -> return savedPlaces.handleCommand(parsed.args)
                 "shortcut" -> return quickMacros.handleCommand(parsed.args)
+                "permissions" -> return permissionsStore.handleCommand(parsed.args)
+                "mode" -> return permissionsStore.handleCommand(parsed.args)  // keep /mode working
                 "install" -> return installSkill(parsed.args)
                 "uninstall" -> return uninstallSkill(parsed.args)
             }
@@ -441,7 +443,11 @@ class AgentOrchestrator(
                 conversationContext.clear(msg.chatId)
                 return "Conversation memory cleared. Fresh start."
             }
-            trimmed.lowercase() == "/mode" -> return toggleMode(msg.chatId)
+            trimmed.lowercase() == "/mode" -> return permissionsStore.handleCommand("")
+            trimmed.lowercase() == "/permissions" -> return permissionsStore.handleCommand("")
+            trimmed.lowercase().startsWith("/permissions ") -> {
+                return permissionsStore.handleCommand(trimmed.substringAfter("/permissions ").trim())
+            }
             trimmed.lowercase() == "/place" -> return savedPlaces.handleCommand("")
             trimmed.lowercase().startsWith("/place ") -> {
                 return savedPlaces.handleCommand(trimmed.substringAfter("/place ").trim())
@@ -909,16 +915,14 @@ You can also open a document on the phone and say:
     }
 
     private fun toggleMode(chatId: Long): String {
-        val prefs = context.getSharedPreferences("bharatdroid", Context.MODE_PRIVATE)
-        val current = prefs.getBoolean("ask_permission", true)
-        val newMode = !current
-        prefs.edit().putBoolean("ask_permission", newMode).apply()
-
-        return if (newMode) {
-            "Mode: *Ask Permission*\nI'll confirm before doing anything."
-        } else {
-            "Mode: *Just Do It*\nNo questions asked. I'll execute immediately."
+        // Cycle through SMART → AUTO → ASK → SMART
+        val next = when (permissionsStore.mode) {
+            PermissionsStore.Mode.SMART -> PermissionsStore.Mode.AUTO
+            PermissionsStore.Mode.AUTO -> PermissionsStore.Mode.ASK
+            PermissionsStore.Mode.ASK -> PermissionsStore.Mode.SMART
         }
+        permissionsStore.mode = next
+        return permissionsStore.buildStatusMessage()
     }
 
     private fun buildMemoryMessage(): String {
@@ -974,6 +978,7 @@ You can also open a document on the phone and say:
         TelegramBotCommand("forget", "Delete rules or clear them all"),
         TelegramBotCommand("place", "Saved places — /place save home <address>"),
         TelegramBotCommand("shortcut", "Quick shortcuts — /shortcut add morning = ..."),
+        TelegramBotCommand("permissions", "View or change permission mode"),
         TelegramBotCommand("knowledge", "Show learned app knowledge"),
         TelegramBotCommand("knowledge_clear", "Clear all or one app's knowledge"),
         TelegramBotCommand("muted", "Show muted notification apps"),

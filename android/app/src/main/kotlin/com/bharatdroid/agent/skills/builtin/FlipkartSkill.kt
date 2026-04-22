@@ -69,20 +69,29 @@ Flipkart UI guide:
         val goal = when (action) {
             "goal" -> params["goal"] as? String ?: query
 
-            "buy", "add_to_cart", "order", "purchase" -> buildString {
-                append("TASK: Find \"$query\" on Flipkart and ADD IT TO CART.\n\n")
-                append("⚠️ Search results are already on screen. Do not re-search.\n\n")
-                append("STEPS:\n")
-                append("1. Scroll through the product list\n")
-                if (maxPrice != null) append("2. Find a product UNDER Rs $maxPrice\n")
-                else append("2. Find the best rated product (4+ stars preferred)\n")
-                append("3. TAP the product card to open its detail page\n")
-                append("4. On the product page: scroll to find 'Add to Cart' button\n")
-                append("5. TAP 'Add to Cart'\n")
-                append("6. STOP after cart confirmation — report what was added\n\n")
-                append("⚠️ STOP BEFORE CHECKOUT. Do NOT tap 'Buy Now' or enter payment details.\n")
-                append("⚠️ If a variant/size picker appears, tap the FIRST option.\n")
-                append("⚠️ DO NOT press back — you will lose the product page.")
+            "buy", "add_to_cart", "order", "purchase" -> {
+                val goal = buildString {
+                    append("TASK: Find \"$query\" on Flipkart and ADD IT TO CART.\n\n")
+                    append("⚠️ Search results are already on screen. Do not re-search.\n\n")
+                    append("STEPS:\n")
+                    append("1. Scroll through the product list\n")
+                    if (maxPrice != null) append("2. Find a product UNDER Rs $maxPrice\n")
+                    else append("2. Find the best rated product (4+ stars preferred)\n")
+                    append("3. TAP the product card to open its detail page\n")
+                    append("4. On the product page: scroll to find 'Add to Cart' button\n")
+                    append("5. TAP 'Add to Cart'\n")
+                    append("6. STOP after cart confirmation — report what was added\n\n")
+                    append("⚠️ STOP BEFORE CHECKOUT. Do NOT tap 'Buy Now' or enter payment details.\n")
+                    append("⚠️ If a variant/size picker appears, tap the FIRST option.\n")
+                    append("⚠️ DO NOT press back — you will lose the product page.")
+                }
+                return SkillResult.NeedsConfirmation(
+                    prompt = "🛍️ *Add to Cart on Flipkart*\n\nItem: *$query*${if (maxPrice != null) "\nMax price: ₹$maxPrice" else ""}\n\nI'll search, find the best match, and add it to your cart.\n\nReply *YES* to proceed.",
+                    onConfirm = {
+                        val result = agent.executeGoal(runner, goal, maxSteps = 20)
+                        SkillResult.Success(result)
+                    }
+                )
             }
 
             else -> buildString {

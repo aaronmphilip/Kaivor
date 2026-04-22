@@ -80,13 +80,20 @@ ${if (searchDone) "4." else "6."} Report the prices and ETAs for each ride type
             "book" -> {
                 if (destination == null) return SkillResult.Failure("Where do you want to go?")
                 val rideLabel = rideType.replaceFirstChar { it.uppercase() }
-                """You are in Ola. Book a $rideLabel cab to "$destination".
+                val goal = """You are in Ola. Book a $rideLabel cab to "$destination".
 STEPS:
 ${if (!searchDone) "1. Tap the destination field\n2. Type \"$destination\"\n3. Tap the correct suggestion\n4." else "1. Tap the correct suggestion for \"$destination\"\n2."} Wait for the ride options cards to appear
 ${if (searchDone) "3." else "5."} Tap the "$rideLabel" (or "Ola $rideLabel") ride card to select it
 ${if (searchDone) "4." else "6."} Tap the orange "Book Ola $rideLabel" button at the bottom
 ${if (searchDone) "5." else "7."} Wait for driver search — this may take 30-60 seconds
 ${if (searchDone) "6." else "8."} Report: driver name, vehicle number, ETA, and fare — or report "Searching for driver" if still waiting"""
+                return SkillResult.NeedsConfirmation(
+                    prompt = "🚕 *Book Ola $rideLabel*\n\nTo: *$destination*\nRide type: $rideLabel\n\nReply *YES* to book now.",
+                    onConfirm = {
+                        val result = agent.executeGoal(runner, goal, maxSteps = 22)
+                        SkillResult.Success(result)
+                    }
+                )
             }
 
             "cancel" ->

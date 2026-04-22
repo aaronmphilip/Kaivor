@@ -59,14 +59,28 @@ PhonePe UI guide:
             "send", "pay" -> {
                 if (upiId.isBlank()) return SkillResult.Failure("Provide UPI ID or mobile number to send money to.")
                 if (amount == null) return SkillResult.Failure("Provide the amount to send.")
-                """You are in PhonePe. Send ₹$amount to "$upiId"${if (note.isNotBlank()) " with note \"$note\"" else ""}.
+                val goal = """You are in PhonePe. Send ₹$amount to "$upiId"${if (note.isNotBlank()) " with note \"$note\"" else ""}.
 STEPS: 1) Tap 'Send Money' or 'To Mobile Number' or the UPI transfer option on the home screen. 2) Enter "$upiId" in the recipient field (UPI ID or mobile number). 3) Tap 'Verify' or 'Proceed'. 4) Enter the amount ₹$amount. 5) If there is a note/remark field, enter "$note". 6) Tap 'Proceed' or 'Pay'. 7) STOP before the UPI PIN entry screen — do not enter the PIN. Report back: recipient name verified, amount, and that the PIN screen is waiting."""
+                return SkillResult.NeedsConfirmation(
+                    prompt = "💸 *Send via PhonePe*\n\nAmount: *₹$amount*\nTo: *${upiId.ifBlank { mobile }}*${if (note.isNotBlank()) "\nNote: _${note}_" else ""}\n\n⚠️ You will need to enter your UPI PIN on the phone.\n\nReply *YES* to proceed.",
+                    onConfirm = {
+                        val result = agent.executeGoal(runner, goal, maxSteps = 20)
+                        SkillResult.Success(result)
+                    }
+                )
             }
             "recharge" -> {
                 if (mobile.isBlank()) return SkillResult.Failure("Provide the mobile number to recharge.")
                 if (amount == null) return SkillResult.Failure("Provide the recharge amount.")
-                """You are in PhonePe. Do a mobile recharge of ₹$amount for number "$mobile".
+                val goal = """You are in PhonePe. Do a mobile recharge of ₹$amount for number "$mobile".
 STEPS: 1) Tap 'Mobile Recharge' or 'Recharge' on the home screen. 2) Enter the mobile number "$mobile". 3) Tap 'Proceed'. 4) Browse the available recharge plans. 5) Select the plan closest to ₹$amount — look for the exact amount or the nearest match. 6) Tap 'Proceed to Pay'. 7) STOP before the UPI PIN entry screen — do not enter the PIN. Report back: the plan selected, validity, and that PIN screen is ready."""
+                return SkillResult.NeedsConfirmation(
+                    prompt = "📱 *Mobile Recharge via PhonePe*\n\nNumber: *$mobile*\nAmount: *₹$amount*\n\n⚠️ You will need to enter your UPI PIN on the phone.\n\nReply *YES* to recharge now.",
+                    onConfirm = {
+                        val result = agent.executeGoal(runner, goal, maxSteps = 20)
+                        SkillResult.Success(result)
+                    }
+                )
             }
             "balance" -> {
                 """You are in PhonePe. Check the UPI wallet balance.

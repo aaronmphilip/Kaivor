@@ -5,7 +5,7 @@ import com.bharatdroid.agent.skills.*
 
 class SkillRunner(
     private val context: Context,
-    private val askPermission: Boolean = true,
+    private val permissionsStore: PermissionsStore,
     private val requestConfirmation: suspend (chatId: Long, question: String) -> Boolean,
     private val notifyUser: suspend (chatId: Long, message: String) -> Unit,
     private val screenAgent: ScreenAgent? = null,
@@ -42,7 +42,7 @@ class SkillRunner(
             )
 
         // ── Safety Gate 1: Community skill warning ──
-        if (!skill.manifest.trusted && askPermission) {
+        if (!skill.manifest.trusted && permissionsStore.shouldAsk("community")) {
             val allowed = requestConfirmation(
                 chatId,
                 "*Community Skill — Not Officially Verified*\n\n" +
@@ -54,15 +54,13 @@ class SkillRunner(
             if (!allowed) return SkillResult.Failure("Skill blocked — community skills require your approval.")
         }
 
-        // ── Safety Gate 2: PAYMENT confirmation ──
-        if (Permission.PAYMENT in skill.manifest.permissions && askPermission) {
+        // ── Safety Gate 2: SENSITIVE_READ confirmation (ASK mode only) ──
+        if (Permission.SENSITIVE_READ in skill.manifest.permissions && permissionsStore.mode == PermissionsStore.Mode.ASK) {
             val allowed = requestConfirmation(
                 chatId,
-                "This action involves a *payment screen*.\n" +
-                "Skill: *${skill.manifest.name}*\n\n" +
-                "Reply *YES* to proceed or anything else to cancel."
+                "⚠️ This skill will read sensitive screen content.\nSkill: *${skill.manifest.name}*\n\nReply *YES* to allow."
             )
-            if (!allowed) return SkillResult.Failure("Payment permission denied by user.")
+            if (!allowed) return SkillResult.Failure("Sensitive read denied by user.")
         }
 
         // ── Execute ──
@@ -92,7 +90,7 @@ class SkillRunner(
 
             // Handle NeedsConfirmation
             if (result is SkillResult.NeedsConfirmation) {
-                if (!askPermission) {
+                if (permissionsStore.mode == PermissionsStore.Mode.AUTO) {
                     result.onConfirm()
                 } else {
                     val confirmed = requestConfirmation(chatId, result.prompt)
