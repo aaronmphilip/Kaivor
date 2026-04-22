@@ -40,10 +40,43 @@ class ZomatoSkill : Skill {
         val filter = (params["filter"] as? String)?.trim().orEmpty()
         val action = (params["action"] as? String)?.lowercase() ?: "search"
 
+        // ── Pre-execution confirmation for ordering ───────────────────────────
+        if (action == "order" || action == "add_to_cart") {
+            val priceHint = if (maxPrice != null) "\nMax price: ₹$maxPrice" else ""
+            val filterHint = if (filter.isNotBlank()) "\nPreference: $filter" else ""
+            return SkillResult.NeedsConfirmation(
+                prompt = buildString {
+                    appendLine("🍕 *Order via Zomato*")
+                    appendLine()
+                    appendLine("Item: *$query*$priceHint$filterHint")
+                    appendLine()
+                    appendLine("I'll find the best-rated restaurant and add *$query* to your cart.")
+                    appendLine("I'll stop before payment — you confirm on-screen.")
+                    appendLine()
+                    append("Reply *YES* to proceed or *NO* to cancel.")
+                }.trim(),
+                onConfirm = {
+                    executeGoal(context, params, query, maxPrice, filter, action)
+                },
+                onCancel = SkillResult.Cancelled("Order cancelled.")
+            )
+        }
+
+        return executeGoal(context, params, query, maxPrice, filter, action)
+    }
+
+    private suspend fun executeGoal(
+        context: SkillContext,
+        params: Map<String, Any>,
+        query: String,
+        maxPrice: Int?,
+        filter: String,
+        action: String,
+    ): SkillResult {
+        val runner = context.runner
+        val agent = context.agent ?: return SkillResult.Failure("Agent not available.")
+
         // ── Continuation support ──────────────────────────────────────────────
-        // If Zomato is already open and in the foreground, skip the cold-start sequence.
-        // This lets the user say "add the first item" while already on a restaurant page
-        // without the skill restarting from the Zomato home screen.
         val currentPkg = try { runner.getCurrentPackage() } catch (_: Exception) { "" }
         val alreadyInZomato = currentPkg == "com.application.zomato"
 
@@ -52,7 +85,6 @@ class ZomatoSkill : Skill {
             runner.waitForApp("com.application.zomato", timeoutMs = 6000)
             delay(400)
             runner.dismissPopups(2)
-            // Zomato has many aggressive popups — kill them before proceeding
             delay(500)
             val zomatoPopupTexts = listOf(
                 "Later", "Not now", "Allow", "Skip", "Close", "Cancel",
@@ -93,7 +125,6 @@ class ZomatoSkill : Skill {
                 }
             }
         } else {
-            // Already in Zomato — just dismiss any open popups and continue
             runner.dismissPopups(2)
             delay(200)
         }
@@ -101,9 +132,6 @@ class ZomatoSkill : Skill {
         val priceNote = if (maxPrice != null) " Prefer options under Rs $maxPrice." else ""
         val filterNote = if (filter.isNotBlank()) " Apply this preference if useful: $filter." else ""
 
-        // Customization popup instructions — Zomato shows a "Customise?" bottom sheet
-        // whenever you tap ADD on any item that has variants (size, add-ons, spice level).
-        // The AI must know how to handle it or it gets completely stuck.
         val customizeNote = buildString {
             appendLine()
             appendLine("⚠️  ZOMATO CUSTOMIZATION POPUPS (VERY IMPORTANT):")
@@ -120,7 +148,6 @@ class ZomatoSkill : Skill {
         val goal = when {
             action == "goal" -> params["goal"] as? String ?: query
 
-            // Continue from wherever the screen currently is
             action == "continue" || alreadyInZomato && action != "goal" -> buildString {
                 append("TASK: Continue from the current Zomato screen. $query\n\n")
                 append("⚠️ You are ALREADY inside Zomato. Do NOT go back to the home screen.\n")
