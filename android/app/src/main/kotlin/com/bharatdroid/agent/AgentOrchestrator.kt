@@ -1,15 +1,20 @@
 package com.bharatdroid.agent
 
+import android.app.AlarmManager
+import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiManager
 import android.os.BatteryManager
+import android.os.Build
 import android.os.Environment
 import android.os.PowerManager
 import android.os.StatFs
 import android.os.SystemClock
+import androidx.core.content.ContextCompat
 import com.bharatdroid.agent.skills.DeliveryMode
 import com.bharatdroid.agent.skills.RemoteSkill
 import com.bharatdroid.agent.skills.SkillResult
@@ -1394,20 +1399,13 @@ Tell me what to do â€” English or Hindi. I'll do it.
         val serviceOk = AgentAccessibilityService.isConnected
         val count = activityLog.todayCount()
         val prefs = context.getSharedPreferences("bharatdroid", Context.MODE_PRIVATE)
-        val mode = if (prefs.getBoolean("ask_permission", true)) "Ask Permission" else "Just Do It"
         val agentProvider = prefs.getString("agent_ai_provider", prefs.getString("ai_provider", "GEMINI")) ?: "GEMINI"
         val agentModel = prefs.getString("agent_ai_model", prefs.getString("ai_model", "")) ?: ""
         val researchKey = prefs.getString("research_ai_key", "")?.trim().orEmpty()
-        val researchProvider = if (researchKey.isBlank()) {
-            "$agentProvider (fallback)"
-        } else {
-            prefs.getString("research_ai_provider", agentProvider) ?: agentProvider
-        }
-        val researchModel = if (researchKey.isBlank()) {
-            agentModel
-        } else {
-            prefs.getString("research_ai_model", "") ?: ""
-        }
+        val researchProvider = if (researchKey.isBlank()) "$agentProvider (fallback)"
+            else prefs.getString("research_ai_provider", agentProvider) ?: agentProvider
+        val researchModel = if (researchKey.isBlank()) agentModel
+            else prefs.getString("research_ai_model", "") ?: ""
         val knownApps = appKnowledge.getAppList().size
         val memCount = userMemory.getAll().size
         val notifGranted = NotificationRelay.isPermissionGranted(context)
@@ -1416,23 +1414,163 @@ Tell me what to do â€” English or Hindi. I'll do it.
         val wifiName = getWifiName()
         val storageFree = getFreeStorage()
         val uptime = getUptimeString()
-        return """
-*BharatDroid Status*
+        val health = buildPermissionsHealth(notifGranted, mutedCount)
+        return buildString {
+            appendLine("*BharatDroid Status*")
+            appendLine()
+            appendLine("🤖 *Agent*")
+            appendLine("Running · $uptime uptime · $count commands today")
+            appendLine("AI: $agentProvider${if (agentModel.isNotBlank()) " ($agentModel)" else ""}")
+            appendLine("Research: $researchProvider${if (researchModel.isNotBlank()) " ($researchModel)" else ""}")
+            appendLine("Skills: ${skillRunner.listSkills().size} loaded · Apps learned: $knownApps · Rules: $memCount")
+            appendLine()
+            appendLine("📱 *Device*")
+            appendLine("Battery: $batteryPct · Network: $wifiName · Free: $storageFree")
+            appendLine()
+            appendLine("🔐 *Permissions & Access*")
+            append(health)
+        }.trimEnd()
+    }
 
-Agent: Running
-Accessibility: ${if (serviceOk) "âœ… Connected" else "âŒ Not connected"}
-Notification relay: ${if (notifGranted) "âœ… Active${if (mutedCount > 0) " ($mutedCount muted)" else ""}" else "âš ï¸ Off â€” grant in Settings â†’ Notification Access"}
-Skills: ${skillRunner.listSkills().size} loaded
-Mode: $mode
-Agent AI: $agentProvider ${if (agentModel.isNotBlank()) "($agentModel)" else ""}
-Research AI: $researchProvider ${if (researchModel.isNotBlank()) "($researchModel)" else ""}
-Brains: Web knowledge + device actions
-Today: $count commands processed
-Apps learned: $knownApps  |  Preferences: $memCount
+    /**
+     * Checks every special permission BharatDroid needs.
+     * ✅ = granted, ❌ = critical missing, ⚠️ = optional missing.
+     */
+    private fun buildPermissionsHealth(notifGranted: Boolean, mutedCount: Int): String {
+        val pkg = context.packageName
+        return buildString {
 
-📱 *Device*
-Battery: $batteryPct  |  Network: $wifiName  |  Free: $storageFree  |  Up: $uptime
-        """.trimIndent()
+            // 1. Accessibility Service
+            val accessOk = AgentAccessibilityService.isConnected
+            if (accessOk) {
+                appendLine("✅ Accessibility Service — on-screen control active")
+            } else {
+                appendLine("❌ *Accessibility Service* — CRITICAL, nothing works without this")
+                appendLine("   Fix: Settings → Accessibility → BharatDroid → ON")
+            }
+
+            // 2. Battery Optimisation
+            val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+            val batteryOk = pm.isIgnoringBatteryOptimizations(pkg)
+            if (batteryOk) {
+                appendLine("✅ Battery Optimisation — unrestricted, agent stays alive")
+            } else {
+                appendLine("❌ *Battery Optimisation* — agent will die in background!")
+                appendLine("   Fix: Settings → Battery → App battery usage → BharatDroid → Unrestricted")
+                val mfr = android.os.Build.MANUFACTURER.lowercase()
+                when (mfr) {
+                    "xiaomi", "redmi", "poco" ->
+                        appendLine("   MIUI: Settings → Apps → BharatDroid → Battery Saver → No restrictions + Autostart ON")
+                    "samsung" ->
+                        appendLine("   Samsung: Device Care → Battery → Background usage limits → Never sleeping → Add BharatDroid")
+                    "oneplus" ->
+                        appendLine("   OnePlus: Settings → Battery → Battery Optimisation → BharatDroid → Don't optimise")
+                    "oppo", "realme" ->
+                        appendLine("   ColorOS: Settings → Battery → Power Saving → BharatDroid → Don't restrict")
+                    "vivo" ->
+                        appendLine("   FunTouchOS: Settings → Battery → Background Power → BharatDroid → No restrictions")
+                    "huawei", "honor" ->
+                        appendLine("   EMUI: Settings → Apps → BharatDroid → Battery → Run in background → Enable")
+                }
+            }
+
+            // 3. Notification Access
+            if (notifGranted) {
+                appendLine("✅ Notification Access — relay active${if (mutedCount > 0) " ($mutedCount muted)" else ""}")
+            } else {
+                appendLine("⚠️ Notification Access — relay disabled")
+                appendLine("   Fix: Settings → Notification Access → BharatDroid → ON")
+            }
+
+            // 4. Exact Alarms (Android 12+)
+            val exactAlarmsOk = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                am.canScheduleExactAlarms()
+            } else true
+            if (exactAlarmsOk) {
+                appendLine("✅ Alarms & Reminders — /schedule fires on time")
+            } else {
+                appendLine("⚠️ Alarms & Reminders — /schedule may fire late")
+                appendLine("   Fix: Settings → Apps → Special app access → Alarms & reminders → BharatDroid → Allow")
+            }
+
+            // 5. Contacts
+            val contactsOk = ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.READ_CONTACTS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (contactsOk) {
+                appendLine("✅ Contacts — ContactsSkill can read your contacts")
+            } else {
+                appendLine("⚠️ Contacts — ContactsSkill limited")
+                appendLine("   Fix: Settings → Apps → BharatDroid → Permissions → Contacts → Allow")
+            }
+
+            // 6. Calendar
+            val calendarOk = ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.READ_CALENDAR
+            ) == PackageManager.PERMISSION_GRANTED
+            if (calendarOk) {
+                appendLine("✅ Calendar — CalendarSkill can read your events")
+            } else {
+                appendLine("⚠️ Calendar — CalendarSkill limited")
+                appendLine("   Fix: Settings → Apps → BharatDroid → Permissions → Calendar → Allow")
+            }
+
+            // 7. Storage (only needed Android 9 and below)
+            val storageOk = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) true
+            else ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
+            if (storageOk) {
+                appendLine("✅ Storage — file access available")
+            } else {
+                appendLine("⚠️ Storage — FileManagerSkill limited")
+                appendLine("   Fix: Settings → Apps → BharatDroid → Permissions → Storage → Allow")
+            }
+
+            // 8. Usage Access (app foreground detection)
+            val usageOk = try {
+                val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+                val opMode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q)
+                    appOps.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), pkg)
+                else
+                    @Suppress("DEPRECATION")
+                    appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), pkg)
+                opMode == AppOpsManager.MODE_ALLOWED
+            } catch (_: Exception) { false }
+            if (usageOk) {
+                appendLine("✅ Usage Access — foreground app detection is precise")
+            } else {
+                appendLine("⚠️ Usage Access — app detection uses accessibility fallback (still works)")
+                appendLine("   Optional: Settings → Apps → Special app access → Usage access → BharatDroid")
+            }
+
+            // 9. OEM Autostart warning
+            val mfr = android.os.Build.MANUFACTURER.lowercase()
+            val oemRisky = mfr in setOf("xiaomi", "redmi", "poco", "samsung", "oneplus", "oppo", "vivo", "realme", "huawei", "honor")
+            if (oemRisky) {
+                appendLine()
+                appendLine("⚠️ *${android.os.Build.MANUFACTURER} phone* — enable Autostart or agent stops after reboot")
+                when (mfr) {
+                    "xiaomi", "redmi", "poco" -> appendLine("   MIUI: Settings → Apps → Manage apps → BharatDroid → Autostart → ON")
+                    "samsung" -> appendLine("   Settings → Device Care → Battery → Background usage limits → Never sleeping → Add")
+                    "oneplus" -> appendLine("   Settings → Battery → Battery Optimisation → BharatDroid → Don't optimise")
+                    "oppo", "realme" -> appendLine("   Settings → Battery → Power Saving → BharatDroid → Don't restrict")
+                    "vivo" -> appendLine("   Settings → Battery → Background Power → BharatDroid → No restrictions")
+                    "huawei", "honor" -> appendLine("   Settings → Apps → BharatDroid → Battery → Run in background → Enable")
+                }
+            }
+
+            // Summary line
+            val criticalMissing = !accessOk || !batteryOk
+            val warnCount = listOf(!notifGranted, !exactAlarmsOk, !contactsOk, !calendarOk, !storageOk).count { it }
+            appendLine()
+            when {
+                criticalMissing -> append("🚨 *Fix the ❌ items above — agent is impaired*")
+                warnCount > 0 -> append("✨ Core healthy · $warnCount optional permission${if (warnCount != 1) "s" else ""} missing")
+                else -> append("✨ All permissions granted — fully operational")
+            }
+        }
     }
 }
 
