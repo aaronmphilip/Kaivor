@@ -96,9 +96,11 @@ class InternetResearcher {
         var i = 0
         while (i < rows.size && results.size < resultLimit) {
             val row = rows[i]
-            val link = row.selectFirst("a.result-link") ?: run { i++; continue }
+            val link = row.selectFirst("a.result-link")
+            if (link == null) { i++; continue }
             val rawHref = link.attr("href")
-            val url = decodeDuckDuckGoUrl(rawHref) ?: run { i++; continue }
+            val url = decodeDuckDuckGoUrl(rawHref)
+            if (url == null) { i++; continue }
             if (!url.startsWith("http")) { i++; continue }
             val title = link.text().cleanForPrompt(180)
             // Snippet is typically in the next row

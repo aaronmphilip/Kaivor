@@ -147,7 +147,7 @@ class NotificationRelay : NotificationListenerService() {
         chatId = cid
         muteStore = MuteStore(applicationContext)
         // Send-only poller — no message polling, just Telegram API sender
-        poller = TelegramPoller(token, emptySet()) { "" }
+        poller = TelegramPoller(token, emptySet(), applicationContext.cacheDir) { "" }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {

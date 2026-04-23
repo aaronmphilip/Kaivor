@@ -124,12 +124,12 @@ class QuickMacrosStore(context: Context) {
             }
             if (name.length > 40) return "Shortcut name too long (max 40 chars)."
             save(name, command)
-            return "⚡ Shortcut saved: *$name* → _$command_\n\nNow just type _\"$name\"_ to run it instantly."
+            return "⚡ Shortcut saved: *$name* → _${command}_\n\nNow just type _\"$name\"_ to run it instantly."
         }
 
         // Direct lookup
         val resolved = resolve(trimmed)
-        if (resolved != null) return "⚡ *$trimmed* → _$resolved_"
+        if (resolved != null) return "⚡ *$trimmed* → _${resolved}_"
 
         return "Unknown /shortcut command.\n`/shortcut list` · `/shortcut add morning = ...` · `/shortcut delete morning`"
     }

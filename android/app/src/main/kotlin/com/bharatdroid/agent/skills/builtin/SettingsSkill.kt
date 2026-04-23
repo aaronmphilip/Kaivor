@@ -1,5 +1,7 @@
 package com.bharatdroid.agent.skills.builtin
 
+import android.content.Intent
+import android.provider.Settings
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
 
@@ -30,6 +32,18 @@ class SettingsSkill : Skill {
             ?: "view"
         val state = (params["state"] as? String)?.lowercase() ?: ""
         val setting = params["setting"] as? String ?: action
+
+        // Accessibility — use direct intent so AI doesn't confuse it with Bluetooth
+        if (action == "accessibility" || setting.contains("accessibility", ignoreCase = true)) {
+            val ctx = context.runner.getContext()
+            ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+            delay(1000)
+            return SkillResult.Success(
+                "Opened Accessibility Settings.\n\nLook for *BharatDroid Agent* in the list under *Downloaded apps* and tap it to enable it."
+            )
+        }
 
         runner.openApp("com.android.settings")
         runner.waitForApp("com.android.settings", timeoutMs = 5000)

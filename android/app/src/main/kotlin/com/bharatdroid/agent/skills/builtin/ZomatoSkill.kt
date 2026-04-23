@@ -58,7 +58,7 @@ class ZomatoSkill : Skill {
                 onConfirm = {
                     executeGoal(context, params, query, maxPrice, filter, action)
                 },
-                onCancel = SkillResult.Cancelled("Order cancelled.")
+                onCancel = SkillResult.Failure("Order cancelled.")
             )
         }
 
@@ -100,28 +100,26 @@ class ZomatoSkill : Skill {
             runner.dismissPopups(3)
             delay(300)
 
-            // Direct search: type into Zomato's search field before AI takes over
+            // Direct search: tap the search bar first (it opens a search screen), then type
             if (query.isNotBlank() && action != "goal" && action != "continue") {
-                val directTyped = runner.typeInFieldWithHint("Search for restaurant", query)
+                val searchEl = runner.getClickableElements().firstOrNull { el ->
+                    val t = (el.text + el.hint + el.contentDescription).lowercase()
+                    (t.contains("search") || t.contains("find") || t.contains("restaurant") || t.contains("dish")) &&
+                        !t.contains("voice") && !t.contains("mic")
+                }
+                if (searchEl != null) {
+                    runner.tapAtPoint(searchEl.centerX.toFloat(), searchEl.centerY.toFloat())
+                    delay(600) // wait for search screen to slide in
+                }
+                // Now type into the active search field
+                val typed = runner.typeInFieldWithHint("Search for restaurant", query)
+                    || runner.typeInFieldWithHint("Search for", query)
                     || runner.typeInFieldWithHint("Search", query)
-                    || runner.typeInFieldWithHint("search", query)
-                if (directTyped) {
-                    delay(200)
+                    || runner.typeReliably(query)
+                if (typed) {
+                    delay(300)
                     runner.pressEnter()
-                    delay(1500)
-                } else {
-                    val searchEl = runner.getClickableElements().firstOrNull { el ->
-                        val t = (el.text + el.hint + el.contentDescription).lowercase()
-                        (t.contains("search") || t.contains("find")) && !t.contains("voice") && !t.contains("mic")
-                    }
-                    if (searchEl != null) {
-                        runner.tapAtPoint(searchEl.centerX.toFloat(), searchEl.centerY.toFloat())
-                        delay(400)
-                        runner.typeReliably(query)
-                        delay(200)
-                        runner.pressEnter()
-                        delay(1500)
-                    }
+                    delay(1800) // wait for results to load
                 }
             }
         } else {
@@ -164,27 +162,28 @@ class ZomatoSkill : Skill {
 
             action == "order" || action == "add_to_cart" -> buildString {
                 append("TASK: Order \"$query\" from Zomato.\n\n")
-                if (alreadyInZomato) {
-                    append("⚠️ Zomato is already open. Continue from the current screen.\n\n")
-                } else {
-                    append("Search results may already be visible. Check before searching again.\n\n")
-                }
+                append("⚠️ CRITICAL: Search results or the Zomato home screen is already visible. ")
+                append("DO NOT tap the search bar or type again — the results are already there.\n\n")
                 append("STEPS:\n")
-                append("1. If no results yet: find the search bar and type \"$query\"\n")
-                append("2. Scroll through the restaurant list\n")
+                append("1. READ what is currently visible on screen RIGHT NOW.\n")
+                append("   - If you see a LIST OF RESTAURANTS → go to step 2.\n")
+                append("   - If you see a MENU inside a restaurant → go to step 4.\n")
+                append("   - If you see the Zomato HOME screen with no results → then and ONLY then tap the search bar and type \"$query\".\n")
+                append("2. From the restaurant list: scroll through results.\n")
                 append(priceNote).append(filterNote).appendLine()
                 append("   🧠 SMART PICK: Choose restaurant with rating ≥ 4.0 AND delivery ≤ 35 min.\n")
-                append("   If multiple qualify, pick highest rating. Mention the trade-off if none qualify.\n")
-                append("3. TAP the best matching restaurant to open its menu\n")
-                append("4. Scroll the menu to find \"$query\"\n")
-                append("5. TAP the ADD button (green '+' or 'ADD' text) next to the item\n")
+                append("   If multiple qualify, pick highest rating.\n")
+                append("3. TAP the restaurant CARD (not the search bar) to open its menu.\n")
+                append("4. Inside the menu: scroll to find \"$query\".\n")
+                append("5. TAP the green ADD button next to the item.\n")
                 append(customizeNote)
-                append("\n6. After item is added: tap the cart button or 'View Cart'\n")
-                append("7. STOP before payment — show the cart summary\n\n")
+                append("\n6. After adding: tap cart button or 'View Cart'.\n")
+                append("7. STOP before payment — report the cart summary.\n\n")
                 append("STRICT RULES:\n")
-                append("- DO NOT press back through results — scroll instead\n")
-                append("- DO NOT tap mic/voice icons\n")
-                append("- DO NOT enter payment details")
+                append("- NEVER tap the search bar if results are already visible\n")
+                append("- NEVER press back — scroll instead\n")
+                append("- NEVER tap mic/voice icons\n")
+                append("- NEVER enter payment details")
             }
 
             else -> buildString {

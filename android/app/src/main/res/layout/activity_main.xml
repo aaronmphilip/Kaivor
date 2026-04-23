@@ -59,7 +59,7 @@
                             android:textColor="#FFFFFF"
                             android:textSize="22sp"
                             android:textStyle="bold"
-                            android:fontFamily="@font/bricolage_grotesque"/>
+                            />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -67,7 +67,6 @@
                             android:text="AI Phone Agent"
                             android:textColor="#FF5C00"
                             android:textSize="11sp"
-                            android:fontFamily="@font/bricolage_grotesque"
                             android:layout_marginTop="1dp"/>
                     </LinearLayout>
                 </LinearLayout>
@@ -109,7 +108,7 @@
                         android:textColor="#FF5C00"
                         android:textSize="24sp"
                         android:textStyle="bold"
-                        android:fontFamily="@font/bricolage_grotesque"/>
+                        />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -141,7 +140,7 @@
                         android:textColor="#FF5C00"
                         android:textSize="24sp"
                         android:textStyle="bold"
-                        android:fontFamily="@font/bricolage_grotesque"/>
+                        />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -173,7 +172,7 @@
                         android:textColor="#FF5C00"
                         android:textSize="24sp"
                         android:textStyle="bold"
-                        android:fontFamily="@font/bricolage_grotesque"/>
+                        />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -216,7 +215,6 @@
                         android:textColor="#FFFFFF"
                         android:textSize="17sp"
                         android:textStyle="bold"
-                        android:fontFamily="@font/bricolage_grotesque"
                         android:layout_marginStart="10dp"/>
                 </LinearLayout>
 
@@ -283,7 +281,7 @@
                         android:textColor="#FFFFFF"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:fontFamily="@font/bricolage_grotesque"/>
+                        />
 
                     <TextView
                         android:id="@+id/tvNotifRelayBadge"
@@ -337,7 +335,7 @@
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:fontFamily="@font/bricolage_grotesque"/>
+                    />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -369,7 +367,7 @@
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:fontFamily="@font/bricolage_grotesque"/>
+                    />
             </LinearLayout>
 
             <LinearLayout

@@ -41,6 +41,7 @@ object NaturalCommandDetector {
             ?: detectStatus(l)
             ?: detectRoutine(l, t)
             ?: detectSchedule(l, t)
+            ?: detectDownload(l)
             ?: detectOpen(l, t)
             ?: detectPermissions(l)
             ?: detectPlace(l, t)
@@ -191,6 +192,18 @@ object NaturalCommandDetector {
         }
 
         return null
+    }
+
+    // ── Download / Install App ───────────────────────────────────────────────
+
+    private fun detectDownload(l: String): String? {
+        val pattern = Regex(
+            """^(?:download|install|get|set up|setup)\s+(?:the\s+)?(.+?)(?:\s+(?:app|application|apk|from\s+play\s+store|on\s+(?:my\s+)?phone))?$""",
+            RegexOption.IGNORE_CASE
+        )
+        val m = pattern.find(l) ?: return null
+        val app = m.groupValues[1].trim().takeIf { it.isNotBlank() && it.length <= 40 } ?: return null
+        return "/download $app"
     }
 
     // ── Open App ─────────────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.ScreenAgent
+import com.bharatdroid.agent.ScreenElement
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
 
@@ -43,20 +44,10 @@ class YouTubeSkill : Skill {
             "play", "search", "lyrics" -> {
                 if (query.isBlank()) return SkillResult.Failure("What do you want to play or search on YouTube?")
 
-                // If the play request is vague (just a short title with no format hint),
-                // ask the user before opening YouTube so we search the right thing.
-                if (action == "play" && isVaguePlayQuery(query)) {
-                    return SkillResult.Success(
-                        message = "🎬 *\"${query.trim()}\"* on YouTube — which format?\n\n" +
-                            "• Full video → reply: *play ${query.trim()} full video*\n" +
-                            "• Shorts → reply: *play ${query.trim()} shorts*\n" +
-                            "• Lyrics → reply: *play ${query.trim()} lyrics*",
-                        delivery = DeliveryMode.LONG_TEXT,
-                    )
+                val searchQuery = when {
+                    action == "lyrics" && !query.contains("lyrics", ignoreCase = true) -> "$query lyrics"
+                    else -> query
                 }
-
-                val searchQuery = if (action == "lyrics" && !query.contains("lyrics", ignoreCase = true))
-                    "$query lyrics" else query
                 playVideo(runner, agent, searchQuery)
             }
 
@@ -202,14 +193,26 @@ class YouTubeSkill : Skill {
         }
 
         if (videoEls.isNotEmpty()) {
-            // Prefer full-length videos unless the query explicitly asks for Shorts.
             val wantShorts = searchQuery.contains("shorts", ignoreCase = true)
-            val target = if (wantShorts) {
-                videoEls.firstOrNull { it.text.contains("shorts", ignoreCase = true) }
-                    ?: videoEls.first()
-            } else {
-                videoEls.firstOrNull { !it.text.contains("shorts", ignoreCase = true) }
-                    ?: videoEls.first()
+                || searchQuery.contains("vertical", ignoreCase = true)
+            val wantLong = searchQuery.contains("full", ignoreCase = true)
+                || searchQuery.contains("long", ignoreCase = true)
+                || searchQuery.contains("video", ignoreCase = true)
+                || searchQuery.contains("documentary", ignoreCase = true)
+
+            // Identify Shorts: element text explicitly says "Shorts", very short title,
+            // or element is taller than it is wide (portrait thumbnail = Short).
+            fun isShort(el: ScreenElement): Boolean {
+                val txt = el.text.lowercase()
+                return txt.contains("shorts") || txt.contains("#shorts")
+                    || (el.height > 0 && el.width > 0 && el.height > el.width * 1.4f)
+            }
+
+            val target = when {
+                wantShorts -> videoEls.firstOrNull { isShort(it) } ?: videoEls.first()
+                wantLong -> videoEls.firstOrNull { !isShort(it) } ?: videoEls.first()
+                // Default: prefer regular videos (landscape) over Shorts
+                else -> videoEls.firstOrNull { !isShort(it) } ?: videoEls.first()
             }
             val ok = runner.tapAtPoint(target.centerX.toFloat(), target.centerY.toFloat())
             if (ok) {

@@ -386,15 +386,7 @@ class AgentOrchestrator(
                 "install" -> return installSkill(parsed.args)
                 "uninstall" -> return uninstallSkill(parsed.args)
                 "screenshot" -> {
-                    val bitmap = try {
-                        AgentAccessibilityService.instance?.captureScreenshot()
-                    } catch (_: Exception) { null }
-                    return if (bitmap != null) {
-                        poller.sendPhoto(msg.chatId, bitmap, "📸 Screenshot")
-                        ""
-                    } else {
-                        "📸 Screenshot unavailable — make sure Accessibility Service is enabled."
-                    }
+                    return takeAndSendScreenshot(msg.chatId)
                 }
                 "open" -> {
                     if (parsed.args.isBlank()) return "Usage: `/open <app name>`\nExamples: `/open Swiggy`, `/open Chrome`, `/open Settings`"
@@ -526,14 +518,30 @@ class AgentOrchestrator(
                 return uninstallSkill(skillId)
             }
             trimmed.lowercase() == "/screenshot" -> {
-                val bitmap = try {
-                    AgentAccessibilityService.instance?.captureScreenshot()
-                } catch (_: Exception) { null }
-                return if (bitmap != null) {
-                    poller.sendPhoto(msg.chatId, bitmap, "📸 Screenshot")
-                    ""
-                } else {
-                    "📸 Screenshot unavailable — make sure Accessibility Service is enabled."
+                return takeAndSendScreenshot(msg.chatId)
+            }
+            trimmed.lowercase().startsWith("/download ") -> {
+                val appName = trimmed.substringAfter("/download ").trim()
+                if (appName.isBlank()) return "Usage: `/download <app name>`\nExample: `/download Swiggy`"
+                return try {
+                    val storeIntent = android.content.Intent(
+                        android.content.Intent.ACTION_VIEW,
+                        android.net.Uri.parse("market://search?q=${android.net.Uri.encode(appName)}&c=apps")
+                    ).apply { addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK) }
+                    context.startActivity(storeIntent)
+                    "🔍 Searching Play Store for *$appName*...\n\nTap Install on the result."
+                } catch (_: Exception) {
+                    // Fallback: open Play Store via web URL
+                    try {
+                        val webIntent = android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://play.google.com/store/search?q=${android.net.Uri.encode(appName)}&c=apps")
+                        ).apply { addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK) }
+                        context.startActivity(webIntent)
+                        "🔍 Opened Play Store for *$appName*."
+                    } catch (e: Exception) {
+                        "❌ Could not open Play Store: ${e.message}"
+                    }
                 }
             }
             trimmed.lowercase().startsWith("/open ") -> {
@@ -610,11 +618,7 @@ class AgentOrchestrator(
             poller.sendMessage(msg.chatId, "🔄 Running compound command in two steps...")
             val result1 = handleMessage(msg.copy(text = andParts.first))
             val result2 = handleMessage(msg.copy(text = andParts.second))
-            return "1️⃣ *" + andParts.first.take(55) + "*
-" + result1 + "
-
-2️⃣ *" + andParts.second.take(55) + "*
-" + result2
+            return "1\u20e3 *" + andParts.first.take(55) + "*\n" + result1 + "\n\n2\u20e3 *" + andParts.second.take(55) + "*\n" + result2
         }
 
         // Save raw command for "again" feature (never save meta-commands)
@@ -863,11 +867,36 @@ class AgentOrchestrator(
                 }
             } catch (_: Exception) { /* fall through to text */ }
         }
-        return message // no screenshot â€” return as plain text
+        return message // no screenshot — return as plain text
+    }
+
+    private suspend fun takeAndSendScreenshot(chatId: Long): String {
+        val service = AgentAccessibilityService.instance
+        if (service == null) {
+            return if (AgentAccessibilityService.isConnected) {
+                “📸 Accessibility service is connected but not responding — try restarting the agent.”
+            } else {
+                “📸 Accessibility Service not connected.\n\nGo to Settings → Accessibility → Installed Services → *BharatDroid Agent* → Enable.”
+            }
+        }
+        if (android.os.Build.VERSION.SDK_INT < 30) {
+            return “📸 Screenshots need Android 11 (API 30+). Your device is on API ${android.os.Build.VERSION.SDK_INT}.”
+        }
+        return try {
+            val bitmap = service.captureScreenshot()
+            if (bitmap != null) {
+                poller.sendPhoto(chatId, bitmap, “📸 Screenshot”)
+                “”
+            } else {
+                “📸 Screen capture returned empty — screen may be locked or in a secure app.”
+            }
+        } catch (e: Exception) {
+            “📸 Screenshot failed: ${e.message}”
+        }
     }
 
     /**
-     * Resolve "WhatsApp" or "com.whatsapp" to a package name. If the input already
+     * Resolve “WhatsApp” or “com.whatsapp” to a package name. If the input already
      * looks like a package id (contains a dot), we trust it. Otherwise we scan
      * installed apps for a case-insensitive label match.
      */
@@ -1016,8 +1045,8 @@ You can also open a document on the phone and say:
     suspend fun dispatchScheduledCommand(chatId: Long, command: String) {
         poller.sendMessage(chatId, "⏰ _Scheduled:_ $command")
         val fakeMsg = IncomingMessage(
+            updateId = -1L,
             chatId = chatId,
-            messageId = -1L,
             text = command,
             username = "scheduled",
             replyToMessageId = null,
