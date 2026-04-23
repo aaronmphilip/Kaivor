@@ -5,9 +5,15 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.os.BatteryManager
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class AgentForegroundService : LifecycleService() {
 
@@ -16,13 +22,11 @@ class AgentForegroundService : LifecycleService() {
         const val NOTIFICATION_ID = 1
 
         var orchestratorInstance: AgentOrchestrator? = null
-        var serviceScope: kotlinx.coroutines.CoroutineScope? = null
+        var serviceScope: CoroutineScope? = null
     }
 
     private lateinit var orchestrator: AgentOrchestrator
-    private val scope = kotlinx.coroutines.CoroutineScope(
-        kotlinx.coroutines.Dispatchers.IO + kotlinx.coroutines.SupervisorJob()
-    )
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override fun onCreate() {
         super.onCreate()
@@ -37,7 +41,7 @@ class AgentForegroundService : LifecycleService() {
         val botToken = prefs.getString("bot_token", null)
         val agentKey = prefs.getString("agent_ai_key", null)
             ?: prefs.getString("ai_key", null)
-            ?: prefs.getString("claude_key", null) // Backwards compatible
+            ?: prefs.getString("claude_key", null)
         val chatId = prefs.getLong("chat_id", -1L)
 
         if (botToken == null || agentKey == null || chatId == -1L) {
@@ -50,30 +54,20 @@ class AgentForegroundService : LifecycleService() {
         val agentModel = prefs.getString("agent_ai_model", prefs.getString("ai_model", "")) ?: ""
         val rawResearchKey = prefs.getString("research_ai_key", null)?.trim().orEmpty()
         val researchKey = rawResearchKey.ifBlank { agentKey }
-        val researchProviderStr = if (rawResearchKey.isBlank()) {
-            agentProviderStr
-        } else {
-            prefs.getString("research_ai_provider", null) ?: ""
-        }
-        val researchModel = if (rawResearchKey.isBlank()) {
-            agentModel
-        } else {
-            prefs.getString("research_ai_model", "") ?: ""
-        }
+        val researchProviderStr = if (rawResearchKey.isBlank()) agentProviderStr
+            else prefs.getString("research_ai_provider", null) ?: ""
+        val researchModel = if (rawResearchKey.isBlank()) agentModel
+            else prefs.getString("research_ai_model", "") ?: ""
 
-        // Determine provider: saved preference > auto-detect from key
         val agentProvider = try {
             if (agentProviderStr.isNotBlank()) AIProvider.valueOf(agentProviderStr)
             else AIBrain.detectProvider(agentKey)
-        } catch (_: Exception) {
-            AIBrain.detectProvider(agentKey)
-        }
+        } catch (_: Exception) { AIBrain.detectProvider(agentKey) }
+
         val researchProvider = try {
             if (researchProviderStr.isNotBlank()) AIProvider.valueOf(researchProviderStr)
             else AIBrain.detectProvider(researchKey)
-        } catch (_: Exception) {
-            AIBrain.detectProvider(researchKey)
-        }
+        } catch (_: Exception) { AIBrain.detectProvider(researchKey) }
 
         val config = AgentConfig(
             telegramBotToken = botToken,
@@ -88,13 +82,12 @@ class AgentForegroundService : LifecycleService() {
         )
 
         orchestrator = AgentOrchestrator(this, config)
-        // Expose refs BEFORE start() so ScheduledCommandReceiver can dispatch immediately
         orchestratorInstance = orchestrator
         serviceScope = scope
         orchestrator.start()
 
-        // Kick the notification listener to rebind after service restarts / boot.
         NotificationRelay.rebind(this)
+        startBatteryMonitor(chatId)
 
         return START_STICKY
     }
@@ -107,6 +100,36 @@ class AgentForegroundService : LifecycleService() {
     }
 
     override fun onBind(intent: Intent): IBinder? = null
+
+    private fun startBatteryMonitor(chatId: Long) {
+        scope.launch {
+            var lastAlertedLevel = 101
+            delay(2 * 60 * 1000L) // wait 2 min after start before first check
+            while (true) {
+                val level = getBatteryLevel()
+                if (level in 1..15 && level < lastAlertedLevel) {
+                    val icon = when {
+                        level <= 5 -> "🪫"
+                        level <= 10 -> "🔴"
+                        else -> "🔋"
+                    }
+                    orchestratorInstance?.sendAlert(
+                        chatId,
+                        "$icon Battery at *$level%* — please plug in your phone!"
+                    )
+                    lastAlertedLevel = level
+                } else if (level > 20) {
+                    lastAlertedLevel = 101 // reset once charged
+                }
+                delay(5 * 60 * 1000L) // check every 5 minutes
+            }
+        }
+    }
+
+    private fun getBatteryLevel(): Int {
+        val bm = getSystemService(BATTERY_SERVICE) as BatteryManager
+        return bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY).coerceIn(0, 100)
+    }
 
     private fun buildNotification(): Notification {
         val openApp = PendingIntent.getActivity(

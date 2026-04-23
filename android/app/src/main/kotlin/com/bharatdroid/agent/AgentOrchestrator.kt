@@ -137,6 +137,7 @@ class AgentOrchestrator(
             runner.register(BillSplitterSkill())
             runner.register(MorningBriefSkill())
             runner.register(EmergencySOSSkill())
+            runner.register(PhoneFinderSkill())
             // â”€â”€ General Agent (catch-all) â”€â”€
             runner.register(GeneralSkill())
 
@@ -1054,6 +1055,10 @@ You can also open a document on the phone and say:
         )
         val result = handleMessage(fakeMsg)
         if (result.isNotBlank()) poller.sendMessage(chatId, result)
+    }
+
+    suspend fun sendAlert(chatId: Long, message: String) {
+        poller.sendMessage(chatId, message)
     }
 
     private fun buildMutedListMessage(): String {

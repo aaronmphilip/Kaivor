@@ -48,27 +48,24 @@ Swiggy UI guide:
         runner.dismissPopups(2)
         delay(200)
 
-        // Direct search: type into Swiggy's search field before AI takes over
+        // Tap search bar first (it opens a search screen), then type
         if (query.isNotBlank() && action != "goal") {
-            val directTyped = runner.typeInFieldWithHint("Search for", query)
+            val searchEl = runner.getClickableElements().firstOrNull { el ->
+                val t = (el.text + el.hint + el.contentDescription).lowercase()
+                (t.contains("search") || t.contains("restaurant") || t.contains("food")) &&
+                    !t.contains("voice") && !t.contains("mic")
+            }
+            if (searchEl != null) {
+                runner.tapAtPoint(searchEl.centerX.toFloat(), searchEl.centerY.toFloat())
+                delay(600) // wait for search screen to open
+            }
+            val typed = runner.typeInFieldWithHint("Search for", query)
                 || runner.typeInFieldWithHint("Search", query)
-            if (directTyped) {
-                delay(200)
+                || runner.typeReliably(query)
+            if (typed) {
+                delay(300)
                 runner.pressEnter()
-                delay(1500)
-            } else {
-                val searchEl = runner.getClickableElements().firstOrNull { el ->
-                    val t = (el.text + el.hint + el.contentDescription).lowercase()
-                    (t.contains("search") || t.contains("find")) && !t.contains("voice") && !t.contains("mic")
-                }
-                if (searchEl != null) {
-                    runner.tapAtPoint(searchEl.centerX.toFloat(), searchEl.centerY.toFloat())
-                    delay(400)
-                    runner.typeReliably(query)
-                    delay(200)
-                    runner.pressEnter()
-                    delay(1500)
-                }
+                delay(1800)
             }
         }
 
@@ -84,24 +81,35 @@ Swiggy UI guide:
             params["goal"] as? String ?: query
         } else {
             buildString {
-                appendLine("TASK: Find \"$query\"$priceNote$filterNote on Swiggy.")
+                appendLine("TASK: ${if (action == "order" || action == "add_to_cart") "Order" else "Find"} \"$query\"$priceNote$filterNote on Swiggy.")
                 appendLine()
-                appendLine("Search may already be submitted. Check if results are visible.")
+                appendLine("⚠️ CRITICAL: Search results may already be visible. DO NOT tap the search bar again.")
                 appendLine()
                 appendLine("STEPS:")
-                appendLine("1. If no results visible, find the search bar and type \"$query\"")
-                appendLine("2. Scroll through restaurant results")
-                if (filter.isNotBlank()) appendLine("3. Apply filter: $filterNote")
-                if (maxPrice != null) appendLine("3. Look for options$priceNote")
-                appendLine("4. Tap the best restaurant")
-                appendLine("5. Find \"$query\" on their menu")
+                appendLine("1. READ what is on screen RIGHT NOW:")
+                appendLine("   - If you see a LIST OF RESTAURANTS → go to step 2.")
+                appendLine("   - If you see a MENU inside a restaurant → go to step 4.")
+                appendLine("   - ONLY if the Swiggy home screen shows with no results → tap search and type \"$query\".")
+                appendLine("2. From the restaurant list: scroll to find the best match.")
+                if (filter.isNotBlank()) appendLine("   Apply filter: $filterNote")
+                if (maxPrice != null) appendLine("   Look for options$priceNote")
+                appendLine("   🧠 SMART PICK: rating ≥ 4.0, delivery ≤ 35 min. Pick highest rated if multiple qualify.")
+                appendLine("3. TAP the restaurant CARD (not search bar) to open the menu.")
+                appendLine("4. Scroll the menu to find \"$query\".")
                 if (action == "order" || action == "add_to_cart") {
-                    appendLine("6. Tap ADD to add to cart")
-                    appendLine("7. Open cart → Proceed — STOP before payment")
+                    appendLine("5. Tap ADD button next to \"$query\".")
+                    appendLine("6. If a customise popup appears: select first option → tap Add Item.")
+                    appendLine("7. Tap the cart bar at bottom → Proceed to checkout.")
+                    appendLine("8. STOP before payment — show the cart summary.")
+                } else {
+                    appendLine("5. Read the menu item details and price.")
                 }
                 appendLine()
-                appendLine("DO NOT press back repeatedly. DO NOT go to home screen.")
-                appendLine("DO NOT tap mic/voice icons. Stay in Swiggy.")
+                appendLine("STRICT RULES:")
+                appendLine("- NEVER tap the search bar if results are already visible")
+                appendLine("- NEVER press back repeatedly — scroll instead")
+                appendLine("- NEVER tap mic/voice icons")
+                appendLine("- NEVER enter payment details")
             }
         }
 
