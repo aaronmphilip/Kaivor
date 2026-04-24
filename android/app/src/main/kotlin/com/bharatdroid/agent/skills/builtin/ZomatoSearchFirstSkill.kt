@@ -125,10 +125,15 @@ class ZomatoSearchFirstSkill : Skill {
                 appendLine()
                 appendLine("TASK: Search Zomato for \"$query\" and shortlist the best options.")
                 appendLine()
-                appendLine("ALWAYS start with APP-LEVEL search for \"$query\".")
-                appendLine("Do NOT inspect a restaurant menu first.")
-                appendLine("If you are inside a restaurant, move to the main Zomato search UI before comparing options.")
-                appendLine("If search results for \"$query\" are already visible, do not re-type the search.")
+                if (shouldPrimeSearch) {
+                    appendLine("IMPORTANT: The search for \"$query\" has already been submitted. Results are loading or already visible on screen.")
+                    appendLine("Do NOT open the search bar or type again. Scroll down and read the visible results directly.")
+                } else {
+                    appendLine("ALWAYS start with APP-LEVEL search for \"$query\".")
+                    appendLine("Do NOT inspect a restaurant menu first.")
+                    appendLine("If you are inside a restaurant, move to the main Zomato search UI before comparing options.")
+                    appendLine("If search results for \"$query\" are already visible, do not re-type the search.")
+                }
                 appendLine()
                 appendLine("STEPS:")
                 appendLine("1. Use the Zomato search bar or search icon and search for \"$query\".")
@@ -217,13 +222,10 @@ class ZomatoSearchFirstSkill : Skill {
     }
 
     private suspend fun finishSearchSubmit(runner: SandboxedRunner) {
-        delay(200)
+        delay(150)
         runner.pressEnter()
         runner.waitForScreenChange(timeoutMs = 2500)
-        delay(900)
-        val (width, height) = runner.getScreenSize()
-        runner.tapAtPoint(width * 0.5f, height * 0.35f)
-        delay(300)
+        delay(600)
     }
 
     private fun tryTypeIntoSearchField(

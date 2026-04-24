@@ -116,6 +116,7 @@ class AgentOrchestrator(
             runner.register(MapsSkill())
             runner.register(OlaSkill())
             runner.register(UberSkill())
+            runner.register(RapidoSkill())
             runner.register(FlipkartSkill())
             runner.register(AmazonSkill())
             runner.register(WhatsAppSkill())

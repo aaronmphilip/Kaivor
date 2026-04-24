@@ -143,7 +143,22 @@ class YouTubeSkill : Skill {
         dismissYouTubePopups(runner)
         delay(400)
 
-        // Step 4: Tap the first real video result
+        // Step 4: Apply the right filter chip so we get the correct content type up front.
+        // YouTube shows filter chips: All | Videos | Shorts | Channels | Playlists
+        // Tapping "Videos" removes Shorts from results; tapping "Shorts" shows only Shorts.
+        val wantShorts = searchQuery.contains("shorts", ignoreCase = true)
+        val filterChipTapped = if (wantShorts) {
+            runner.tapByText("Shorts")
+        } else {
+            runner.tapByText("Videos")
+        }
+        if (filterChipTapped) {
+            delay(1000) // let filtered results reload
+            dismissYouTubePopups(runner)
+            delay(300)
+        }
+
+        // Step 5: Tap the first real video result
         // CRITICAL: Do NOT press back — just find and tap a video result
         return tapFirstVideo(runner, agent, searchQuery)
     }
@@ -193,26 +208,20 @@ class YouTubeSkill : Skill {
         }
 
         if (videoEls.isNotEmpty()) {
+            // After filter chips are applied the list is already the right type,
+            // so just pick the first element. If filter chips were not available,
+            // fall back to width-based heuristic: Shorts thumbnails are narrow
+            // portrait cards while regular videos are wide landscape cards.
             val wantShorts = searchQuery.contains("shorts", ignoreCase = true)
-                || searchQuery.contains("vertical", ignoreCase = true)
-            val wantLong = searchQuery.contains("full", ignoreCase = true)
-                || searchQuery.contains("long", ignoreCase = true)
-                || searchQuery.contains("video", ignoreCase = true)
-                || searchQuery.contains("documentary", ignoreCase = true)
-
-            // Identify Shorts: element text explicitly says "Shorts", very short title,
-            // or element is taller than it is wide (portrait thumbnail = Short).
-            fun isShort(el: ScreenElement): Boolean {
-                val txt = el.text.lowercase()
-                return txt.contains("shorts") || txt.contains("#shorts")
-                    || (el.height > 0 && el.width > 0 && el.height > el.width * 1.4f)
-            }
-
-            val target = when {
-                wantShorts -> videoEls.firstOrNull { isShort(it) } ?: videoEls.first()
-                wantLong -> videoEls.firstOrNull { !isShort(it) } ?: videoEls.first()
-                // Default: prefer regular videos (landscape) over Shorts
-                else -> videoEls.firstOrNull { !isShort(it) } ?: videoEls.first()
+            val (screenW, _) = runner.getScreenSize()
+            val target = if (wantShorts) {
+                // Shorts cards are narrow (roughly portrait aspect, width < 60% screen)
+                videoEls.firstOrNull { it.width < screenW * 0.6f }
+                    ?: videoEls.first()
+            } else {
+                // Regular video cards span most of the screen width (> 70%)
+                videoEls.firstOrNull { it.width > screenW * 0.7f }
+                    ?: videoEls.first()
             }
             val ok = runner.tapAtPoint(target.centerX.toFloat(), target.centerY.toFloat())
             if (ok) {

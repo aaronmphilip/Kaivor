@@ -31,9 +31,9 @@ class RideConciergeSkill : Skill {
 
     override val manifest = SkillManifest(
         id = "ride_concierge",
-        name = "Ride Concierge (Uber/Ola + ETA + WhatsApp)",
-        version = "1.1.0",
-        description = "Compares Uber and Ola or uses the chosen provider, honors an explicit pickup instead of GPS, reads road ETA, books the ride after confirmation, and messages a contact.",
+        name = "Ride Concierge (Uber/Ola/Rapido + ETA + WhatsApp)",
+        version = "2.0.0",
+        description = "Compares Uber, Ola, and Rapido or uses the chosen provider, honors an explicit pickup instead of GPS, reads road ETA, books the ride after confirmation, and messages a contact.",
         author = "bharatdroid-team",
         trusted = true,
         permissions = setOf(
@@ -50,6 +50,7 @@ class RideConciergeSkill : Skill {
             "com.google.android.apps.maps",
             "com.ubercab",
             "com.olacabs.customer",
+            "com.rapido.passenger",
             "com.whatsapp",
         ),
         exampleParamsHint = """{"destination":"Bangalore Airport","pickup":"Indiranagar","via":"uber","transport":"cab","contact":"Mom","message":"I'm leaving"}""",
@@ -106,9 +107,14 @@ class RideConciergeSkill : Skill {
         when (providerPreference) {
             "uber" -> estimates += readUberEstimate(runner, agent, pickup, destination, transport)
             "ola" -> estimates += readOlaEstimate(runner, agent, pickup, destination, transport)
+            "rapido" -> estimates += readRapidoEstimate(runner, agent, pickup, destination, transport)
             else -> {
                 estimates += readUberEstimate(runner, agent, pickup, destination, transport)
                 estimates += readOlaEstimate(runner, agent, pickup, destination, transport)
+                // Include Rapido only for bike/auto so the comparison stays fast for cab requests
+                if (transport == "bike" || transport == "auto") {
+                    estimates += readRapidoEstimate(runner, agent, pickup, destination, transport)
+                }
             }
         }
 
@@ -150,6 +156,7 @@ class RideConciergeSkill : Skill {
                 val bookingResult = when (chosen.provider) {
                     "uber" -> bookUberRide(runner, agent, pickup, destination, transport, chosen)
                     "ola" -> bookOlaRide(runner, agent, pickup, destination, transport, chosen)
+                    "rapido" -> bookRapidoRide(runner, agent, pickup, destination, transport, chosen)
                     else -> SkillResult.Failure("Unsupported provider: ${chosen.provider}")
                 }
 
@@ -385,6 +392,50 @@ class RideConciergeSkill : Skill {
             runner,
             buildBookingGoal(
                 provider = "ola",
+                pickup = pickup,
+                destination = destination,
+                transport = transport,
+                chosen = chosen,
+            ),
+            maxSteps = 34,
+        )
+        return SkillResult.Success(result)
+    }
+
+    private suspend fun readRapidoEstimate(
+        runner: SandboxedRunner,
+        agent: ScreenAgent,
+        pickup: String,
+        destination: String,
+        transport: String,
+    ): RideEstimate {
+        openApp(runner, "com.rapido.passenger", dismissCount = 3)
+        val result = agent.executeGoal(
+            runner,
+            buildEstimateGoal(
+                provider = "rapido",
+                pickup = pickup,
+                destination = destination,
+                transport = transport,
+            ),
+            maxSteps = 26,
+        )
+        return parseEstimate("rapido", result)
+    }
+
+    private suspend fun bookRapidoRide(
+        runner: SandboxedRunner,
+        agent: ScreenAgent,
+        pickup: String,
+        destination: String,
+        transport: String,
+        chosen: RideEstimate,
+    ): SkillResult {
+        openApp(runner, "com.rapido.passenger", dismissCount = 3)
+        val result = agent.executeGoal(
+            runner,
+            buildBookingGoal(
+                provider = "rapido",
                 pickup = pickup,
                 destination = destination,
                 transport = transport,
@@ -682,6 +733,7 @@ class RideConciergeSkill : Skill {
             text.isBlank() -> null
             "uber" in text -> "uber"
             "ola" in text -> "ola"
+            "rapido" in text -> "rapido"
             else -> null
         }
     }
@@ -712,24 +764,26 @@ class RideConciergeSkill : Skill {
         return when (transport) {
             "auto" -> "Choose an auto/rickshaw option only. Ignore car, sedan, bike, package, and rental options."
             "bike" -> "Choose a bike or moto option only. Ignore auto, car, sedan, package, and rental options."
-            else -> {
-                when (provider) {
-                    "ola" -> "Choose a car/cab option only, such as Mini, Prime Sedan, Sedan, or similar. Ignore Auto, Bike, package, rental, and outstation options."
-                    else -> "Choose a car/cab option only, such as Uber Go, Go Sedan, Premier, XL, or similar. Ignore Auto, Moto, package, rental, and reserve options."
-                }
+            else -> when (provider) {
+                "ola" -> "Choose a car/cab option only, such as Mini, Prime Sedan, Sedan, or similar. Ignore Auto, Bike, package, rental, and outstation options."
+                "rapido" -> "Choose a Cab or Car option if available; otherwise pick the most suitable non-bike option. Ignore Bike and outstation options."
+                else -> "Choose a car/cab option only, such as Uber Go, Go Sedan, Premier, XL, or similar. Ignore Auto, Moto, package, rental, and reserve options."
             }
         }
     }
 
     private fun defaultRideHint(provider: String, transport: String): String {
         return when (transport) {
-            "auto" -> if (provider == "ola") "Auto" else "Uber Auto"
-            "bike" -> if (provider == "ola") "Bike" else "Moto"
-            else -> if (provider == "ola") "Mini" else "Uber Go"
+            "auto" -> when (provider) { "ola" -> "Auto"; "rapido" -> "Auto"; else -> "Uber Auto" }
+            "bike" -> when (provider) { "ola" -> "Bike"; "rapido" -> "Bike"; else -> "Moto" }
+            else -> when (provider) { "ola" -> "Mini"; "rapido" -> "Cab"; else -> "Uber Go" }
         }
     }
 
-    private fun providerLabel(provider: String): String = provider.replaceFirstChar { it.uppercase() }
+    private fun providerLabel(provider: String): String = when (provider) {
+        "rapido" -> "Rapido"
+        else -> provider.replaceFirstChar { it.uppercase() }
+    }
 
     private fun parseFare(text: String): Int? {
         val match = Regex("""(?:\u20B9|Rs\.?|INR)\s*([\d,]+)""", RegexOption.IGNORE_CASE).find(text)

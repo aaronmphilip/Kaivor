@@ -84,9 +84,10 @@ Rules:
 20. Unknown apps should go through the "general" skill.
 21. Instagram, Swiggy, Zomato, Maps and similar apps can use action="goal" for complex multi-step intents.
 22. Multi-step requests should become ordered "steps".
-23. Ride tasks that compare Uber/Ola, honor an explicit pickup, book a ride, tell the ETA, and message someone should prefer the "ride_concierge" skill.
+23. Ride tasks that compare Uber/Ola/Rapido, honor an explicit pickup, book a ride, tell the ETA, and message someone should prefer the "ride_concierge" skill.
 24. If the user specifies a pickup location, pass it as "pickup" and do not replace it with current location.
-25. If the user specifies "via Uber" or "via Ola", pass it as "via". If the user specifies cab/auto/bike, pass it as "transport".
+25. If the user specifies "via Uber", "via Ola", or "via Rapido", pass it as "via". If the user specifies cab/auto/bike, pass it as "transport".
+25a. Rapido is a bike-taxi and auto app (package com.rapido.passenger). Use the "rapido" skill for direct Rapido requests, or pass via="rapido" to ride_concierge.
 26. For WhatsApp PDFs/documents use action="whatsapp_pdf" unless the request clearly says article/link.
 27. For WhatsApp article links use action="whatsapp_article". For browser article reads use action="article".
 28. If a reading/summarizing request mentions a contact, file, article topic, or desired output length like one paragraph/one page/two pages/detailed, pass those as "contact", "query", and "instruction" for "reading_concierge".
