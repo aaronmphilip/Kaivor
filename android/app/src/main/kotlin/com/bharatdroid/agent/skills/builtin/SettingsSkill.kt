@@ -52,79 +52,145 @@ Android Settings UI guide:
         val state = (params["state"] as? String)?.lowercase() ?: ""
         val setting = params["setting"] as? String ?: action
 
-        // Accessibility — use direct intent so AI doesn't confuse it with Bluetooth
+        val ctx = context.runner.getContext()
+        val onOff = if (state == "off") "OFF" else "ON"
+
+        // ── Direct-intent shortcuts ──────────────────────────────────────────────
+        // Jump straight to the correct settings page so the AI never has to
+        // navigate from Settings home — eliminates back-loop bugs entirely.
+        val directIntent: Intent? = when {
+            action == "accessibility" || setting.contains("accessibility", ignoreCase = true) ->
+                Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            action == "bluetooth" -> Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+            action == "wifi" || action == "wi-fi" -> Intent(Settings.ACTION_WIFI_SETTINGS)
+            action == "location" || action == "gps" -> Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+            action == "airplane" || action == "flight" -> Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS)
+            action == "sound" || action == "volume" || action == "ringer" -> Intent(Settings.ACTION_SOUND_SETTINGS)
+            action == "display" || action == "brightness" -> Intent(Settings.ACTION_DISPLAY_SETTINGS)
+            action == "data" || action == "mobile_data" -> Intent(Settings.ACTION_DATA_ROAMING_SETTINGS)
+            action == "hotspot" -> Intent(Settings.ACTION_WIRELESS_SETTINGS)
+            action == "battery" -> Intent(Intent.ACTION_POWER_USAGE_SUMMARY)
+            action == "storage" -> Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS)
+            action == "about" || action == "device_info" -> Intent(Settings.ACTION_DEVICE_INFO_SETTINGS)
+            else -> null
+        }
+
+        if (directIntent != null) {
+            directIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            ctx.startActivity(directIntent)
+            delay(1200)
+            runner.dismissPopups(1)
+            delay(300)
+        } else {
+            runner.openApp("com.android.settings")
+            runner.waitForApp("com.android.settings", timeoutMs = 5000)
+            delay(600)
+            runner.dismissPopups(1)
+            delay(200)
+        }
+
+        // Special-case accessibility: no AI step needed, just return
         if (action == "accessibility" || setting.contains("accessibility", ignoreCase = true)) {
-            val ctx = context.runner.getContext()
-            ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
-            delay(1000)
             return SkillResult.Success(
-                "Opened Accessibility Settings.\n\nLook for *BharatDroid Agent* in the list under *Downloaded apps* and tap it to enable it."
+                "Opened Accessibility Settings.\n\nLook for *BharatDroid Agent* under *Downloaded apps* and tap it to enable it."
             )
         }
 
-        runner.openApp("com.android.settings")
-        runner.waitForApp("com.android.settings", timeoutMs = 5000)
-        delay(600)
-        runner.dismissPopups(1)
-        delay(200)
-
-        val onOff = if (state == "off") "OFF" else "ON"
+        val strictRules = """
+STRICT RULES — obey exactly:
+- You are ALREADY on the correct settings page. DO NOT press Back. DO NOT go anywhere else.
+- Look only at the CURRENT screen. Identify the toggle or control described and act on it.
+- If already in the desired state, report that and STOP — do not tap anything.
+- Tap the toggle ONCE, then read the new state and report. You are done.
+- NEVER navigate backwards. NEVER open a different section.""".trimIndent()
 
         val goal = when (action) {
-            "wifi", "wi-fi" ->
-                """You are in Android Settings. Turn WiFi $onOff.
-                STEPS: 1) Tap 'Network & internet' or 'Wi-Fi' or 'Connections'. 2) Find the Wi-Fi toggle switch. 3) Tap it to turn $onOff. 4) Confirm the current state."""
+            "bluetooth" -> """
+$strictRules
 
-            "bluetooth" ->
-                """You are in Android Settings. Turn Bluetooth $onOff.
-                STEPS: 1) Tap 'Connected devices' or 'Bluetooth'. 2) Find the Bluetooth toggle. 3) Tap to turn $onOff."""
+TASK: Turn Bluetooth $onOff.
+You are on the Bluetooth settings screen.
+Find the Bluetooth toggle (ON/OFF switch). If it is already $onOff, say so and stop.
+Tap it once. Report: "Bluetooth is now $onOff." """.trimIndent()
 
-            "brightness", "display" ->
-                """You are in Android Settings. Adjust screen brightness${if (state.isNotBlank()) " to $state" else ""}.
-                STEPS: 1) Tap 'Display' or 'Display & Brightness'. 2) Find the Brightness slider. 3) Adjust it ${if (state.isNotBlank()) "to $state" else "to maximum"}."""
+            "wifi", "wi-fi" -> """
+$strictRules
 
-            "airplane", "flight", "do_not_disturb" ->
-                """You are in Android Settings. Toggle Airplane mode $onOff.
-                STEPS: 1) Tap 'Network & internet'. 2) Find 'Airplane mode' or 'Flight mode'. 3) Tap to turn $onOff."""
+TASK: Turn Wi-Fi $onOff.
+You are on the Wi-Fi settings screen.
+Find the Wi-Fi toggle at the top. If already $onOff, say so and stop.
+Tap it once. Report: "Wi-Fi is now $onOff." """.trimIndent()
 
-            "battery" ->
-                "You are in Android Settings. Show battery status. Tap 'Battery' or 'Battery and device care' and read the percentage and usage details."
+            "location", "gps" -> """
+$strictRules
 
-            "storage" ->
-                "You are in Android Settings. Show storage usage. Tap 'Storage' and read the used/available space."
+TASK: Turn Location $onOff.
+You are on the Location settings screen.
+Find the Location toggle at the top. Tap to turn it $onOff. Report the result.""".trimIndent()
 
-            "sound", "volume", "ringer" ->
-                """You are in Android Settings. Adjust sound settings${if (state.isNotBlank()) " — $state" else ""}.
-                STEPS: 1) Tap 'Sound' or 'Sound & vibration'. 2) Adjust the relevant volume slider or toggle."""
+            "airplane", "flight" -> """
+$strictRules
 
-            "notifications" ->
-                "You are in Android Settings. Open notification settings. Tap 'Notifications' or 'Apps & notifications'."
+TASK: Turn Airplane mode $onOff.
+Find "Airplane mode" or "Flight mode" toggle on this screen.
+Tap to turn it $onOff. Report the result.""".trimIndent()
 
-            "about", "device_info" ->
-                "You are in Android Settings. Show device information. Scroll to the bottom and tap 'About phone' or 'About device'."
+            "brightness", "display" -> """
+$strictRules
 
-            "location", "gps" ->
-                """You are in Android Settings. Turn location $onOff.
-                STEPS: 1) Tap 'Location'. 2) Find the Location toggle. 3) Turn it $onOff."""
+TASK: Adjust screen brightness${if (state.isNotBlank()) " to $state" else " to maximum"}.
+You are on the Display settings screen.
+Find the Brightness slider. Drag it ${if (state.isNotBlank()) "to $state" else "all the way right (maximum)"}.
+Report the result.""".trimIndent()
 
-            "data", "mobile_data" ->
-                """You are in Android Settings. Turn mobile data $onOff.
-                STEPS: 1) Tap 'Network & internet' or 'Connections'. 2) Find 'Mobile data'. 3) Toggle $onOff."""
+            "sound", "volume", "ringer" -> """
+$strictRules
 
-            "hotspot" ->
-                """You are in Android Settings. Turn hotspot $onOff.
-                STEPS: 1) Tap 'Network & internet' or 'Hotspot & tethering'. 2) Tap 'Wi-Fi hotspot'. 3) Toggle $onOff."""
+TASK: Adjust sound/volume${if (state.isNotBlank()) " — $state" else ""}.
+You are on the Sound settings screen.
+Find the relevant volume slider or toggle and adjust it. Report the result.""".trimIndent()
+
+            "data", "mobile_data" -> """
+$strictRules
+
+TASK: Turn Mobile Data $onOff.
+Find "Mobile data" toggle on this screen. Tap once to turn it $onOff. Report the result.""".trimIndent()
+
+            "hotspot" -> """
+$strictRules
+
+TASK: Turn Wi-Fi Hotspot $onOff.
+Find "Wi-Fi hotspot" or "Mobile hotspot". Tap it, then find the hotspot toggle and set it $onOff.
+Report the result.""".trimIndent()
+
+            "battery" -> """
+$strictRules
+
+TASK: Read battery status.
+You are on the Battery settings screen. Read and report: current percentage, charging status, and any usage info shown.""".trimIndent()
+
+            "storage" -> """
+$strictRules
+
+TASK: Read storage info.
+You are on the Storage settings screen. Read and report: total space, used space, and available space.""".trimIndent()
+
+            "about", "device_info" -> """
+$strictRules
+
+TASK: Read device info.
+You are on the About phone screen. Read and report: device model, Android version, and build number.""".trimIndent()
 
             else -> {
                 val searchQuery = setting.ifBlank { action }
-                """You are in Android Settings. Find and change '$searchQuery'${if (state.isNotBlank()) " to $state" else ""}.
-                STEPS: 1) Tap the search icon at the top. 2) Type '$searchQuery'. 3) Tap the matching result. 4) Make the change as needed."""
+                """$strictRules
+
+TASK: Find and change '$searchQuery'${if (state.isNotBlank()) " to $state" else ""}.
+Tap the search icon (magnifier) at the top. Type '$searchQuery'. Tap the best match. Make the change. Report the result.""".trimIndent()
             }
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 15)
+        val result = agent.executeGoal(runner, goal, maxSteps = 10)
         return SkillResult.Success(result)
     }
 }
