@@ -21,6 +21,25 @@ class SettingsSkill : Skill {
         ),
         allowedPackages = setOf("com.android.settings"),
         exampleParamsHint = """{"action": "wifi", "state": "off"}""",
+        uiKnowledge = """
+Android Settings UI guide:
+- Home screen: vertical list of setting categories — Network & internet, Connected devices, Apps, Battery, Display, Sound, Storage, Privacy, Location, Security, Accessibility, About phone.
+- Search: magnifying glass icon at the top right — tap and type any setting name to jump directly to it. Use this for settings not in the main list.
+- Toggles: blue/green toggle switch to the right of a setting means ON; grey means OFF. Tap to flip.
+- Wi-Fi: Network & internet → Wi-Fi → toggle at the top. Wi-Fi network list appears below.
+- Bluetooth: Connected devices → Connection preferences → Bluetooth, OR directly "Bluetooth" if shown.
+- Mobile Data: Network & internet → Mobile network → Mobile data toggle.
+- Airplane Mode: Network & internet → Airplane mode toggle.
+- Hotspot: Network & internet → Hotspot & tethering → Wi-Fi hotspot.
+- Display / Brightness: Display → Brightness level slider; also Adaptive brightness toggle.
+- Sound / Volume: Sound & vibration → sliders for Media, Call, Ring, Notification, Alarm volumes.
+- Location: Location → toggle at the top to enable/disable GPS.
+- Battery: Battery → shows percentage and estimated remaining time; Battery saver toggle.
+- Storage: Storage → shows used/available space with category breakdown.
+- Accessibility: Accessibility → Downloaded apps section → BharatDroid Agent.
+- About phone: last item in main list → shows Android version, device model, software info.
+- Samsung devices: top-level may differ — "Connections" instead of "Network & internet", "Display" directly accessible, "Device care" for battery + storage.
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

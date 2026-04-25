@@ -86,31 +86,48 @@ STEPS:
                 if (to.isBlank()) return SkillResult.Failure("Who should I send the email to? Provide a 'to' address.")
                 if (subject.isBlank()) return SkillResult.Failure("What is the email subject?")
                 if (body.isBlank()) return SkillResult.Failure("What should the email say?")
-                """You are in Gmail. Compose and send an email.
+                val composeGoal = """You are in Gmail. Compose and send an email.
 STEPS:
-1. Tap the Compose button (pencil/+ FAB at bottom right)
-2. Wait for the compose screen to open
-3. Tap the "To" field and type "$to" — then tap the Enter key or the space bar to confirm the recipient
-4. Tap the "Subject" field and type "$subject"
-5. Tap the email body area (below Subject) and type "$body"
-6. Tap the Send button (paper plane ▶ at top right)
-7. Confirm the email was sent — you should return to inbox or see a "Message sent" toast
-
-⚠️ Do NOT tap outside the compose window — it will discard the draft
-⚠️ The To field needs Enter/comma after the email address to confirm it"""
+1. Tap the Compose button (pencil/+ FAB at bottom right).
+2. Wait for the compose screen to open.
+3. Tap the "To" field and type "$to" — then tap Enter or space to confirm the recipient (a chip should appear).
+4. Tap the "Subject" field and type "$subject".
+5. Tap the email body area (below Subject) and type "$body".
+6. Tap the Send button (paper plane ▶ at top right).
+7. Confirm the email was sent — you should return to inbox or see a "Message sent" toast.
+STRICT RULES:
+- Do NOT tap outside the compose window — it will discard the draft.
+- The To field must show the recipient chip before sending."""
+                return SkillResult.NeedsConfirmation(
+                    prompt = "📧 *Send Email via Gmail*\n\nTo: *$to*\nSubject: *$subject*\nMessage: \"${body.take(120)}${if (body.length > 120) "…" else ""}\"\n\nReply *YES* to send.",
+                    onConfirm = {
+                        val result = agent.executeGoal(runner, composeGoal, maxSteps = 22)
+                        SkillResult.Success(result)
+                    }
+                )
             }
 
             "reply" -> {
                 if (body.isBlank()) return SkillResult.Failure("What should I reply?")
                 val emailContext = search.ifBlank { subject }
-                """You are in Gmail. Reply to ${if (emailContext.isNotBlank()) "email about \"$emailContext\"" else "the first email in the inbox"}.
+                val replyGoal = """You are in Gmail. Reply to ${if (emailContext.isNotBlank()) "email about \"$emailContext\"" else "the first email in the inbox"}.
 STEPS:
-1. ${if (emailContext.isNotBlank()) "Search for or find the email about \"$emailContext\" and tap to open it" else "Tap the first email in the inbox to open it"}
-2. Scroll to the bottom of the email thread
-3. Tap the "Reply" button
-4. Tap the reply body field and type "$body"
-5. Tap the Send button (▶)
-6. Confirm the reply was sent"""
+1. ${if (emailContext.isNotBlank()) "Search for or find the email about \"$emailContext\" and tap to open it." else "Tap the first email in the inbox to open it."}
+2. Scroll to the bottom of the email thread.
+3. Tap the "Reply" button.
+4. Tap the reply body field and type "$body".
+5. Tap the Send button (▶).
+6. Confirm the reply was sent.
+STRICT RULES:
+- Do NOT reply to the wrong email thread.
+- Do NOT tap Reply All unless the user specifically asked."""
+                return SkillResult.NeedsConfirmation(
+                    prompt = "↩️ *Reply Email via Gmail*\n\n${if (emailContext.isNotBlank()) "Re: *$emailContext*\n" else ""}Reply: \"${body.take(120)}${if (body.length > 120) "…" else ""}\"\n\nReply *YES* to send.",
+                    onConfirm = {
+                        val result = agent.executeGoal(runner, replyGoal, maxSteps = 20)
+                        SkillResult.Success(result)
+                    }
+                )
             }
 
             "search", "find" ->

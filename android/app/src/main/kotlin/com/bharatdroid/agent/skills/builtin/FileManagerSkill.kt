@@ -70,9 +70,23 @@ class FileManagerSkill : Skill {
                 """You are in a File Manager. Open the file "$query".
                 STEPS: 1) If not visible, search for "$query" using the search icon. 2) Tap the file to open it. 3) If prompted to choose an app, tap the most relevant one."""
 
-            "delete" ->
-                """You are in a File Manager. Delete the file "$query".
-                STEPS: 1) Search for "$query". 2) Long press on the file to select it. 3) Tap the delete or trash icon. 4) Confirm deletion."""
+            "delete" -> {
+                if (query.isBlank()) return SkillResult.Failure("Which file should I delete?")
+                val deleteGoal = """You are in a File Manager. Delete the file "$query".
+STEPS:
+1. If not visible, tap the search icon and search for "$query".
+2. Long-press the file to select it (a checkmark should appear).
+3. Tap the delete or trash icon in the toolbar.
+4. Confirm deletion when prompted.
+5. Report: file deleted successfully or not found."""
+                return SkillResult.NeedsConfirmation(
+                    prompt = "🗑️ *Delete File*\n\nFile: *$query*\n\n⚠️ This will permanently delete the file. It cannot be undone.\n\nReply *YES* to confirm.",
+                    onConfirm = {
+                        val result = agent.executeGoal(runner, deleteGoal, maxSteps = 12)
+                        SkillResult.Success(result)
+                    }
+                )
+            }
 
             else ->
                 params["goal"] as? String ?: "Do this in Files: $action $folder $query".trim()

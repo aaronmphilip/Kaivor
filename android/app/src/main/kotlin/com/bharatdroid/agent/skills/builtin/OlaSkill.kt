@@ -19,6 +19,20 @@ class OlaSkill : Skill {
         ),
         allowedPackages = setOf("com.olacabs.customer"),
         exampleParamsHint = """{"destination":"Mumbai Airport","action":"book","pickup":"Bandra"}""",
+        uiKnowledge = """
+Ola app UI guide:
+- Home screen: Ola logo top-left; bottom half shows a map with current GPS pin; a white card at the bottom has a "Where to?" search bar — tap it to start booking.
+- Booking entry: tapping "Where to?" opens a two-field screen. TOP field = pickup (pre-filled with current location or last address). BOTTOM field = destination (labelled "Where to?" or "Enter destination").
+- Location fields: both fields show placeholder text ("Enter pickup location", "Current location", "Where to?") — these are NOT content, do NOT type them. Tap the field's text area itself to focus it; a blinking cursor must appear before typing.
+- Clear / X icon: a small × appears inside a filled field — tapping it CLEARS the field, it does NOT confirm selection. Always pick from the dropdown suggestion list after typing.
+- Suggestion dropdown: appears below the active field as you type; shows 3–6 place names. ALWAYS tap one suggestion to confirm the location; never proceed without selecting.
+- Confirm pickup map screen: after destination is set Ola may show a full-screen map with a draggable pin asking to "Confirm pickup location". Verify the address label matches the intended pickup before tapping the green "Confirm Pickup" button; if wrong, tap back and re-enter.
+- Ride options list: scrollable vertical list of ride types — Mini, Prime Sedan, Prime SUV, Auto, Bike, Rental, Outstation. Each card shows vehicle icon, estimated fare (Rs), and ETA.
+- Selecting a ride: tap the ride card; it highlights in orange/green. Then tap the green "Book" or "Confirm Booking" button at the bottom.
+- Payment screen: shows UPI, cards, and Ola Money. STOP here — do NOT enter any PIN or card details.
+- Promo/notification popups: "Allow notifications", "Rate us", "Try Ola Electric" — dismiss with "Later", "Skip", "Not Now", or the × button.
+- Scheduled / Outstation tab: appears at the top of ride options. IGNORE these — book for "Right Now" only.
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

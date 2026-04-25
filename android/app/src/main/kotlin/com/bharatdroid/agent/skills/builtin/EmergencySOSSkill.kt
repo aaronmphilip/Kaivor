@@ -1,5 +1,6 @@
 package com.bharatdroid.agent.skills.builtin
 
+import com.bharatdroid.agent.ScreenAgent
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
 
@@ -47,6 +48,23 @@ class EmergencySOSSkill : Skill {
         val shouldCall = (params["call"] as? Boolean) ?: true
         val shareLocation = (params["shareLocation"] as? Boolean) ?: true
 
+        val callNote = if (shouldCall) " + place a call to them" else ""
+        val locNote = if (shareLocation) " + share live location" else ""
+
+        return SkillResult.NeedsConfirmation(
+            prompt = "🚨 *EMERGENCY SOS*\n\nSend WhatsApp SOS message$locNote$callNote to *$contact*?\n\nMessage: \"$message\"\n\n⚠️ This will immediately send a message and${if (shareLocation) " share your live location" else ""}${if (shouldCall) " and call $contact" else ""}.\n\nReply *YES* to confirm.",
+            onConfirm = { executeSOS(runner, agent, contact, message, shouldCall, shareLocation) }
+        )
+    }
+
+    private suspend fun executeSOS(
+        runner: SandboxedRunner,
+        agent: ScreenAgent,
+        contact: String,
+        message: String,
+        shouldCall: Boolean,
+        shareLocation: Boolean,
+    ): SkillResult {
         // ─── 1. WhatsApp: find contact, send message + live location ─────────────
         runner.openApp("com.whatsapp")
         runner.waitForApp("com.whatsapp", timeoutMs = 6000)

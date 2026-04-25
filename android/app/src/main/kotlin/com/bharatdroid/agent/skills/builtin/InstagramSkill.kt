@@ -89,29 +89,49 @@ STEPS:
             "comment" -> {
                 if (message.isBlank()) return SkillResult.Failure("What should I comment?")
                 val target = query.ifBlank { "the first post in the feed" }
-                """You are in Instagram. Comment "$message" on $target.
+                val commentGoal = """You are in Instagram. Comment "$message" on $target.
 STEPS:
-1. ${if (query.isNotBlank()) "Search for \"$query\" and open their profile, then tap their most recent post" else "Tap the first post in the home feed to open it"}
-2. Tap the comment (speech bubble 💬) icon below the post
-3. The comments section opens — tap the text field at the bottom that says "Add a comment..."
-4. Type "$message"
-5. Tap "Post" or the send button to submit the comment
-6. Confirm the comment is visible in the comments list"""
+1. ${if (query.isNotBlank()) "Search for \"$query\" and open their profile, then tap their most recent post." else "Tap the first post in the home feed to open it."}
+2. Tap the comment (speech bubble 💬) icon below the post.
+3. The comments section opens — tap the text field at the bottom that says "Add a comment...".
+4. Type "$message".
+5. Tap "Post" or the send button to submit the comment.
+6. Confirm the comment is visible in the comments list.
+STRICT RULES:
+- Do NOT type in the search bar — only in the comment input at the bottom.
+- Do NOT post on the wrong account's post."""
+                return SkillResult.NeedsConfirmation(
+                    prompt = "💬 *Instagram Comment*\n\nOn: *${query.ifBlank { "first post in feed" }}*\nComment: \"$message\"\n\nReply *YES* to post.",
+                    onConfirm = {
+                        val result = agent.executeGoal(runner, commentGoal, maxSteps = 22)
+                        SkillResult.Success(result)
+                    }
+                )
             }
 
             "dm" -> {
                 if (query.isBlank()) return SkillResult.Failure("Who should I send the DM to?")
                 if (message.isBlank()) return SkillResult.Failure("What should the DM say?")
-                """You are in Instagram. Send a DM to "$query" saying "$message".
+                val dmGoal = """You are in Instagram. Send a DM to "$query" saying "$message".
 STEPS:
-1. Tap the paper airplane (Direct Messages) icon at the top right of the home screen
-2. Tap the compose/pencil icon or the search bar in DMs
-3. Type "$query" to find the contact
-4. Tap the matching conversation or contact
-5. Tap the message input field at the bottom
-6. Type "$message"
-7. Tap the Send button
-8. Confirm the message was sent"""
+1. Tap the paper airplane (Direct Messages) icon at the top right of the home screen.
+2. Tap the compose/pencil icon or the search bar in DMs.
+3. Type "$query" to find the contact.
+4. Tap the matching conversation or contact.
+5. Tap the message input field at the bottom.
+6. Type "$message".
+7. Tap the Send button.
+8. Confirm the message was sent.
+STRICT RULES:
+- Do NOT send to the wrong person — verify the name before tapping Send.
+- Do NOT type in the wrong field (search bar vs message input)."""
+                return SkillResult.NeedsConfirmation(
+                    prompt = "📩 *Instagram DM*\n\nTo: *$query*\nMessage: \"$message\"\n\nReply *YES* to send.",
+                    onConfirm = {
+                        val result = agent.executeGoal(runner, dmGoal, maxSteps = 22)
+                        SkillResult.Success(result)
+                    }
+                )
             }
 
             "story", "view_story" -> {

@@ -70,9 +70,26 @@ Google Calendar UI guide:
                 """You are in Google Calendar. Search for event "$title".
                 STEPS: 1) Tap the search icon (magnifying glass). 2) Type "$title". 3) If multiple matches appear, prefer the exact title match${if (date.isNotBlank()) " on '$date'" else ""}${if (time.isNotBlank()) " at '$time'" else ""}. 4) Read the matching events - title, date, time."""
 
-            "delete" ->
-                """You are in Google Calendar. Delete event "$title".
-                STEPS: 1) Tap the search icon and search for "$title". 2) Open the exact matching event${if (date.isNotBlank()) " on '$date'" else ""}${if (time.isNotBlank()) " at '$time'" else ""}. 3) Tap the delete or trash icon. 4) Confirm deletion."""
+            "delete" -> {
+                if (title.isBlank()) return SkillResult.Failure("Which event should I delete?")
+                val deleteGoal = buildString {
+                    appendLine("You are in Google Calendar. Delete event \"$title\".")
+                    appendLine("STEPS:")
+                    appendLine("1. Tap the search icon (magnifying glass) at the top.")
+                    appendLine("2. Type \"$title\" and find the exact match${if (date.isNotBlank()) " on '$date'" else ""}${if (time.isNotBlank()) " at '$time'" else ""}.")
+                    appendLine("3. Tap the event to open its detail screen.")
+                    appendLine("4. Tap the delete (trash) icon at the top right.")
+                    appendLine("5. Confirm deletion if prompted.")
+                    appendLine("6. Report: event deleted or not found.")
+                }
+                return SkillResult.NeedsConfirmation(
+                    prompt = "🗑️ *Delete Calendar Event*\n\nEvent: *$title*${if (date.isNotBlank()) "\nDate: $date" else ""}${if (time.isNotBlank()) "\nTime: $time" else ""}\n\n⚠️ This will permanently delete the event.\n\nReply *YES* to confirm.",
+                    onConfirm = {
+                        val result = agent.executeGoal(runner, deleteGoal, maxSteps = 18)
+                        SkillResult.Success(result)
+                    }
+                )
+            }
 
             else ->
                 params["goal"] as? String ?: "Do this in Google Calendar: $action $title $date $time".trim()

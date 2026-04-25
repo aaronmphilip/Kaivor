@@ -19,6 +19,22 @@ class RapidoSkill : Skill {
         ),
         allowedPackages = setOf("com.rapido.passenger"),
         exampleParamsHint = """{"destination":"Koramangala","action":"book","transport":"bike"}""",
+        uiKnowledge = """
+Rapido app UI guide:
+- Home screen: Rapido logo top-left; map fills the middle; bottom white card shows current location and a "Where to?" / "Enter destination" search bar — tap it to begin booking.
+- Booking entry: tapping the destination bar opens a two-field screen. TOP field = pick-up location (auto-filled with GPS). BOTTOM field = destination.
+- Location fields: placeholder text ("Pick-up location", "Where to?", "Current location") are labels only — never type them. Tap the text area to focus; a cursor must appear before typing.
+- Clear / X icon: the × inside a field clears it — it does NOT confirm selection. Always pick a suggestion from the dropdown after typing.
+- Suggestion dropdown: 3–6 results appear below the active field while typing. Tap one to confirm; never skip this step.
+- Confirm pickup map: may appear after destination — shows a pin on the map with "Confirm pickup" button. Verify the address matches, then tap the button. If wrong, go back and re-enter.
+- Ride options screen: shows horizontal tabs (Bike, Auto, Cab) or a scrollable vertical list. Each card has vehicle icon, fare (Rs), and captain ETA.
+- Bike tab: Rapido's signature offering; cheapest and fastest for short distances.
+- Auto tab: 3-wheeled auto-rickshaw option; slightly pricier than bike.
+- Cab tab: AC car option (availability varies by city).
+- Booking confirmation: tap the yellow/orange "Request" or "Book" button at the bottom. A captain-finding screen follows.
+- Payment: Rapido shows UPI and cash options AFTER captain accepts — STOP before any PIN entry.
+- Popups to dismiss: "Enable notifications", "Rate Rapido", safety tip sheets — use "Later", "Skip", "Dismiss", or the × button.
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

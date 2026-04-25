@@ -1,5 +1,6 @@
 package com.bharatdroid.agent.skills.builtin
 
+import com.bharatdroid.agent.ScreenAgent
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
 
@@ -52,6 +53,24 @@ class BillSplitterSkill : Skill {
 
         val totalHeads = contacts.size + (if (includePayer) 1 else 0)
         val perHead = (amount / totalHeads).toInt()
+        val contactList = contacts.joinToString(", ")
+
+        return SkillResult.NeedsConfirmation(
+            prompt = "💸 *Bill Split via PhonePe*\n\nTotal: *₹${"%.0f".format(amount)}* for \"$note\"\nSplit $totalHeads ways = *₹$perHead each*\nContacts: $contactList\n\nThis will draft UPI requests (not send them) in PhonePe.\n\nReply *YES* to proceed.",
+            onConfirm = { executeSplit(runner, agent, amount, contacts, note, includePayer, perHead) }
+        )
+    }
+
+    private suspend fun executeSplit(
+        runner: SandboxedRunner,
+        agent: ScreenAgent,
+        amount: Double,
+        contacts: List<String>,
+        note: String,
+        includePayer: Boolean,
+        perHead: Int,
+    ): SkillResult {
+        val totalHeads = contacts.size + (if (includePayer) 1 else 0)
 
         runner.openApp("com.phonepe.app")
         runner.waitForApp("com.phonepe.app", timeoutMs = 7000)
