@@ -37,103 +37,92 @@ class UberSkill : Skill {
         runner.dismissPopups(3)
         delay(200)
 
+        if (action == "book" && destination.isBlank())
+            return SkillResult.Failure("Where do you want to go?")
+        if (action == "estimate" && destination.isBlank())
+            return SkillResult.Failure("Where do you want an estimate for?")
+
         val goal = when (action) {
-            "book" -> {
-                if (destination.isBlank()) return SkillResult.Failure("Where do you want to go?")
-                buildString {
-                    append("You are in the Uber app. Book a ride")
-                    if (pickup.isNotBlank()) append(" FROM \"$pickup\"")
-                    else append(" FROM the current GPS location")
-                    append(" TO \"$destination\".\n\n")
-                    append("UBER HAS TWO LOCATION FIELDS. READ CAREFULLY:\n")
-                    append("- TOP field = pickup location (where the driver picks you up).\n")
-                    append("- BOTTOM field = destination (where you want to go).\n")
-                    append("- Placeholder text such as 'Enter pickup location', 'Current location', 'Where to?', or 'Search destination' is only a label.\n")
-                    append("- NEVER type the placeholder words themselves. Use them only to identify the field, then type the real location value.\n\n")
-                    append("STEPS:\n")
-                    append("1. Tap the 'Where to?' search field on the home screen.\n")
-                    append("2. A screen with TWO input fields appears. STOP. Before typing anything, identify each field:\n")
-                    append("   PICKUP field (first / top): has placeholder like 'Enter pickup location', 'Choose starting point', 'Current location', 'Add a stop', or already shows your GPS address.\n")
-                    append("   DESTINATION field (second / bottom): has placeholder like 'Where to?', 'Enter destination', 'Where are you going?', 'Search destination'.\n")
-                    if (!useCurrentPickup) {
-                        append("3. Tap INSIDE the TOP pickup field itself. Do NOT tap the tiny X or clear icon beside the field — tapping X dismisses the field without selecting it.\n")
-                        append("4. A text cursor must appear inside the pickup field. Clear any existing wrong address (long-press then select-all, or use the clear button ONLY after the field is focused). Then type \"$pickup\".\n")
-                        append("   CRITICAL: A suggestion dropdown will appear below the field. You MUST tap one of those suggestions to confirm the pickup. Do NOT tap the X, do NOT press Back, do NOT tap anywhere else — always pick a suggestion.\n")
-                        append("5. Only AFTER the pickup suggestion is confirmed, tap INSIDE the BOTTOM destination field. Type \"$destination\" and tap the best suggestion from its dropdown.\n")
-                    } else {
-                        append("3. The PICKUP field already shows current GPS location. DO NOT tap or clear it.\n")
-                        append("4. Tap INSIDE the DESTINATION field (identified by placeholder 'Where to?', 'Enter destination', etc.). Type \"$destination\" and tap the best suggestion.\n")
-                    }
-                    append("6. If a 'Confirm pickup' map-pin screen appears:\n")
-                    append("   - Check that the address shown matches \"${if (useCurrentPickup) "your current location" else pickup}\".\n")
-                    append("   - If it matches, tap 'Confirm pickup'.\n")
-                    append("   - If it shows a WRONG address, tap the back arrow and re-enter the correct pickup in step 3-4.\n")
-                    append("7. Wait for the ride options (Uber Go, Premier, Auto, etc.) with fares to appear.\n")
-                    append("8. Tap the cheapest ride option (usually Uber Go or Auto) unless the user specified otherwise.\n")
-                    append("9. Review the fare. Tap 'Choose <RideType>' or 'Confirm' or 'Request' to book.\n")
-                    append("10. Stop before entering any payment PIN.\n\n")
-                    append("STRICT RULES:\n")
-                    append("- Do not type the destination into the pickup field or vice-versa. Check which field is top vs bottom first.\n")
-                    append("- Do not type placeholder labels like 'Enter pickup location' or 'Where to?'. Only type the actual location names.\n")
-                    append("- NEVER tap the tiny X / clear icon to select or focus a field. Tap the field text area itself.\n")
-                    append("- After typing the pickup, you MUST tap a suggestion from the dropdown. Never skip the suggestion step.\n")
-                    append("- If pickup should use current location or GPS, keep the existing current-location value and do not erase it.\n")
-                    append("- If the confirm-pickup screen shows the wrong address, go back and re-enter the correct one.\n")
-                    append("- Do not tap 'Schedule' or 'Reserve'. Book for right now.\n")
-                    append("- If a promo or offer popup appears, dismiss it and continue.\n")
-                    append("- Do not enter payment PIN or card details.\n\n")
-                    append("FINAL REPLY:\n")
-                    append("Ride booked:\n")
-                    append("- Pickup: ${if (useCurrentPickup) "Current location" else pickup}\n")
-                    append("- Destination: $destination\n")
-                    append("- Ride: <ride type>\n")
-                    append("- Fare: Rs <amount>\n")
-                    append("- Pickup ETA: <eta>")
-                }
-            }
-
-            "estimate" -> {
-                if (destination.isBlank()) return SkillResult.Failure("Where do you want an estimate for?")
-                buildString {
-                    append("You are in the Uber app. Get a fare estimate")
-                    if (pickup.isNotBlank()) append(" from \"$pickup\"")
-                    else append(" from the current GPS location")
-                    append(" to \"$destination\".\n\n")
-                    append("IMPORTANT: placeholder text like 'Enter pickup location', 'Current location', or 'Where to?' is only a UI label. Never type the placeholder words.\n\n")
-                    append("STEPS:\n")
-                    append("1. Tap the 'Where to?' search field.\n")
-                    append("2. Two fields appear. Identify them first:\n")
-                    append("   PICKUP = top field with placeholder like 'Enter pickup location', 'Current location', 'Choose starting point'.\n")
-                    append("   DESTINATION = bottom field with placeholder like 'Where to?', 'Enter destination', 'Where are you going?'.\n")
-                    if (!useCurrentPickup) {
-                        append("3. Tap inside the PICKUP field (not the X icon). Type \"$pickup\". Choose best suggestion. Wait for it to register.\n")
-                        append("4. Tap inside the DESTINATION field. Type \"$destination\". Choose best suggestion.\n")
-                        append("5. Wait for the ride options screen with fare estimates to load.\n")
-                        append("6. Read all visible ride types and their fares / ETAs. Do not confirm the ride.\n")
-                    } else {
-                        append("3. Leave the PICKUP field as current GPS location. Do not touch it.\n")
-                        append("4. Tap inside the DESTINATION field (placeholder 'Where to?' or 'Enter destination'). Type \"$destination\". Choose best suggestion.\n")
-                        append("5. Wait for the ride options screen with fare estimates to load.\n")
-                        append("6. Read all visible ride types and their fares / ETAs. Do not confirm the ride.\n")
-                    }
-                    append("\nSTRICT RULES:\n")
-                    append("- Never tap the tiny X / clear icon when you mean to focus the pickup field.\n")
-                    append("- Do not erase the current-location pickup when the user wants GPS pickup.\n")
-                    append("- Do not type placeholder labels into either field.\n")
-                    append("- Do not book or confirm the ride.\n\n")
-                    append("FINAL REPLY FORMAT:\n")
-                    append("Uber estimates:\n")
-                    append("- <ride type> - Fare Rs <amount> - Pickup ETA <eta> - Drop-off <time if visible>\n")
-                    append("- <ride type> - Fare Rs <amount> - Pickup ETA <eta> - Drop-off <time if visible>\n")
-                    append("One ride per line. Do not merge multiple rides into one paragraph.")
-                }
-            }
-
-            else ->
-                params["goal"] as? String ?: "Do this in Uber: $action $destination".trim()
+            "book" -> buildUberGoal(pickup, destination, useCurrentPickup, book = true)
+            "estimate" -> buildUberGoal(pickup, destination, useCurrentPickup, book = false)
+            else -> params["goal"] as? String ?: "Do this in Uber: $action $destination".trim()
         }
 
         val result = agent.executeGoal(runner, goal, maxSteps = 32)
         return SkillResult.Success(result)
+    }
+
+    private fun buildUberGoal(
+        pickup: String,
+        destination: String,
+        useCurrentPickup: Boolean,
+        book: Boolean,
+    ) = buildString {
+        append("You are in the Uber app. ")
+        append(if (book) "Book a ride" else "Get a fare estimate")
+        if (pickup.isNotBlank()) append(" FROM \"$pickup\"") else append(" FROM current GPS location")
+        append(" TO \"$destination\".\n\n")
+
+        append("── HOW UBER'S LOCATION PICKER WORKS ──\n")
+        append("When you tap 'Where to?' a sheet opens with TWO fields:\n")
+        append("  TOP field    = PICKUP   — placeholder: 'Enter pickup location', 'Current location', 'Choose starting point'\n")
+        append("  BOTTOM field = DESTINATION — placeholder: 'Where to?', 'Enter destination', 'Search destination'\n")
+        append("The BOTTOM (destination) field is AUTO-FOCUSED when the sheet opens — the keyboard is already for it.\n")
+        append("The TINY X / clear icon inside a field CLEARS it — tapping X does NOT confirm or focus a field.\n")
+        append("After typing in any field, a suggestion dropdown appears below it. You MUST tap a suggestion — never skip this.\n\n")
+
+        append("── STEPS ──\n")
+        append("1. Tap the 'Where to?' black pill button on the Uber home screen.\n")
+        append("   → The location picker opens. The BOTTOM destination field is already focused (keyboard visible).\n")
+        append("2. TYPE DESTINATION FIRST (it's already focused): type \"$destination\".\n")
+        append("   → A suggestion list appears. Tap the best matching result for \"$destination\".\n")
+        append("   → The destination field is now confirmed.\n")
+        if (!useCurrentPickup) {
+            append("3. NOW handle pickup: tap INSIDE the TOP pickup field's text area.\n")
+            append("   → A cursor must appear in the TOP field before you type.\n")
+            append("   → If the field already has text (e.g. current GPS address), clear it: tap and hold the text, select all, then delete.\n")
+            append("   → Type \"$pickup\".\n")
+            append("   → A suggestion list appears. Tap the best matching result for \"$pickup\".\n")
+            append("   → The pickup field is now confirmed.\n")
+        } else {
+            append("3. Pickup: the TOP field already shows your current GPS location. DO NOT tap it, DO NOT clear it.\n")
+        }
+        append("4. After both fields are filled, Uber may show a 'Confirm pickup' map screen.\n")
+        append("   → The map shows a pin with an address label.\n")
+        append("   → If the address matches ${if (useCurrentPickup) "your current location" else "\"$pickup\""}, tap 'Confirm pickup'.\n")
+        append("   → If it shows the WRONG address, tap Back and re-enter the correct pickup in step 3.\n")
+        append("5. The ride options screen loads — shows Uber Go, Premier, Auto, etc. with fares and ETAs.\n")
+        if (book) {
+            append("6. Tap the cheapest option (usually Uber Go or Auto) unless the user asked for a specific type.\n")
+            append("7. Tap 'Choose <ride type>' or 'Confirm' or 'Request <ride type>' to book.\n")
+            append("8. STOP before any payment PIN entry.\n")
+        } else {
+            append("6. READ all visible ride types and fares. Do NOT tap Confirm or Request — estimate only.\n")
+        }
+
+        append("\n── STRICT RULES ──\n")
+        append("- The BOTTOM field is for DESTINATION. The TOP field is for PICKUP. Never swap them.\n")
+        append("- ALWAYS tap a suggestion from the dropdown after typing. Never skip the suggestion step.\n")
+        append("- NEVER tap the X / clear icon to 'select' or 'focus' a field — it only clears.\n")
+        append("- Do NOT type placeholder labels like 'Where to?' or 'Current location' into any field.\n")
+        append("- If the confirm-pickup map shows the wrong address, go back — do not proceed with a wrong pickup.\n")
+        append("- Do not tap Schedule or Reserve. Book for right now only.\n")
+        append("- Dismiss any promo or rating popup and continue.\n")
+        append("- Never enter payment PIN or card details.\n\n")
+
+        if (book) {
+            append("FINAL REPLY:\n")
+            append("Ride booked:\n")
+            append("- Pickup: ${if (useCurrentPickup) "Current location" else pickup}\n")
+            append("- Destination: $destination\n")
+            append("- Ride: <ride type>\n")
+            append("- Fare: ₹<amount>\n")
+            append("- Pickup ETA: <eta>")
+        } else {
+            append("FINAL REPLY:\n")
+            append("Uber estimates from ${if (useCurrentPickup) "current location" else pickup} to $destination:\n")
+            append("- <ride type> — ₹<fare> — ETA <eta>\n")
+            append("(one ride per line, do not merge)")
+        }
     }
 }
