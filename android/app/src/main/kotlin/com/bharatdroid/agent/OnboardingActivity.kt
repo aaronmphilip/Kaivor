@@ -324,9 +324,36 @@ class OnboardingActivity : AppCompatActivity() {
 
     private fun showStep(step: Int) {
         val steps = listOf(R.id.step1, R.id.step2, R.id.step3, R.id.step4, R.id.step5)
-        steps.forEachIndexed { i, id ->
-            findViewById<View>(id).visibility = if (i == step - 1) View.VISIBLE else View.GONE
+        val incomingId = steps[step - 1]
+        val incoming = findViewById<View>(incomingId)
+
+        // Fade-out anything currently visible, then slide-in + fade-in the new step.
+        // ViewPropertyAnimator gives us hardware-accelerated transitions for free.
+        steps.forEach { id ->
+            val v = findViewById<View>(id)
+            if (id != incomingId && v.visibility == View.VISIBLE) {
+                v.animate()
+                    .alpha(0f)
+                    .setDuration(150)
+                    .withEndAction { v.visibility = View.GONE; v.alpha = 1f }
+                    .start()
+            }
         }
-        findViewById<TextView>(R.id.tvStepIndicator).text = "Step $step of 5"
+
+        incoming.alpha = 0f
+        incoming.translationY = 24f
+        incoming.visibility = View.VISIBLE
+        incoming.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .setDuration(280)
+            .setStartDelay(120)
+            .start()
+
+        val indicator = findViewById<TextView>(R.id.tvStepIndicator)
+        indicator.animate().alpha(0f).setDuration(120).withEndAction {
+            indicator.text = "Step $step of 5"
+            indicator.animate().alpha(1f).setDuration(180).start()
+        }.start()
     }
 }

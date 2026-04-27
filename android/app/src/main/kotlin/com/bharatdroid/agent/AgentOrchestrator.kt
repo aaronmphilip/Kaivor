@@ -24,6 +24,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 
 class AgentOrchestrator(
@@ -69,6 +70,9 @@ class AgentOrchestrator(
     private lateinit var poller: TelegramPoller
     private lateinit var actionBrain: AIBrain
     private lateinit var knowledgeBrain: KnowledgeBrain
+    private val ttsClient: TtsClient by lazy {
+        TtsClient(context, config.ttsProvider, config.ttsApiKey, config.ttsVoice)
+    }
     private lateinit var documentBrain: DocumentSummaryBrain
     private lateinit var skillRunner: SkillRunner
     private lateinit var screenAgent: ScreenAgent
@@ -943,6 +947,22 @@ class AgentOrchestrator(
         )
         val commandLabel = if (depth == ResearchDepth.DEEP) "/research" else "/info"
         activityLog.log("$commandLabel $query", "knowledge", "success", knowledgeReply.summary.take(100))
+
+        // Send the text reply first so the user sees it immediately, then attach
+        // a voice rendering if TTS is configured. Voice failures never break text.
+        if (ttsClient.isEnabled) {
+            poller.sendMessage(chatId, knowledgeReply.reply)
+            scope.launch {
+                runCatching {
+                    val audio = ttsClient.synthesize(knowledgeReply.summary)
+                    if (audio != null) {
+                        poller.sendVoice(chatId, audio)
+                        runCatching { audio.delete() }
+                    }
+                }
+            }
+            return ""  // text already sent above
+        }
         return knowledgeReply.reply
     }
 
@@ -1619,4 +1639,8 @@ data class AgentConfig(
     val agentModel: String = "",
     val researchProvider: AIProvider = AIProvider.GEMINI,
     val researchModel: String = "",
+    /** Optional. When set, /info and /research replies are also sent as a voice note. */
+    val ttsProvider: TtsProvider = TtsProvider.OFF,
+    val ttsApiKey: String = "",
+    val ttsVoice: String = "alloy",
 )

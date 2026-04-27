@@ -69,6 +69,12 @@ class AgentForegroundService : LifecycleService() {
             else AIBrain.detectProvider(researchKey)
         } catch (_: Exception) { AIBrain.detectProvider(researchKey) }
 
+        // Optional TTS — voice replies for /info and /research.
+        val ttsKey = prefs.getString("tts_api_key", "")?.trim().orEmpty()
+        val ttsEnabled = prefs.getBoolean("tts_enabled", false) && ttsKey.isNotBlank()
+        val ttsProvider = if (ttsEnabled) TtsProvider.OPENAI else TtsProvider.OFF
+        val ttsVoice = prefs.getString("tts_voice", "alloy") ?: "alloy"
+
         val config = AgentConfig(
             telegramBotToken = botToken,
             agentApiKey = agentKey,
@@ -79,6 +85,9 @@ class AgentForegroundService : LifecycleService() {
             agentModel = agentModel,
             researchProvider = researchProvider,
             researchModel = researchModel,
+            ttsProvider = ttsProvider,
+            ttsApiKey = ttsKey,
+            ttsVoice = ttsVoice,
         )
 
         orchestrator = AgentOrchestrator(this, config)

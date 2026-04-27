@@ -6,6 +6,7 @@ import com.google.gson.JsonObject
 import kotlinx.coroutines.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -193,6 +194,36 @@ class TelegramPoller(
             }
         } catch (_: Exception) {
             sendMessage(chatId, caption)
+        }
+    }
+
+    /**
+     * Send an audio file as a Telegram voice message — appears with the inline playback
+     * bar like a recorded note. Accepts MP3 (Telegram supports it directly for voice).
+     * The file is left untouched on disk so the caller can clean it up.
+     */
+    suspend fun sendVoice(chatId: Long, audioFile: File, caption: String = "") {
+        if (!audioFile.exists() || audioFile.length() == 0L) return
+        try {
+            val body = MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("chat_id", chatId.toString())
+                .apply { if (caption.isNotBlank()) addFormDataPart("caption", caption.take(1024)) }
+                .addFormDataPart(
+                    "voice", audioFile.name,
+                    audioFile.asRequestBody("audio/mpeg".toMediaType())
+                )
+                .build()
+            val request = Request.Builder()
+                .url("$baseUrl/sendVoice")
+                .post(body)
+                .build()
+            withContext(Dispatchers.IO) {
+                try { client.newCall(request).execute().close() }
+                catch (_: IOException) { /* network blip — voice silently skipped */ }
+            }
+        } catch (_: Exception) {
+            // Voice failures must never break the user-visible text reply.
         }
     }
 

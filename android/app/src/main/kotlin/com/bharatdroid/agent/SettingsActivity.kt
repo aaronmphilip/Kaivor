@@ -15,6 +15,8 @@ class SettingsActivity : AppCompatActivity() {
     private var selectedResearchProvider = AIProvider.GEMINI
     private var askPermission = true
     private var learningEnabled = true
+    private var ttsEnabled = false
+    private var ttsVoice = "alloy"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,6 +31,8 @@ class SettingsActivity : AppCompatActivity() {
         askPermission = prefs.getBoolean("ask_permission", true)
         learningEnabled = getSharedPreferences("bharatdroid_memory", MODE_PRIVATE)
             .getBoolean("learning_enabled", true)
+        ttsEnabled = prefs.getBoolean("tts_enabled", false)
+        ttsVoice = prefs.getString("tts_voice", "alloy") ?: "alloy"
 
         val agentKeyField = findViewById<EditText>(R.id.etApiKey)
         val agentModelField = findViewById<EditText>(R.id.etModel)
@@ -39,6 +43,9 @@ class SettingsActivity : AppCompatActivity() {
         agentModelField.setText(prefs.getString("agent_ai_model", prefs.getString("ai_model", "")) ?: "")
         researchKeyField.setText(prefs.getString("research_ai_key", "") ?: "")
         researchModelField.setText(prefs.getString("research_ai_model", "") ?: "")
+
+        val ttsKeyField = findViewById<EditText>(R.id.etTtsKey)
+        ttsKeyField.setText(prefs.getString("tts_api_key", "") ?: "")
 
         setupProviderSection(
             initialProvider = selectedAgentProvider,
@@ -62,6 +69,8 @@ class SettingsActivity : AppCompatActivity() {
         }
         setupPermissionToggle()
         setupLearningToggle()
+        setupTtsToggle()
+        setupVoicePicker()
 
         findViewById<Button>(R.id.btnBack).setOnClickListener { finish() }
 
@@ -76,6 +85,7 @@ class SettingsActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            val ttsKey = ttsKeyField.text.toString().trim()
             prefs.edit()
                 .putString("agent_ai_key", agentKey)
                 .putString("agent_ai_provider", selectedAgentProvider.name)
@@ -87,6 +97,9 @@ class SettingsActivity : AppCompatActivity() {
                 .putString("ai_provider", selectedAgentProvider.name)
                 .putString("ai_model", agentModel)
                 .putBoolean("ask_permission", askPermission)
+                .putString("tts_api_key", ttsKey)
+                .putBoolean("tts_enabled", ttsEnabled)
+                .putString("tts_voice", ttsVoice)
                 .apply()
 
             getSharedPreferences("bharatdroid_memory", MODE_PRIVATE)
@@ -216,6 +229,57 @@ class SettingsActivity : AppCompatActivity() {
         btnOff.setOnClickListener { selectLearning(false) }
 
         selectLearning(learningEnabled)
+    }
+
+    private fun setupTtsToggle() {
+        val btnOn = findViewById<Button>(R.id.btnTtsOn)
+        val btnOff = findViewById<Button>(R.id.btnTtsOff)
+
+        fun render(enabled: Boolean) {
+            ttsEnabled = enabled
+            if (enabled) {
+                btnOn.setBackgroundColor(0xFF00CC88.toInt())
+                btnOn.setTextColor(0xFF000000.toInt())
+                btnOff.setBackgroundColor(0xFF1A1A1A.toInt())
+                btnOff.setTextColor(0xFFAAAAAA.toInt())
+            } else {
+                btnOff.setBackgroundColor(0xFF555555.toInt())
+                btnOff.setTextColor(0xFFFFFFFF.toInt())
+                btnOn.setBackgroundColor(0xFF1A1A1A.toInt())
+                btnOn.setTextColor(0xFFAAAAAA.toInt())
+            }
+        }
+
+        btnOn.setOnClickListener { render(true) }
+        btnOff.setOnClickListener { render(false) }
+        render(ttsEnabled)
+    }
+
+    private fun setupVoicePicker() {
+        val btnAlloy = findViewById<Button>(R.id.btnVoiceAlloy)
+        val btnNova = findViewById<Button>(R.id.btnVoiceNova)
+        val btnShimmer = findViewById<Button>(R.id.btnVoiceShimmer)
+        val all = listOf(btnAlloy, btnNova, btnShimmer)
+
+        fun render(voice: String) {
+            ttsVoice = voice
+            all.forEach {
+                it.setBackgroundColor(0xFF1A1A1A.toInt())
+                it.setTextColor(0xFFAAAAAA.toInt())
+            }
+            val active = when (voice) {
+                "nova" -> btnNova
+                "shimmer" -> btnShimmer
+                else -> btnAlloy
+            }
+            active.setBackgroundColor(0xFFFF5C00.toInt())
+            active.setTextColor(0xFFFFFFFF.toInt())
+        }
+
+        btnAlloy.setOnClickListener { render("alloy") }
+        btnNova.setOnClickListener { render("nova") }
+        btnShimmer.setOnClickListener { render("shimmer") }
+        render(ttsVoice)
     }
 
     private fun parseProvider(raw: String, fallback: AIProvider): AIProvider {

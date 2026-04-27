@@ -2,435 +2,632 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0D0D0D"
-    android:padding="24dp">
+    android:background="#0A0A0A"
+    android:fillViewport="true"
+    android:scrollbars="none">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="32dp">
 
-        <!-- Header -->
+        <!-- Brand bar -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:background="#FF5C00" />
+
+        <!-- ─── Header ───────────────────────────── -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="20dp">
 
             <Button
                 android:id="@+id/btnBack"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
                 android:text="←"
                 android:textSize="20sp"
-                android:backgroundTint="#1E1E1E"
-                android:textColor="#FFFFFF" />
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#1A1A1A"
+                android:stateListAnimator="@null"
+                android:padding="0dp" />
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:text="Settings"
                 android:textColor="#FFFFFF"
-                android:textSize="24sp"
+                android:textSize="22sp"
                 android:textStyle="bold"
-                android:layout_marginStart="12dp" />
+                android:layout_marginStart="14dp"
+                android:letterSpacing="-0.01" />
         </LinearLayout>
 
-        <!-- ═══════════════════════════════ -->
-        <!--  AI PROVIDER                    -->
-        <!-- ═══════════════════════════════ -->
+        <!-- ═══════════════════════════════════════ -->
+        <!--  SECTION: AGENT AI                      -->
+        <!-- ═══════════════════════════════════════ -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Agent AI Provider"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:text="AGENT AI"
+            android:textColor="#666666"
+            android:textSize="11sp"
             android:textStyle="bold"
+            android:letterSpacing="0.15"
             android:layout_marginTop="32dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Provider"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:layout_marginTop="14dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Choose the AI that powers phone actions"
-            android:textColor="#888888"
+            android:text="The AI that powers phone actions"
+            android:textColor="#777777"
             android:textSize="12sp"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="2dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="12dp">
+            android:layout_marginTop="12dp"
+            android:weightSum="3">
 
             <Button
                 android:id="@+id/btnProvGemini"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="46dp"
                 android:layout_weight="1"
                 android:text="Gemini"
-                android:textSize="12sp"
+                android:textSize="13sp"
+                android:textStyle="bold"
                 android:backgroundTint="#1A73E8"
                 android:textColor="#FFFFFF"
-                android:layout_marginEnd="4dp" />
+                android:layout_marginEnd="6dp"
+                android:stateListAnimator="@null" />
 
             <Button
                 android:id="@+id/btnProvClaude"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="46dp"
                 android:layout_weight="1"
                 android:text="Claude"
-                android:textSize="12sp"
-                android:backgroundTint="#1E1E1E"
+                android:textSize="13sp"
+                android:backgroundTint="#1A1A1A"
                 android:textColor="#AAAAAA"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp" />
+                android:layout_marginEnd="6dp"
+                android:stateListAnimator="@null" />
 
             <Button
                 android:id="@+id/btnProvOpenAI"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="46dp"
                 android:layout_weight="1"
                 android:text="ChatGPT"
-                android:textSize="12sp"
-                android:backgroundTint="#1E1E1E"
+                android:textSize="13sp"
+                android:backgroundTint="#1A1A1A"
                 android:textColor="#AAAAAA"
-                android:layout_marginStart="4dp" />
+                android:stateListAnimator="@null" />
         </LinearLayout>
 
-        <!-- ═══════════════════════════════ -->
-        <!--  API KEY                        -->
-        <!-- ═══════════════════════════════ -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Agent API Key"
+            android:text="API Key"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold"
-            android:layout_marginTop="28dp" />
+            android:layout_marginTop="22dp" />
 
         <TextView
             android:id="@+id/tvKeyHint"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Get your free key at aistudio.google.com/apikey"
-            android:textColor="#888888"
+            android:textColor="#777777"
             android:textSize="12sp"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="2dp" />
 
         <EditText
             android:id="@+id/etApiKey"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Paste API key here"
+            android:hint="Paste API key"
             android:inputType="textPassword"
             android:textColor="#FFFFFF"
-            android:textColorHint="#555555"
+            android:textColorHint="#444444"
             android:background="@drawable/input_bg"
             android:padding="14dp"
             android:fontFamily="monospace"
             android:textSize="13sp"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="10dp" />
 
-        <!-- ═══════════════════════════════ -->
-        <!--  MODEL (optional)               -->
-        <!-- ═══════════════════════════════ -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Agent Model (optional)"
+            android:text="Model  "
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold"
-            android:layout_marginTop="28dp" />
+            android:layout_marginTop="22dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Leave blank for default. Defaults:\nGemini: gemini-2.5-flash (free)\nClaude: claude-haiku-4-5 (paid)\nChatGPT: gpt-4o-mini (paid)"
-            android:textColor="#888888"
-            android:textSize="11sp"
+            android:text="Optional. Leave blank for defaults: gemini-2.5-flash · claude-haiku-4-5 · gpt-4o-mini"
+            android:textColor="#777777"
+            android:textSize="12sp"
             android:lineSpacingMultiplier="1.3"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="2dp" />
 
         <EditText
             android:id="@+id/etModel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="e.g. gemini-2.5-flash or gpt-4o"
+            android:hint="e.g. gemini-2.5-flash"
             android:inputType="text"
             android:textColor="#FFFFFF"
-            android:textColorHint="#555555"
+            android:textColorHint="#444444"
             android:background="@drawable/input_bg"
             android:padding="14dp"
             android:fontFamily="monospace"
             android:textSize="13sp"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="10dp" />
+
+        <!-- ═══════════════════════════════════════ -->
+        <!--  SECTION: RESEARCH AI                   -->
+        <!-- ═══════════════════════════════════════ -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="RESEARCH AI"
+            android:textColor="#666666"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.15"
+            android:layout_marginTop="36dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Research AI Provider"
+            android:text="Provider"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold"
-            android:layout_marginTop="28dp" />
+            android:layout_marginTop="14dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="This powers /info and /research. Leave the key blank to reuse Agent AI."
-            android:textColor="#888888"
+            android:text="Powers /info and /research. Leave key blank to reuse the Agent AI."
+            android:textColor="#777777"
             android:textSize="12sp"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="2dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="12dp">
+            android:layout_marginTop="12dp"
+            android:weightSum="3">
 
             <Button
                 android:id="@+id/btnResearchProvGemini"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="46dp"
                 android:layout_weight="1"
                 android:text="Gemini"
-                android:textSize="12sp"
-                android:backgroundTint="#1E1E1E"
+                android:textSize="13sp"
+                android:backgroundTint="#1A1A1A"
                 android:textColor="#AAAAAA"
-                android:layout_marginEnd="4dp" />
+                android:layout_marginEnd="6dp"
+                android:stateListAnimator="@null" />
 
             <Button
                 android:id="@+id/btnResearchProvClaude"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="46dp"
                 android:layout_weight="1"
                 android:text="Claude"
-                android:textSize="12sp"
-                android:backgroundTint="#1E1E1E"
+                android:textSize="13sp"
+                android:backgroundTint="#1A1A1A"
                 android:textColor="#AAAAAA"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp" />
+                android:layout_marginEnd="6dp"
+                android:stateListAnimator="@null" />
 
             <Button
                 android:id="@+id/btnResearchProvOpenAI"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="46dp"
                 android:layout_weight="1"
                 android:text="ChatGPT"
-                android:textSize="12sp"
-                android:backgroundTint="#1E1E1E"
+                android:textSize="13sp"
+                android:backgroundTint="#1A1A1A"
                 android:textColor="#AAAAAA"
-                android:layout_marginStart="4dp" />
+                android:stateListAnimator="@null" />
         </LinearLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Research API Key"
+            android:text="API Key"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold"
-            android:layout_marginTop="28dp" />
+            android:layout_marginTop="22dp" />
 
         <TextView
             android:id="@+id/tvResearchKeyHint"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Get your free key at aistudio.google.com/apikey"
-            android:textColor="#888888"
+            android:text="Optional · leave blank to reuse Agent AI key"
+            android:textColor="#777777"
             android:textSize="12sp"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="2dp" />
 
         <EditText
             android:id="@+id/etResearchApiKey"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Paste research API key here"
+            android:hint="Paste research API key (optional)"
             android:inputType="textPassword"
             android:textColor="#FFFFFF"
-            android:textColorHint="#555555"
+            android:textColorHint="#444444"
             android:background="@drawable/input_bg"
             android:padding="14dp"
             android:fontFamily="monospace"
             android:textSize="13sp"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="10dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Research Model (optional)"
+            android:text="Model"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold"
-            android:layout_marginTop="28dp" />
+            android:layout_marginTop="22dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Leave blank for default. This only affects /info and /research."
-            android:textColor="#888888"
-            android:textSize="11sp"
-            android:lineSpacingMultiplier="1.3"
-            android:layout_marginTop="4dp" />
+            android:text="Optional. Only affects /info and /research."
+            android:textColor="#777777"
+            android:textSize="12sp"
+            android:layout_marginTop="2dp" />
 
         <EditText
             android:id="@+id/etResearchModel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="e.g. gemini-2.5-flash or gpt-4o-mini"
+            android:hint="e.g. gpt-4o-mini"
             android:inputType="text"
             android:textColor="#FFFFFF"
-            android:textColorHint="#555555"
+            android:textColorHint="#444444"
             android:background="@drawable/input_bg"
             android:padding="14dp"
             android:fontFamily="monospace"
             android:textSize="13sp"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="10dp" />
 
-        <!-- ═══════════════════════════════ -->
-        <!--  PERMISSION MODE                -->
-        <!-- ═══════════════════════════════ -->
+        <!-- ═══════════════════════════════════════ -->
+        <!--  SECTION: VOICE REPLIES (TTS)           -->
+        <!-- ═══════════════════════════════════════ -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Permission Mode"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:text="VOICE REPLIES"
+            android:textColor="#666666"
+            android:textSize="11sp"
             android:textStyle="bold"
-            android:layout_marginTop="28dp" />
+            android:letterSpacing="0.15"
+            android:layout_marginTop="36dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Read research aloud  "
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:layout_marginTop="14dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Ask Permission = confirms before acting\nJust Do It = executes immediately"
-            android:textColor="#888888"
+            android:text="Optional. When ON, /info and /research replies are also sent as a Telegram voice note. Uses OpenAI TTS — bring your own key."
+            android:textColor="#777777"
             android:textSize="12sp"
-            android:layout_marginTop="4dp" />
+            android:lineSpacingMultiplier="1.35"
+            android:layout_marginTop="2dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="12dp">
+            android:layout_marginTop="12dp"
+            android:weightSum="2">
+
+            <Button
+                android:id="@+id/btnTtsOn"
+                android:layout_width="0dp"
+                android:layout_height="46dp"
+                android:layout_weight="1"
+                android:text="Voice ON"
+                android:textSize="13sp"
+                android:backgroundTint="#1A1A1A"
+                android:textColor="#AAAAAA"
+                android:layout_marginEnd="6dp"
+                android:stateListAnimator="@null" />
+
+            <Button
+                android:id="@+id/btnTtsOff"
+                android:layout_width="0dp"
+                android:layout_height="46dp"
+                android:layout_weight="1"
+                android:text="Voice OFF"
+                android:textSize="13sp"
+                android:backgroundTint="#1A1A1A"
+                android:textColor="#AAAAAA"
+                android:stateListAnimator="@null" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="OpenAI TTS Key  "
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Optional · platform.openai.com/api-keys · ~$0.015 per 1k characters"
+            android:textColor="#777777"
+            android:textSize="12sp"
+            android:layout_marginTop="2dp" />
+
+        <EditText
+            android:id="@+id/etTtsKey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="sk-... (optional)"
+            android:inputType="textPassword"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#444444"
+            android:background="@drawable/input_bg"
+            android:padding="14dp"
+            android:fontFamily="monospace"
+            android:textSize="13sp"
+            android:layout_marginTop="10dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Voice"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp"
+            android:weightSum="3">
+
+            <Button
+                android:id="@+id/btnVoiceAlloy"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="Alloy"
+                android:textSize="12sp"
+                android:backgroundTint="#1A1A1A"
+                android:textColor="#AAAAAA"
+                android:layout_marginEnd="6dp"
+                android:stateListAnimator="@null" />
+
+            <Button
+                android:id="@+id/btnVoiceNova"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="Nova"
+                android:textSize="12sp"
+                android:backgroundTint="#1A1A1A"
+                android:textColor="#AAAAAA"
+                android:layout_marginEnd="6dp"
+                android:stateListAnimator="@null" />
+
+            <Button
+                android:id="@+id/btnVoiceShimmer"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="Shimmer"
+                android:textSize="12sp"
+                android:backgroundTint="#1A1A1A"
+                android:textColor="#AAAAAA"
+                android:stateListAnimator="@null" />
+        </LinearLayout>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!--  SECTION: PERMISSION MODE               -->
+        <!-- ═══════════════════════════════════════ -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BEHAVIOUR"
+            android:textColor="#666666"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.15"
+            android:layout_marginTop="36dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Permission mode"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:layout_marginTop="14dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ask Permission confirms before acting. Just Do It runs immediately."
+            android:textColor="#777777"
+            android:textSize="12sp"
+            android:lineSpacingMultiplier="1.3"
+            android:layout_marginTop="2dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp"
+            android:weightSum="2">
 
             <Button
                 android:id="@+id/btnAskPerm"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="46dp"
                 android:layout_weight="1"
                 android:text="Ask Permission"
-                android:textSize="12sp"
+                android:textSize="13sp"
+                android:textStyle="bold"
                 android:backgroundTint="#00CC88"
                 android:textColor="#000000"
-                android:layout_marginEnd="6dp" />
+                android:layout_marginEnd="6dp"
+                android:stateListAnimator="@null" />
 
             <Button
                 android:id="@+id/btnJustDoIt"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="46dp"
                 android:layout_weight="1"
                 android:text="Just Do It"
-                android:textSize="12sp"
-                android:backgroundTint="#1E1E1E"
+                android:textSize="13sp"
+                android:backgroundTint="#1A1A1A"
                 android:textColor="#AAAAAA"
-                android:layout_marginStart="6dp" />
+                android:stateListAnimator="@null" />
         </LinearLayout>
 
-        <!-- ═══════════════════════════════ -->
-        <!--  AI LEARNING                    -->
-        <!-- ═══════════════════════════════ -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="AI Learning"
+            android:text="AI learning"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold"
-            android:layout_marginTop="28dp" />
+            android:layout_marginTop="22dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="When ON, the agent learns from your feedback (e.g. 'next time do it like this'). All data stays on your phone — nothing is sent to any server."
-            android:textColor="#888888"
+            android:text="When ON, the agent learns from your feedback. All data stays on your phone."
+            android:textColor="#777777"
             android:textSize="12sp"
             android:lineSpacingMultiplier="1.3"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="2dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="12dp">
+            android:layout_marginTop="12dp"
+            android:weightSum="2">
 
             <Button
                 android:id="@+id/btnLearnOn"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="46dp"
                 android:layout_weight="1"
                 android:text="Learning ON"
-                android:textSize="12sp"
+                android:textSize="13sp"
+                android:textStyle="bold"
                 android:backgroundTint="#00CC88"
                 android:textColor="#000000"
-                android:layout_marginEnd="6dp" />
+                android:layout_marginEnd="6dp"
+                android:stateListAnimator="@null" />
 
             <Button
                 android:id="@+id/btnLearnOff"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="46dp"
                 android:layout_weight="1"
                 android:text="Full Privacy"
-                android:textSize="12sp"
-                android:backgroundTint="#1E1E1E"
+                android:textSize="13sp"
+                android:backgroundTint="#1A1A1A"
                 android:textColor="#AAAAAA"
-                android:layout_marginStart="6dp" />
+                android:stateListAnimator="@null" />
         </LinearLayout>
 
-        <!-- ═══════════════════════════════ -->
-        <!--  SAVE BUTTON                    -->
-        <!-- ═══════════════════════════════ -->
+        <!-- ═══════════════════════════════════════ -->
+        <!--  SAVE                                   -->
+        <!-- ═══════════════════════════════════════ -->
         <Button
             android:id="@+id/btnSave"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:text="Save and Restart Agent"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold"
-            android:backgroundTint="#FF4500"
+            android:backgroundTint="#FF5C00"
             android:textColor="#FFFFFF"
-            android:layout_marginTop="36dp" />
+            android:layout_marginTop="36dp"
+            android:stateListAnimator="@null" />
 
-        <!-- ═══════════════════════════════ -->
-        <!--  DANGER ZONE                    -->
-        <!-- ═══════════════════════════════ -->
+        <!-- ═══════════════════════════════════════ -->
+        <!--  DANGER ZONE                            -->
+        <!-- ═══════════════════════════════════════ -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#331111"
+            android:background="#1A1A1A"
             android:layout_marginTop="40dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Danger Zone"
+            android:text="DANGER ZONE"
             android:textColor="#FF6B6B"
-            android:textSize="14sp"
+            android:textSize="11sp"
             android:textStyle="bold"
-            android:layout_marginTop="16dp" />
+            android:letterSpacing="0.15"
+            android:layout_marginTop="20dp" />
 
         <Button
             android:id="@+id/btnReset"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:text="Reset App (Erase All Settings)"
+            android:text="Reset App (erase all settings)"
             android:textSize="13sp"
-            android:backgroundTint="#331111"
+            android:backgroundTint="#1A0A0A"
             android:textColor="#FF6B6B"
             android:layout_marginTop="12dp"
-            android:layout_marginBottom="40dp" />
+            android:stateListAnimator="@null" />
 
     </LinearLayout>
 </ScrollView>
