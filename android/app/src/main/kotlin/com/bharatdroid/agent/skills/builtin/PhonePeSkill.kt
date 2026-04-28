@@ -59,8 +59,23 @@ PhonePe UI guide:
             "send", "pay" -> {
                 if (upiId.isBlank()) return SkillResult.Failure("Provide UPI ID or mobile number to send money to.")
                 if (amount == null) return SkillResult.Failure("Provide the amount to send.")
-                val goal = """You are in PhonePe. Send ₹$amount to "$upiId"${if (note.isNotBlank()) " with note \"$note\"" else ""}.
-STEPS: 1) Tap 'Send Money' or 'To Mobile Number' or the UPI transfer option on the home screen. 2) Enter "$upiId" in the recipient field (UPI ID or mobile number). 3) Tap 'Verify' or 'Proceed'. 4) Enter the amount ₹$amount. 5) If there is a note/remark field, enter "$note". 6) Tap 'Proceed' or 'Pay'. 7) STOP before the UPI PIN entry screen — do not enter the PIN. Report back: recipient name verified, amount, and that the PIN screen is waiting."""
+                val goal = buildString {
+                    appendLine("You are in PhonePe. Send ₹$amount to \"$upiId\"${if (note.isNotBlank()) " with note \"$note\"" else ""}.")
+                    appendLine()
+                    appendLine("STEPS:")
+                    appendLine("1. Tap 'Send Money' or 'To Mobile Number' or the UPI transfer option on the home screen.")
+                    appendLine("2. Enter \"$upiId\" in the recipient field (UPI ID or mobile number).")
+                    appendLine("   → A suggestion list appears below — TAP the best matching contact. Never skip this step.")
+                    appendLine("3. Tap 'Verify' or 'Proceed'.")
+                    appendLine("4. Enter the amount ₹$amount using the keypad.")
+                    if (note.isNotBlank()) appendLine("5. Tap the note/remark field and type \"$note\".")
+                    val payStep = if (note.isNotBlank()) 6 else 5
+                    appendLine("$payStep. Tap 'Proceed' or 'Pay'.")
+                    appendLine("${payStep + 1}. STOP before the UPI PIN entry screen — do NOT enter the PIN.")
+                    appendLine("${payStep + 2}. Report: recipient name as shown on screen, amount ₹$amount, PIN screen is ready.")
+                    appendLine()
+                    append("⚠️ NEVER enter the UPI PIN.")
+                }.trimEnd()
                 return SkillResult.NeedsConfirmation(
                     prompt = "💸 *Send via PhonePe*\n\nAmount: *₹$amount*\nTo: *${upiId.ifBlank { mobile }}*${if (note.isNotBlank()) "\nNote: _${note}_" else ""}\n\n⚠️ You will need to enter your UPI PIN on the phone.\n\nReply *YES* to proceed.",
                     onConfirm = {
@@ -72,8 +87,22 @@ STEPS: 1) Tap 'Send Money' or 'To Mobile Number' or the UPI transfer option on t
             "recharge" -> {
                 if (mobile.isBlank()) return SkillResult.Failure("Provide the mobile number to recharge.")
                 if (amount == null) return SkillResult.Failure("Provide the recharge amount.")
-                val goal = """You are in PhonePe. Do a mobile recharge of ₹$amount for number "$mobile".
-STEPS: 1) Tap 'Mobile Recharge' or 'Recharge' on the home screen. 2) Enter the mobile number "$mobile". 3) Tap 'Proceed'. 4) Browse the available recharge plans. 5) Select the plan closest to ₹$amount — look for the exact amount or the nearest match. 6) Tap 'Proceed to Pay'. 7) STOP before the UPI PIN entry screen — do not enter the PIN. Report back: the plan selected, validity, and that PIN screen is ready."""
+                val goal = buildString {
+                    appendLine("You are in PhonePe. Do a mobile recharge of ₹$amount for number \"$mobile\".")
+                    appendLine()
+                    appendLine("STEPS:")
+                    appendLine("1. Tap 'Mobile Recharge' or 'Recharge' on the home screen.")
+                    appendLine("2. Enter the mobile number \"$mobile\".")
+                    appendLine("3. Tap 'Proceed' — the operator will be auto-detected.")
+                    appendLine("4. Browse the available recharge plan cards.")
+                    appendLine("5. Select the plan closest to ₹$amount — look for the exact amount or the nearest match.")
+                    appendLine("   Read the plan's validity and data details from the card.")
+                    appendLine("6. Tap 'Proceed to Pay'.")
+                    appendLine("7. STOP before the UPI PIN entry screen — do NOT enter the PIN.")
+                    appendLine("8. Report: the plan selected (amount, validity, data), and that PIN screen is ready.")
+                    appendLine()
+                    append("⚠️ NEVER enter the UPI PIN.")
+                }.trimEnd()
                 return SkillResult.NeedsConfirmation(
                     prompt = "📱 *Mobile Recharge via PhonePe*\n\nNumber: *$mobile*\nAmount: *₹$amount*\n\n⚠️ You will need to enter your UPI PIN on the phone.\n\nReply *YES* to recharge now.",
                     onConfirm = {

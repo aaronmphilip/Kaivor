@@ -151,12 +151,12 @@ class ZomatoSearchFirstSkill : Skill {
                 appendLine("- Do NOT tap mic or voice icons.")
                 appendLine("- Do NOT go to payment.")
                 appendLine()
-                appendLine("FINAL REPLY TEMPLATE:")
-                appendLine("These are the things I found:")
-                appendLine("1. <item> - <restaurant> - Rs <price>")
-                appendLine("2. <item> - <restaurant> - Rs <price>")
-                appendLine("3. <item> - <restaurant> - Rs <price>")
-                appendLine("These look good. Tell me which one to order.")
+                appendLine("FINAL REPLY — read EXACT values from the screen, do NOT use placeholders or invent prices:")
+                appendLine("List 3–5 options, one per line, using this format:")
+                appendLine("1. [item name] from [restaurant name] — Rs [exact price from screen]")
+                appendLine("2. [item name] from [restaurant name] — Rs [exact price from screen]")
+                appendLine("End with: 'Tell me which one to order.'")
+                appendLine("Only include items and prices you actually SEE on screen. Never guess.")
             }
 
             else -> buildString {

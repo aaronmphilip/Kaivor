@@ -53,15 +53,17 @@ Instagram UI guide:
         val goal = when (action) {
             "search", "find_profile" -> {
                 if (query.isBlank()) return SkillResult.Failure("Who or what should I search for on Instagram?")
-                // Pre-type into search
-                val typed = runner.typeInFieldWithHint("Search", query)
-                if (typed) delay(1000)
-                val searchDone = typed
-                """You are in Instagram. ${if (searchDone) "Search results for \"$query\" are showing." else "Search for \"$query\"."}
+                """You are in Instagram. Search for "$query" and report the profile.
 STEPS:
-${if (!searchDone) "1. Tap the Search icon (magnifying glass) in the bottom navigation bar\n2. Tap the search text field at the top\n3. Type \"$query\"\n4. Wait for results" else "1. Look at the search results"}
-${if (searchDone) "2." else "5."} Tap the most relevant profile or result (match the exact username if given)
-${if (searchDone) "3." else "6."} Report: username, full name, follower/following count, bio"""
+1. Tap the Search icon (magnifying glass — second icon in the bottom navigation bar).
+2. Tap the search text field at the top of the Search screen.
+3. Type "$query".
+4. Wait for results to appear.
+5. Tap the most relevant profile result (match the exact username if given).
+6. Report: username, full name, follower count, following count, bio.
+STRICT RULES:
+- Tap the Search ICON in the bottom nav first — do NOT tap the Home or DM icons.
+- Do NOT type in the message input or any other field."""
             }
 
             "follow" -> {
@@ -114,17 +116,20 @@ STRICT RULES:
                 if (message.isBlank()) return SkillResult.Failure("What should the DM say?")
                 val dmGoal = """You are in Instagram. Send a DM to "$query" saying "$message".
 STEPS:
-1. Tap the paper airplane (Direct Messages) icon at the top right of the home screen.
-2. Tap the compose/pencil icon or the search bar in DMs.
-3. Type "$query" to find the contact.
-4. Tap the matching conversation or contact.
-5. Tap the message input field at the bottom.
+1. Tap the paper airplane (Direct Messages ✈️) icon at the TOP RIGHT of the home screen.
+2. Tap the COMPOSE / PENCIL icon (top right of the DM list) to start a new message.
+   → A "New message" search screen opens.
+3. Type "$query" in the "Search" field to find the contact.
+4. Tap the contact name that best matches "$query" from the results.
+5. Tap the message input field at the BOTTOM of the chat.
 6. Type "$message".
-7. Tap the Send button.
-8. Confirm the message was sent.
+7. Tap the SEND button (arrow ▶ on the right side of the input).
+8. Confirm the message bubble appears in the chat as sent.
 STRICT RULES:
-- Do NOT send to the wrong person — verify the name before tapping Send.
-- Do NOT type in the wrong field (search bar vs message input)."""
+- Tap the PENCIL/COMPOSE icon — do NOT tap an existing conversation row in step 2.
+- The message input is at the BOTTOM. Do NOT type in the search field at the top.
+- Do NOT send to the wrong person — verify the name in step 4 before tapping.
+- Do NOT tap the Post/Caption field on any media."""
                 return SkillResult.NeedsConfirmation(
                     prompt = "📩 *Instagram DM*\n\nTo: *$query*\nMessage: \"$message\"\n\nReply *YES* to send.",
                     onConfirm = {

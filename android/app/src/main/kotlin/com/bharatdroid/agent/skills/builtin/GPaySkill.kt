@@ -56,7 +56,7 @@ Google Pay UI guide:
                 || runner.typeInFieldWithHint("Pay", contact)
                 || runner.typeInFieldWithHint("Search", contact)
             if (typed) {
-                delay(1200) // wait for contact suggestions
+                delay(1500) // wait for contact/phonebook suggestions to load
             }
         }
 
@@ -64,18 +64,25 @@ Google Pay UI guide:
             "send", "pay" -> {
                 if (contact.isBlank()) return SkillResult.Failure("Who should I send money to? Provide a contact name, phone number, or UPI ID.")
                 if (amount.isBlank()) return SkillResult.Failure("How much money should I send?")
+                val noteStep = if (note.isNotBlank())
+                    "\n5. Tap the 'Add a note' or 'Message' field and type \"$note\"."
+                else ""
+                val payStep = if (note.isNotBlank()) 6 else 5
+                val stopStep = payStep + 1
+                val reportStep = stopStep + 1
                 val goal = """You are in Google Pay. Send ₹$amount to "$contact"${if (note.isNotBlank()) " with note \"$note\"" else ""}.
 STEPS:
-1. The contact search field may already have "$contact" typed. If not, tap "New payment" and type "$contact"
-2. Tap the most relevant contact or UPI ID from the suggestions
-3. Verify the recipient name shown on screen matches "$contact"
-4. On the amount screen, enter ₹$amount using the number pad
-5. ${if (note.isNotBlank()) "Tap the 'Add a note' or 'Message' field and type \"$note\"\n6. " else ""}Tap the "Pay" button
-7. STOP at the UPI PIN entry screen — do NOT enter the PIN
-8. Report: recipient name verified, amount ₹$amount, and that PIN screen is waiting for user
+1. The contact search field may already have "$contact" typed. If not, tap "New payment" and type "$contact".
+2. A suggestion list appears below — TAP the suggestion that best matches "$contact".
+   (If no suggestion appears, type the phone number or UPI ID directly.)
+3. Verify the recipient name shown on screen matches "$contact".
+4. On the amount screen, enter ₹$amount using the number pad.$noteStep
+$payStep. Tap the "Pay" button.
+$stopStep. STOP at the UPI PIN entry screen — do NOT enter the PIN.
+$reportStep. Report: recipient name confirmed as shown on screen, amount ₹$amount, PIN screen is ready.
 
 ⚠️ NEVER enter the UPI PIN — this is a sensitive action
-⚠️ If the contact is not found by name, ask the user for their phone number or UPI ID"""
+⚠️ Always tap a suggestion from the list after typing the contact name. Never skip this step."""
                 return SkillResult.NeedsConfirmation(
                     prompt = "💸 *Send via Google Pay*\n\nAmount: *₹$amount*\nTo: *$contact*${if (note.isNotBlank()) "\nNote: _${note}_" else ""}\n\n⚠️ You will need to enter your UPI PIN on the phone.\n\nReply *YES* to proceed.",
                     onConfirm = {

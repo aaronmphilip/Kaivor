@@ -101,6 +101,10 @@ Rules:
 36. For YouTube: if the user says "full video", "long video", or just "full" after a previous YouTube query, route to youtube with action="play" and the original song/query as the value. If they say "shorts" or "short", append "shorts" to the query.
 37. For WhatsApp multi-file requests (send X and Y to Z), use action="send_files" and pass a comma-separated "files" param, e.g. "files": "invoice.pdf,resume.pdf".
 38. For WhatsApp requests, if the user describes a file by topic (e.g. "the latest invoice", "my resume"), pass that description as the "file" param and let the skill search for it.
+39. For YouTube video link sharing (e.g. "share [video] link", "send YouTube link of [song] to [person]", "share the link of [video] on WhatsApp"), use the "youtube" skill with action="share". Pass the video name/song/query in "query". If a contact is mentioned, include "contact" param. NEVER answer with a hardcoded URL from AI knowledge.
+40. For skipping or waiting out YouTube ads (e.g. "skip the ad", "skip ads", "wait for the ad to finish", "bypass the ad"), use the "youtube" skill with action="skip_ads".
+41. If a user asks to find a contact's Instagram profile, search Instagram, or navigate there, use the "instagram" skill with action="search" and the username/name in "query".
+42. For sending an Instagram DM, always extract: action="dm", the recipient as "contact", and the message text as "message". Do not omit either.
 
 Do NOT return anything outside JSON.
             """.trimIndent()

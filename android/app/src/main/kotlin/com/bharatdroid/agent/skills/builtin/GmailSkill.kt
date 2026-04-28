@@ -90,12 +90,16 @@ STEPS:
 STEPS:
 1. Tap the Compose button (pencil/+ FAB at bottom right).
 2. Wait for the compose screen to open.
-3. Tap the "To" field and type "$to" — then tap Enter or space to confirm the recipient (a chip should appear).
+3. Tap the "To" field and type "$to".
+   → A suggestion dropdown appears below the field — TAP the best matching contact suggestion.
+   → If no suggestion appears (e.g. it's a full email address), press Enter or tap space to add the recipient chip.
+   → The recipient chip must appear before moving on.
 4. Tap the "Subject" field and type "$subject".
 5. Tap the email body area (below Subject) and type "$body".
 6. Tap the Send button (paper plane ▶ at top right).
 7. Confirm the email was sent — you should return to inbox or see a "Message sent" toast.
 STRICT RULES:
+- ALWAYS tap a suggestion from the dropdown after typing the recipient — this is how Gmail confirms the address.
 - Do NOT tap outside the compose window — it will discard the draft.
 - The To field must show the recipient chip before sending."""
                 return SkillResult.NeedsConfirmation(
