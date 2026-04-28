@@ -1,4 +1,4 @@
-﻿package com.bharatdroid.agent
+package com.bharatdroid.agent
 
 import android.app.AlarmManager
 import android.app.AppOpsManager
@@ -62,7 +62,7 @@ class AgentOrchestrator(
     // coroutines access this map concurrently. mutableMapOf is NOT thread-safe.
     private val pendingConfirmations = java.util.concurrent.ConcurrentHashMap<Long, CompletableDeferred<Boolean>>()
 
-    // Serializes skill execution â€" only one task runs at a time.
+    // Serializes skill execution — only one task runs at a time.
     // When a new message arrives, requestStop() is called first so the
     // running task exits quickly, then this lock is acquired for the new task.
     private val taskMutex = Mutex()
@@ -78,7 +78,7 @@ class AgentOrchestrator(
     private lateinit var screenAgent: ScreenAgent
 
     fun start() {
-        // Create the AI-driven screen agent â€" inject user memory so learned preferences
+        // Create the AI-driven screen agent — inject user memory so learned preferences
         // are automatically applied to every executeGoal call, without touching skill files
         screenAgent = ScreenAgent(
             apiKey = config.agentApiKey,
@@ -207,14 +207,14 @@ class AgentOrchestrator(
 
         // â"€â"€ Notification reply relay â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
         // User replied (using Telegram's Reply button) to a forwarded notification.
-        // Try RemoteInput first (fastest â€" fires directly into the source app).
+        // Try RemoteInput first (fastest — fires directly into the source app).
         // If that fails (no quick-reply action on the notification), fall back to
         // opening the app and sending via the accessibility skill.
         if (msg.replyToMessageId != null) {
             val delivered = NotificationRelay.sendReply(msg.replyToMessageId, trimmed)
             if (delivered) return "âœ‰ï¸ Reply sent."
 
-            // RemoteInput unavailable â€" try skill-based fallback
+            // RemoteInput unavailable — try skill-based fallback
             val rec = NotificationRelay.getRecord(msg.replyToMessageId)
             if (rec != null) {
                 val contact = rec.lastTitle.takeIf { it.isNotBlank() } ?: "them"
@@ -246,7 +246,7 @@ class AgentOrchestrator(
                     }
                 }
             }
-            // No record or unknown app â€" fall through to normal AI routing
+            // No record or unknown app — fall through to normal AI routing
         }
 
         if (msg.attachment != null && msg.attachment.mimeType?.startsWith("audio") == true) {
@@ -262,8 +262,8 @@ class AgentOrchestrator(
 
         // â"€â"€ AUTO-STOP: every new message kills the currently running task â"€â"€â"€â"€â"€
         // Exceptions:
-        //   â€¢ Confirmation answers (YES/NO) â€" they continue a pending task, not start a new one
-        //   â€¢ Explicit stop commands â€" handled below, requestStop() called there
+        //   â€¢ Confirmation answers (YES/NO) — they continue a pending task, not start a new one
+        //   â€¢ Explicit stop commands — handled below, requestStop() called there
         //
         // Why: TelegramPoller fires scope.launch per message, so multiple messages run in
         // parallel. Without this, "open Obsidian" while YouTube is running would fight with
@@ -274,20 +274,20 @@ class AgentOrchestrator(
         val hasPendingConfirmation = pendingConfirmations.containsKey(msg.chatId)
         val isStopCommand = run {
             val stopExactInner = setOf("stop", "à¤°à¥à¤•à¥‹", "ruko", "band karo", "cancel", "bas", "à¤¬à¤¸",
-                "rok", "à¤°à¥‹à¤•", "hatao", "à¤¹à¤Ÿà¤¾à¤"", "abort", "quit", "chhod do", "à¤›à¥‹à¤¡à¤¼ à¤¦à¥‹",
+                "rok", "à¤°à¥‹à¤•", "hatao", "à¤¹à¤Ÿà¤¾à¤“", "abort", "quit", "chhod do", "à¤›à¥‹à¤¡à¤¼ à¤¦à¥‹",
                 "mat karo", "à¤®à¤¤ à¤•à¤°à¥‹", "nahi", "à¤¨à¤¹à¥€à¤‚", "enough", "done stop")
             val stopContainsInner = listOf("stop", "à¤°à¥à¤•à¥‹", "cancel", "abort", "band kar", "à¤°à¥‹à¤•", "bas kar")
             lower in stopExactInner || stopContainsInner.any { lower.contains(it) }
         }
         if (!hasPendingConfirmation && !isStopCommand) {
-            // Kill whatever is currently running â€" the new message takes priority
+            // Kill whatever is currently running — the new message takes priority
             screenAgent.requestStop()
         }
 
-        // â"€â"€ STOP â€" explicit stop command â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+        // â"€â"€ STOP — explicit stop command â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
         if (isStopCommand) {
             screenAgent.requestStop()
-            return "â›" Stopping current task. Left everything where it was."
+            return "⛔ Stopping current task. Left everything where it was."
         }
 
         // â"€â"€ Built-in commands â"€â"€
@@ -350,7 +350,7 @@ class AgentOrchestrator(
                         "âš ï¸ Learning is OFF. Turn it on in Settings first."
                     } else {
                         val saved = userMemory.addRule(parsed.args)
-                        if (saved) "ðŸ"Œ Rule saved: _\"${parsed.args}\"_\n\nUse /memory to see all rules."
+                        if (saved) "📌 Rule saved: _\"${parsed.args}\"_\n\nUse /memory to see all rules."
                         else "Already have that rule saved."
                     }
                 }
@@ -362,7 +362,7 @@ class AgentOrchestrator(
                     val pkg = resolvePackage(parsed.args)
                         ?: return "Can't find app \"${parsed.args}\". Try the package name (e.g. `com.whatsapp`) or the exact app label."
                     muteStore.mute(pkg)
-                    return "ðŸ"• Muted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`). Use `/unmute ${parsed.args}` to re-enable."
+                    return "🔕 Muted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`). Use `/unmute ${parsed.args}` to re-enable."
                 }
                 "unmute" -> {
                     if (parsed.args.isBlank()) {
@@ -370,7 +370,7 @@ class AgentOrchestrator(
                     }
                     val pkg = resolvePackage(parsed.args) ?: return "Can't find app \"${parsed.args}\"."
                     muteStore.unmute(pkg)
-                    return "ðŸ"" Unmuted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`)."
+                    return "🔔 Unmuted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`)."
                 }
                 "clear" -> {
                     actionBrain.clearHistory(msg.chatId)
@@ -468,7 +468,7 @@ class AgentOrchestrator(
                     "âš ï¸ Learning is OFF. Turn it on in Settings first."
                 } else {
                     val saved = userMemory.addRule(rule)
-                    if (saved) "ðŸ"Œ Rule saved: _\"$rule\"_\n\nUse /memory to see all rules."
+                    if (saved) "📌 Rule saved: _\"$rule\"_\n\nUse /memory to see all rules."
                     else "Already have that rule saved."
                 }
             }
@@ -477,13 +477,13 @@ class AgentOrchestrator(
                 val arg = trimmed.substringAfter("/mute ").trim()
                 val pkg = resolvePackage(arg) ?: return "Can't find app \"$arg\". Try the package name (e.g. `com.whatsapp`) or the exact app label."
                 muteStore.mute(pkg)
-                return "ðŸ"• Muted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`). Use `/unmute $arg` to re-enable."
+                return "🔕 Muted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`). Use `/unmute $arg` to re-enable."
             }
             trimmed.lowercase().startsWith("/unmute ") -> {
                 val arg = trimmed.substringAfter("/unmute ").trim()
                 val pkg = resolvePackage(arg) ?: return "Can't find app \"$arg\"."
                 muteStore.unmute(pkg)
-                return "ðŸ"" Unmuted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`)."
+                return "🔔 Unmuted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`)."
             }
             trimmed.lowercase() == "/clear" -> {
                 actionBrain.clearHistory(msg.chatId)
@@ -580,7 +580,7 @@ class AgentOrchestrator(
         if (preference != null && userMemory.learningEnabled) {
             val saved = userMemory.remember(preference)
             if (saved) {
-                return "ðŸ"Œ Got it! I'll remember:\n_\"$preference\"_\n\nThis will apply to future tasks. Use /memory to see all preferences, /forget to remove any."
+                return "📌 Got it! I'll remember:\n_\"$preference\"_\n\nThis will apply to future tasks. Use /memory to see all preferences, /forget to remove any."
             }
         }
 
@@ -687,7 +687,7 @@ class AgentOrchestrator(
             contextHint = actionContext,
         )
 
-        // Direct replies and unknowns don't touch the phone â€" no lock needed.
+        // Direct replies and unknowns don't touch the phone — no lock needed.
         if (plan.type == PlanType.DIRECT_REPLY) {
             val directReply = plan.directReply ?: "?"
             conversationContext.rememberAction(msg.chatId, actionPrompt, directReply)
@@ -699,7 +699,7 @@ class AgentOrchestrator(
             return plan.directReply ?: "I didn't understand that. Try again."
         }
 
-        // Skill execution touches the phone â€" serialize with mutex.
+        // Skill execution touches the phone — serialize with mutex.
         // requestStop() was already called at the top of handleMessage, so the
         // previous task is stopping. We wait here until the lock is released,
         // then start the new task with a clean slate.
@@ -715,7 +715,7 @@ class AgentOrchestrator(
             // Clear any leftover stop flag so the NEW task doesn't immediately self-stop.
             // Root cause of the "Stopped." spam: requestStop() is called for every message
             // to kill old tasks, but with no old task running the flag stays true and the
-            // new task sees it in executeGoal's first check and returns "â›" Stopped." before
+            // new task sees it in executeGoal's first check and returns "⛔ Stopped." before
             // doing anything. Clearing here (after acquiring the mutex = old task is done)
             // fixes this without losing the ability to stop a genuinely running task.
             screenAgent.clearStop()
@@ -723,7 +723,7 @@ class AgentOrchestrator(
             // Wake screen so agent can interact with apps even if phone was sleeping.
             if (!wakeLock.isHeld) wakeLock.acquire(180_000L) // 3 min max; released in finally
 
-            // Dismiss lock screen â€" swipe up from bottom (swipe-only lock) or navigate home
+            // Dismiss lock screen — swipe up from bottom (swipe-only lock) or navigate home
             // to land on the actual app. No-op if screen is already unlocked.
             AgentAccessibilityService.instance?.let { svc ->
                 val km = context.getSystemService(android.app.KeyguardManager::class.java)
@@ -869,7 +869,7 @@ class AgentOrchestrator(
                 val bitmap = service.captureScreenshot()
                 if (bitmap != null) {
                     poller.sendPhoto(chatId, bitmap, message)
-                    return "" // already sent as photo â€" caller sends nothing
+                    return "" // already sent as photo — caller sends nothing
                 }
             } catch (_: Exception) { /* fall through to text */ }
         }
@@ -1023,7 +1023,7 @@ You can also open a document on the phone and say:
         return if (cleanedInstruction.isBlank()) {
             "summarize $fileName"
         } else {
-            "summarize $fileName â€" ${cleanedInstruction.take(80)}"
+            "summarize $fileName — ${cleanedInstruction.take(80)}"
         }
     }
 
@@ -1087,12 +1087,12 @@ You can also open a document on the phone and say:
         val granted = NotificationRelay.isPermissionGranted(context)
         val header = if (granted) "âœ… Notification relay: ON" else "âš ï¸ Notification relay needs permission. Settings â†' Notifications â†' Device & app notifications â†' BharatDroid â†' Allow."
         if (muted.isEmpty()) {
-            return "$header\n\nðŸ"" No apps muted. All notifications are forwarded.\n\n*Commands:*\n`/mute WhatsApp` or `/mute com.whatsapp`\n`/unmute WhatsApp`"
+            return "$header\n\n🔔 No apps muted. All notifications are forwarded.\n\n*Commands:*\n`/mute WhatsApp` or `/mute com.whatsapp`\n`/unmute WhatsApp`"
         }
         val list = muted.mapIndexed { i, pkg ->
             "${i + 1}. ${NotificationRelay.labelFor(context, pkg)} (`$pkg`)"
         }.joinToString("\n")
-        return "$header\n\nðŸ"• *Muted apps (${muted.size}):*\n$list\n\nUse `/unmute <name>` to re-enable."
+        return "$header\n\n🔕 *Muted apps (${muted.size}):*\n$list\n\nUse `/unmute <name>` to re-enable."
     }
 
     private fun toggleMode(chatId: Long): String {
@@ -1112,7 +1112,7 @@ You can also open a document on the phone and say:
 
         if (memories.isEmpty()) {
             return buildString {
-                appendLine("ðŸ"­ No rules saved yet.")
+                appendLine("🔭 No rules saved yet.")
                 appendLine()
                 appendLine("*Two ways to add rules:*")
                 appendLine()
@@ -1130,18 +1130,18 @@ You can also open a document on the phone and say:
 
         val list = memories.mapIndexed { i, m -> "${i + 1}. $m" }.joinToString("\n")
         return buildString {
-            appendLine("ðŸ"Œ *Your Rules* (${memories.size}/30):")
+            appendLine("📌 *Your Rules* (${memories.size}/30):")
             appendLine()
             appendLine(list)
             appendLine()
             appendLine(status)
             appendLine()
             appendLine("*Manage rules:*")
-            appendLine("`/forget 3` â€" remove rule 3")
-            appendLine("`/forget 1,3,5` â€" remove rules 1, 3 and 5")
-            appendLine("`/forget 2-5` â€" remove rules 2 through 5")
-            appendLine("`/forget` â€" clear all rules")
-            appendLine("`/remember <rule>` â€" add a rule directly")
+            appendLine("`/forget 3` — remove rule 3")
+            appendLine("`/forget 1,3,5` — remove rules 1, 3 and 5")
+            appendLine("`/forget 2-5` — remove rules 2 through 5")
+            appendLine("`/forget` — clear all rules")
+            appendLine("`/remember <rule>` — add a rule directly")
         }.trimEnd()
     }
 
@@ -1264,7 +1264,7 @@ You can also open a document on the phone and say:
     private fun buildWelcomeMessage(): String = """
 *BharatDroid Agent* is live on this phone.
 
-Tell me what to do â€" English or Hindi. I'll do it.
+Tell me what to do — English or Hindi. I'll do it.
 
 *Food & Grocery:*
 - "Biryani from Swiggy under 200"
@@ -1436,14 +1436,14 @@ Tell me what to do â€" English or Hindi. I'll do it.
 
         grouped[true]?.let { official ->
             official.forEach { s ->
-                sb.appendLine("*${s.name}* â€" ${s.description}")
+                sb.appendLine("*${s.name}* — ${s.description}")
             }
         }
 
         grouped[false]?.let { community ->
             sb.appendLine("\n*Community Skills:*")
             community.forEach { s ->
-                sb.appendLine("${s.name} by ${s.author} â€" ${s.description}")
+                sb.appendLine("${s.name} by ${s.author} — ${s.description}")
             }
         }
 
