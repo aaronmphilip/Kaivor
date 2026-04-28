@@ -428,6 +428,14 @@ class SandboxedRunner(
         clipboard.setPrimaryClip(android.content.ClipData.newPlainText("BharatDroid", text))
     }
 
+    fun readClipboard(): String {
+        requirePermission(Permission.CLIPBOARD)
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        val clip = clipboard.primaryClip ?: return ""
+        if (clip.itemCount == 0) return ""
+        return clip.getItemAt(0)?.coerceToText(context)?.toString() ?: ""
+    }
+
     suspend fun waitForText(text: String, timeoutMs: Long = 8000): Boolean {
         requirePermission(Permission.READ_SCREEN)
         val deadline = System.currentTimeMillis() + timeoutMs

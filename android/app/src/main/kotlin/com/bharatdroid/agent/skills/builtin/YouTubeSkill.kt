@@ -10,18 +10,24 @@ class YouTubeSkill : Skill {
     override val manifest = SkillManifest(
         id = "youtube",
         name = "YouTube",
-        version = "8.0.0",
-        description = "Play videos, search, go to channels, browse subscriptions — any YouTube task",
+        version = "9.0.0",
+        description = "Play videos, search, go to channels, share video links, skip ads — any YouTube task",
         author = "bharatdroid-team",
         trusted = true,
         permissions = setOf(
             Permission.OPEN_APP, Permission.READ_SCREEN,
             Permission.TAP, Permission.TYPE, Permission.SCROLL,
-            Permission.NAVIGATE_BACK,
+            Permission.NAVIGATE_BACK, Permission.CLIPBOARD,
         ),
-        allowedPackages = setOf("com.google.android.youtube"),
+        allowedPackages = setOf("com.google.android.youtube", "com.whatsapp"),
         exampleParamsHint = """{"action": "play", "query": "Arijit Singh Tum Hi Ho"}""",
-        uiKnowledge = "YouTube home screen has a search icon (magnifying glass) at top-right. Tapping it opens a search field. After searching, results appear as a scrollable list — each result shows a thumbnail, title, channel name, view count, and duration. Full videos show duration like '4:22' in thumbnail corner. Shorts show a vertical phone icon or say 'Shorts'. Channel results show a round avatar with subscriber count. The bottom navigation has: Home, Shorts, +, Subscriptions, Library tabs — NEVER tap these during a search task.",
+        uiKnowledge = """
+YouTube home screen has a search icon (magnifying glass) at top-right. Tapping it opens a search field. After searching, results appear as a scrollable list — each result shows a thumbnail, title, channel name, view count, and duration. Full videos show duration like '4:22' in thumbnail corner. Shorts show a vertical phone icon or say 'Shorts'. Channel results show a round avatar with subscriber count. The bottom navigation has: Home, Shorts, +, Subscriptions, Library tabs — NEVER tap these during a search task.
+
+AD DETECTION: When a YouTube ad plays before a video, the screen shows 'Skip Ad', 'Skip Ads', 'Ad ·', 'Ad 1 of 2', 'Visit advertiser', or 'Your video will play after the ad'. If 'Skip Ad' / 'Skip Ads' button is visible, tap it immediately. If not visible yet, wait — it appears after 5 seconds. Non-skippable ads must be waited out (usually 15-30 seconds).
+
+SHARE LINK: The Share button is in the action row BELOW the video player (same row as Like, Dislike). Tap Share → a bottom sheet opens. Tap 'Copy link' in that sheet. The YouTube URL is now in the clipboard.
+""".trimIndent(),
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {
@@ -31,11 +37,11 @@ class YouTubeSkill : Skill {
         val action = (params["action"] as? String)?.lowercase() ?: "play"
         val query = params["query"] as? String ?: ""
         val goal = params["goal"] as? String ?: ""
+        val contact = params["contact"] as? String ?: params["to"] as? String ?: ""
 
         runner.openApp("com.google.android.youtube")
         runner.waitForApp("com.google.android.youtube", timeoutMs = 6000)
         delay(1000)
-        // Dismiss any startup popups (location, notifications, etc)
         dismissYouTubePopups(runner)
         delay(300)
 
@@ -51,8 +57,19 @@ class YouTubeSkill : Skill {
                 playVideo(runner, agent, searchQuery)
             }
 
+            "share", "share_link", "copy_link", "get_link" -> {
+                if (query.isBlank()) return SkillResult.Failure("Which video do you want to share the link for?")
+                shareVideo(runner, agent, query, contact.takeIf { it.isNotBlank() })
+            }
+
+            "skip_ads", "skip_ad", "watch", "wait_ads" -> {
+                // Skip/wait for ads on whatever is currently playing
+                val hadAd = waitForAdsToFinish(runner, maxWaitMs = 60_000)
+                if (hadAd) SkillResult.Success("✅ Ads done — video is playing.")
+                else SkillResult.Success("No ads detected — video is already playing.")
+            }
+
             "subscriptions", "subs" -> {
-                // Tap subscriptions tab in bottom nav
                 tapBottomNav(runner, "Subscriptions")
                 delay(800)
                 val screen = runner.readScreen()
@@ -66,8 +83,6 @@ class YouTubeSkill : Skill {
             }
 
             "channel", "goal" -> {
-                // Complex multi-step task — give AI full context
-                // Use the goal text directly; extract a clean search term from it
                 val rawGoal = goal.ifBlank { query }
                 val fullGoal = buildFullGoal(rawGoal, query)
                 val result = agent.executeGoal(runner, fullGoal, maxSteps = 35)
@@ -83,27 +98,192 @@ class YouTubeSkill : Skill {
         }
     }
 
+    // ── Share a video: search → play → copy link → optionally WhatsApp ─────────
+    private suspend fun shareVideo(
+        runner: SandboxedRunner,
+        agent: ScreenAgent,
+        query: String,
+        contact: String?,
+    ): SkillResult {
+        // Step 1: Find and play the video
+        val playResult = playVideo(runner, agent, query)
+        if (playResult is SkillResult.Failure) return playResult
+
+        // Step 2: Wait for ads to finish so Share button is accessible
+        waitForAdsToFinish(runner, maxWaitMs = 60_000)
+        delay(600)
+
+        // Step 3: Use the agent to tap Share → Copy link
+        val copyGoal = """
+You are watching a YouTube video. Get the video link by following these steps:
+
+1. Find the Share button in the action row BELOW the video player.
+   - It is in the same row as Like and Dislike buttons.
+   - It has an arrow/forward icon and the text "Share".
+   - If the action row is not visible, scroll up slightly.
+2. Tap the Share button.
+   → A bottom sheet appears with app icons and a "Copy link" option.
+3. Tap "Copy link" (NOT any app icon like WhatsApp/Telegram — ONLY "Copy link").
+   → The YouTube link is now copied to the clipboard.
+4. Say "LINK COPIED" when done.
+
+STRICT RULES:
+- Tap ONLY "Copy link" in the share sheet — do not tap WhatsApp, Telegram, Instagram, or any other app icon.
+- If the Share button is behind the video controls, tap the video once to reveal controls, then tap Share.
+- Do NOT go back or navigate away from the video.
+""".trimIndent()
+
+        agent.executeGoal(runner, copyGoal, maxSteps = 12)
+        delay(500)
+
+        // Step 4: Read the clipboard
+        val link = runner.readClipboard()
+        val isYouTubeLink = link.contains("youtu.be", ignoreCase = true)
+            || link.contains("youtube.com/watch", ignoreCase = true)
+            || link.contains("youtube.com/shorts", ignoreCase = true)
+
+        if (link.isBlank() || !isYouTubeLink) {
+            return SkillResult.Failure(
+                "Couldn't read the YouTube link from clipboard (got: \"${link.take(80)}\"). " +
+                "The video is playing — you can manually tap Share → Copy link."
+            )
+        }
+
+        // Step 5: If contact specified, send via WhatsApp
+        if (!contact.isNullOrBlank()) {
+            return sendLinkViaWhatsApp(runner, agent, link, contact, query)
+        }
+
+        return SkillResult.Success("🔗 YouTube link:\n$link")
+    }
+
+    // ── Send a link via WhatsApp to a contact ─────────────────────────────────
+    private suspend fun sendLinkViaWhatsApp(
+        runner: SandboxedRunner,
+        agent: ScreenAgent,
+        link: String,
+        contact: String,
+        videoTitle: String,
+    ): SkillResult {
+        runner.openApp("com.whatsapp")
+        runner.waitForApp("com.whatsapp", timeoutMs = 6000)
+        delay(600)
+        runner.dismissPopups(1)
+        delay(300)
+
+        val sendGoal = """
+You are in WhatsApp. Send the link "$link" to "$contact".
+
+STEPS:
+1. Tap the search icon (magnifying glass) at the top of WhatsApp.
+2. Type "$contact" in the search field.
+3. Wait for results. Tap the contact row that shows "$contact".
+   - Do NOT tap the small round avatar on the far left.
+   - Tap the contact name text in the middle of the result row.
+4. The chat opens. Tap the message input field at the BOTTOM of the screen.
+5. Type this exact text: $link
+6. Tap the Send button (green arrow on the right of the message field).
+7. Confirm the message appears in the chat as a sent bubble.
+
+STRICT RULES:
+- Send ONLY the link text above — no extra words before or after.
+- Do NOT tap any message bubble in the chat history.
+- Do NOT tap voice note / camera / attachment icons.
+- Stop as soon as the link is sent.
+""".trimIndent()
+
+        agent.executeGoal(runner, sendGoal, maxSteps = 20)
+
+        return SkillResult.Success("🔗 Sent YouTube link to *$contact*:\n$link\n_(video: $videoTitle)_")
+    }
+
+    // ── Smart ad detection + skip/wait ─────────────────────────────────────────
+    // Returns true if ads were present (and are now done), false if no ad detected.
+    private suspend fun waitForAdsToFinish(
+        runner: SandboxedRunner,
+        maxWaitMs: Long = 60_000,
+    ): Boolean {
+        // Ad presence signals — any of these means an ad is playing
+        val adSignals = listOf(
+            "Skip Ad", "Skip Ads", "skip ad", "skip ads",
+            "Ad ·", "Ad·", "·Ad",
+            "Ad 1 of", "Ad 2 of",
+            "Visit advertiser",
+            "Why this ad",
+            "Stop seeing this ad",
+            "Your video will play after",
+            "Your video will play in",
+        )
+        // Texts for the skippable-ad Skip button (appears after ~5 s)
+        val skipButtonTexts = listOf("Skip Ad", "Skip Ads", "Skip ad", "Skip ads", "SKIP AD", "SKIP ADS", "Skip")
+
+        // Quick first-check — if no ad is playing right now, bail immediately
+        val firstScreen = runner.readScreen()
+        val hadAdAtStart = adSignals.any { firstScreen.contains(it, ignoreCase = true) }
+        if (!hadAdAtStart) return false
+
+        val deadline = System.currentTimeMillis() + maxWaitMs
+        var adEverDetected = true // we already confirmed above
+
+        while (System.currentTimeMillis() < deadline) {
+            val screen = runner.readScreen()
+            val adVisible = adSignals.any { screen.contains(it, ignoreCase = true) }
+
+            if (!adVisible) {
+                // Ad finished (or was skipped)
+                delay(300) // brief settle
+                return true
+            }
+
+            // ── Try to tap Skip button (appears only on skippable ads after 5s) ──
+            // First try by element — more reliable than text-match alone
+            val elements = runner.getClickableElements()
+            val skipEl = elements.firstOrNull { el ->
+                val combined = (el.text + " " + el.contentDescription).lowercase()
+                // Must contain "skip" and be small (not a big content block)
+                combined.contains("skip") && el.text.length < 20
+            }
+            if (skipEl != null) {
+                runner.tapAtPoint(skipEl.centerX.toFloat(), skipEl.centerY.toFloat())
+                delay(800)
+                // Verify ad is gone
+                val afterSkip = runner.readScreen()
+                val stillHasAd = adSignals.any { afterSkip.contains(it, ignoreCase = true) }
+                if (!stillHasAd) return true
+                // If ad indicator still there, continue waiting (might be 2nd ad)
+                delay(1000)
+                continue
+            }
+
+            // Fallback: text-based tap for Skip
+            val skipped = skipButtonTexts.any { runner.tapByText(it) }
+            if (skipped) {
+                delay(1000)
+                continue
+            }
+
+            // No skip button yet — non-skippable ad or skip not available yet
+            // Wait and try again
+            delay(1500)
+        }
+
+        return adEverDetected
+    }
+
     // ── Open search, type query, wait for results, tap first real video ───────
     private suspend fun playVideo(
         runner: SandboxedRunner,
         agent: ScreenAgent,
         searchQuery: String,
     ): SkillResult {
-        // Step 1: Get to search input
-        // Check current state
         val screen0 = runner.readScreen()
         val alreadyInSearch = screen0.contains("Search YouTube", ignoreCase = true)
         val alreadyPlaying = screen0.contains("Subscribe", ignoreCase = true)
             && (screen0.contains("Comments", ignoreCase = true) || screen0.contains("Like", ignoreCase = true))
 
         if (alreadyPlaying) {
-            // Already on a video — minimize via pressBack (PIP) so the video keeps playing
-            // in a floating window, and YouTube returns to the previous screen (results/feed).
-            // Tapping the Home bottom-nav caused the "home page loop" because it reset the
-            // feed entirely and the AI kept bouncing between home and search.
             runner.pressBack()
             delay(600)
-            // Verify we're off the player. If still on a video, press back once more.
             val nowScreen = runner.readScreen()
             if (nowScreen.contains("Subscribe", ignoreCase = true)
                 && nowScreen.contains("Comments", ignoreCase = true)) {
@@ -113,10 +293,8 @@ class YouTubeSkill : Skill {
         }
 
         if (!alreadyInSearch) {
-            // Tap the search icon at the top of YouTube
             val searchIconTapped = tapSearchIcon(runner)
             if (!searchIconTapped) {
-                // fallback: look for it in elements
                 val (_, sH) = runner.getScreenSize()
                 val el = runner.getClickableElements().firstOrNull { e ->
                     val t = (e.text + e.hint + e.contentDescription).lowercase()
@@ -127,8 +305,7 @@ class YouTubeSkill : Skill {
             delay(600)
         }
 
-        // Step 2: Type query — clear old query first, then type fresh
-        runner.clearField() // safe clear via ACTION_SET_TEXT(""), no selection chaos
+        runner.clearField()
         delay(100)
         val typed = runner.typeInFieldWithHint("Search YouTube", searchQuery)
             || runner.typeInFieldWithHint("Search", searchQuery)
@@ -137,15 +314,11 @@ class YouTubeSkill : Skill {
         if (!typed) return SkillResult.Failure("Could not type in YouTube search field")
         delay(300)
         runner.pressEnter()
-        delay(2000) // wait for results
+        delay(2000)
 
-        // Step 3: Dismiss any history/privacy banners WITHOUT going back
         dismissYouTubePopups(runner)
         delay(400)
 
-        // Step 4: Apply the right filter chip so we get the correct content type up front.
-        // YouTube shows filter chips: All | Videos | Shorts | Channels | Playlists
-        // Tapping "Videos" removes Shorts from results; tapping "Shorts" shows only Shorts.
         val wantShorts = searchQuery.contains("shorts", ignoreCase = true)
         val filterChipTapped = if (wantShorts) {
             runner.tapByText("Shorts")
@@ -153,20 +326,17 @@ class YouTubeSkill : Skill {
             runner.tapByText("Videos")
         }
         if (filterChipTapped) {
-            delay(1000) // let filtered results reload
+            delay(1000)
             dismissYouTubePopups(runner)
             delay(300)
         }
 
-        // Step 5: Tap the first real video result
-        // CRITICAL: Do NOT press back — just find and tap a video result
         return tapFirstVideo(runner, agent, searchQuery)
     }
 
-    // ── Tap the search icon without pressing back ─────────────────────────────
+    // ── Tap the search icon ───────────────────────────────────────────────────
     private suspend fun tapSearchIcon(runner: SandboxedRunner): Boolean {
         val (screenW, screenH) = runner.getScreenSize()
-        // Try elements first — use screen fractions, not hardcoded pixels
         val elements = runner.getClickableElements()
         val searchEl = elements.firstOrNull { el ->
             val combined = (el.text + el.hint + el.contentDescription + el.viewId).lowercase()
@@ -175,24 +345,19 @@ class YouTubeSkill : Skill {
         if (searchEl != null) {
             return runner.tapAtPoint(searchEl.centerX.toFloat(), searchEl.centerY.toFloat())
         }
-        // Try by text
         return runner.tapByText("Search")
     }
 
-    // ── Tap first real video (no back, no home, just tap and stay) ────────────
+    // ── Tap first real video result ───────────────────────────────────────────
     private suspend fun tapFirstVideo(
         runner: SandboxedRunner,
         agent: ScreenAgent,
         searchQuery: String,
-        retryCount: Int = 0,  // prevent infinite recursion
+        retryCount: Int = 0,
     ): SkillResult {
         val (w, h) = runner.getScreenSize()
         val elements = runner.getClickableElements()
 
-        // Filter to likely video title elements:
-        // - Not a nav button, filter chip, or banner
-        // - Has meaningful text (>10 chars)
-        // - In the middle/lower portion of screen (past the filter bar)
         val skipTexts = setOf(
             "all", "videos", "channels", "playlists", "shorts",
             "turn on", "history", "got it", "no thanks", "dismiss",
@@ -208,26 +373,22 @@ class YouTubeSkill : Skill {
         }
 
         if (videoEls.isNotEmpty()) {
-            // After filter chips are applied the list is already the right type,
-            // so just pick the first element. If filter chips were not available,
-            // fall back to width-based heuristic: Shorts thumbnails are narrow
-            // portrait cards while regular videos are wide landscape cards.
             val wantShorts = searchQuery.contains("shorts", ignoreCase = true)
             val (screenW, _) = runner.getScreenSize()
             val target = if (wantShorts) {
-                // Shorts cards are narrow (roughly portrait aspect, width < 60% screen)
-                videoEls.firstOrNull { it.width < screenW * 0.6f }
-                    ?: videoEls.first()
+                videoEls.firstOrNull { it.width < screenW * 0.6f } ?: videoEls.first()
             } else {
-                // Regular video cards span most of the screen width (> 70%)
-                videoEls.firstOrNull { it.width > screenW * 0.7f }
-                    ?: videoEls.first()
+                videoEls.firstOrNull { it.width > screenW * 0.7f } ?: videoEls.first()
             }
             val ok = runner.tapAtPoint(target.centerX.toFloat(), target.centerY.toFloat())
             if (ok) {
                 delay(2000)
+
+                // ── Wait for any pre-roll ad to finish before confirming success ──
+                waitForAdsToFinish(runner, maxWaitMs = 60_000)
+                delay(300)
+
                 val afterScreen = runner.readScreen()
-                // Success checks — video OR channel page
                 val isVideoPlaying = afterScreen.contains("Comments", ignoreCase = true)
                     || afterScreen.contains("Like", ignoreCase = true)
                 val isOnChannel = isChannelPage(afterScreen)
@@ -237,43 +398,37 @@ class YouTubeSkill : Skill {
                 if (isOnChannel) {
                     return SkillResult.Success("📺 Opened channel: *${target.text.take(80)}*")
                 }
-                // Something else opened — still count as success
                 return SkillResult.Success("Opened: *${target.text.take(80)}*")
             }
         }
 
-        // Coordinate fallback — try positions down the results list
-        // CRITICAL: avoid bottom 16% of screen (nav bar area — Home/Shorts/Library tabs)
-        val safeH = (h * 0.83f).toInt() // never tap below this
+        val safeH = (h * 0.83f).toInt()
         val tapYPositions = listOf(0.28f, 0.36f, 0.44f, 0.52f, 0.60f)
         for (yFrac in tapYPositions) {
             val tapY = (h * yFrac).coerceAtMost(safeH.toFloat())
             runner.tapAtPoint(w / 2f, tapY)
             delay(1800)
-            val after = runner.readScreen()
 
-            // Success: we're on a video or channel page
+            // Wait for any ad before checking success
+            waitForAdsToFinish(runner, maxWaitMs = 60_000)
+            delay(300)
+
+            val after = runner.readScreen()
             if (after.contains("Comments", ignoreCase = true)
                 || after.contains("Like", ignoreCase = true)
                 || isChannelPage(after)) {
                 return SkillResult.Success("▶️ Playing video for: *$searchQuery*")
             }
 
-            // Detect if we accidentally navigated to YouTube home (bottom nav tap)
-            // Signs: "Recommended", "What to watch", no search query text visible
             val wentHome = !after.contains(searchQuery.take(5), ignoreCase = true)
                 && (after.contains("Recommended", ignoreCase = true)
                     || after.contains("What to watch", ignoreCase = true)
                     || after.contains("Trending", ignoreCase = true))
 
             if (wentHome) {
-                // Accidentally hit YouTube home tab — re-search WITHOUT recursing into playVideo()
-                // (recursive playVideo() was causing the infinite loop: home→search→home→search...)
                 if (retryCount >= 1) {
-                    // Already retried once — give up gracefully
                     return SkillResult.Success("Searched YouTube for *$searchQuery* — tap a result to play.")
                 }
-                // Re-open search directly from YouTube home (no back, no home press)
                 tapSearchIcon(runner)
                 delay(500)
                 runner.clearField()
@@ -283,11 +438,9 @@ class YouTubeSkill : Skill {
                 delay(2200)
                 dismissYouTubePopups(runner)
                 delay(300)
-                // Try tapping a video one more time (retryCount=1 prevents further recursion)
                 return tapFirstVideo(runner, agent, searchQuery, retryCount = 1)
             }
 
-            // Navigated somewhere wrong (not results, not video) — go back to results
             if (!after.contains(searchQuery.take(5), ignoreCase = true)) {
                 runner.pressBack()
                 delay(600)
@@ -297,7 +450,7 @@ class YouTubeSkill : Skill {
         return SkillResult.Success("Searched YouTube for *$searchQuery* — tap a result to play.")
     }
 
-    // ── Dismiss YouTube-specific popups WITHOUT going to home ─────────────────
+    // ── Dismiss YouTube-specific popups ───────────────────────────────────────
     private suspend fun dismissYouTubePopups(runner: SandboxedRunner) {
         val bannersToTap = listOf(
             "Got it", "No thanks", "Dismiss", "Not now", "Skip",
@@ -309,12 +462,12 @@ class YouTubeSkill : Skill {
             if (runner.screenContains(banner)) {
                 runner.tapByText(banner)
                 delay(300)
-                break // dismiss one at a time, re-check next step
+                break
             }
         }
     }
 
-    // ── Tap a bottom nav tab by label ─────────────────────────────────────────
+    // ── Tap a bottom nav tab ──────────────────────────────────────────────────
     private suspend fun tapBottomNav(runner: SandboxedRunner, label: String) {
         val tapped = runner.tapByText(label)
         if (!tapped) {
@@ -325,11 +478,7 @@ class YouTubeSkill : Skill {
         }
     }
 
-    // ── Extract clean search term from natural language goal ─────────────────
-    // "go to MrBeast channel" → "MrBeast"
-    // "navigate to Kurzgesagt" → "Kurzgesagt"
-    // "play Tum Hi Ho" → "Tum Hi Ho"
-    // "subscribe to Veritasium channel" → "Veritasium"
+    // ── Extract clean search term from natural language ───────────────────────
     private fun extractSearchTerm(goal: String, query: String): String {
         if (query.isNotBlank()) return query
         return goal
@@ -340,34 +489,17 @@ class YouTubeSkill : Skill {
             .ifBlank { goal.take(60) }
     }
 
-    // ── Detect if we're on a YouTube channel page ─────────────────────────────
-    // Channel pages show subscriber count ("subscribers") + tab row (Videos/Shorts/Playlists)
+    // ── Detect YouTube channel page ───────────────────────────────────────────
     private fun isChannelPage(screen: String): Boolean {
         val lower = screen.lowercase()
         return lower.contains("subscribers") ||
             (lower.contains("videos") && lower.contains("shorts") && lower.contains("playlists"))
     }
 
-    // ── Detect vague play queries that need format clarification ─────────────
-    // A query is "vague" if it's a short title/name with no format or intent signal.
-    // Examples: "faded", "shape of you", "believer"
-    // Not vague: "faded shorts", "alan walker faded official", "faded lyrics"
-    private fun isVaguePlayQuery(query: String): Boolean {
-        val words = query.trim().split(Regex("\\s+"))
-        if (words.size > 4) return false
-        val formatHints = listOf(
-            "shorts", "short", "full", "lyrics", "live", "official", "cover",
-            "remix", "audio", "video", "song", "music", "ft", "feat", "acoustic",
-            "playlist", "album", "latest", "new", "channel",
-        )
-        return formatHints.none { query.contains(it, ignoreCase = true) }
-    }
-
-    // ── Build a precise goal string — do EXACTLY what was asked, nothing more ──
+    // ── Build a precise goal string ───────────────────────────────────────────
     private fun buildFullGoal(goal: String, query: String): String {
         val searchTerm = extractSearchTerm(goal, query)
 
-        // Detect if this is a channel navigation goal
         val isChannelGoal = goal.lowercase().let { g ->
             g.contains("channel") || g.contains("go to") || g.contains("navigate to") ||
             g.contains("subscribe") || g.contains("unsubscribe") || g.contains("visit")
@@ -395,7 +527,10 @@ class YouTubeSkill : Skill {
                 appendLine("   - Call done IMMEDIATELY when you reach the channel page")
             } else {
                 appendLine("5. Do exactly what the goal says — tap the right video/channel/button")
-                appendLine("6. SUCCESS — call done when you reach the target (video playing or action done)")
+                appendLine("6. If an ad plays after tapping a video:")
+                appendLine("   - If 'Skip Ad' button appears → tap it immediately")
+                appendLine("   - If no skip button → wait for the ad to finish (do NOT go back)")
+                appendLine("7. SUCCESS — call done when you reach the target (video playing or action done)")
             }
             appendLine()
             appendLine("STRICT RULES:")
