@@ -94,23 +94,31 @@ Rapido app UI guide:
         if (pickup.isNotBlank()) append(" FROM \"$pickup\"") else append(" FROM current GPS location")
         append(" TO \"$destination\".\n\n")
 
+        append("═══ MANDATORY RULE: HOW TO ENTER ANY LOCATION ═══\n")
+        append("Every time you type text into a location field:\n")
+        append("  a) Tap the field — cursor must appear inside it.\n")
+        append("  b) Type 4–8 characters only.\n")
+        append("  c) STOP. Wait 1–2 seconds.\n")
+        append("  d) A suggestion list appears BELOW the field — tap the best matching place name.\n")
+        append("  e) The field text changes and the list disappears — location is confirmed.\n")
+        append("NEVER skip tapping a suggestion. NEVER press Enter or continue typing past suggestions.\n")
+        append("NEVER tap the × icon to select — it only clears.\n\n")
+
         append("── HOW RAPIDO'S LOCATION PICKER WORKS ──\n")
         append("Tapping the destination bar opens a sheet with TWO fields:\n")
         append("  TOP field    = PICKUP      — placeholder: 'Pick-up location', 'Current location'\n")
         append("  BOTTOM field = DESTINATION — placeholder: 'Where to?', 'Enter destination'\n")
-        append("The BOTTOM (destination) field is AUTO-FOCUSED when the sheet opens.\n")
-        append("The X / clear icon clears a field — it does NOT select or focus it.\n")
-        append("After typing in any field, always tap a suggestion from the dropdown to confirm.\n\n")
+        append("The BOTTOM (destination) field is AUTO-FOCUSED when the sheet opens.\n\n")
 
         append("── STEPS ──\n")
         append("1. Tap 'Where to?' or the destination bar on the Rapido home screen.\n")
         append("   → Location picker opens. BOTTOM destination field is already focused.\n")
-        append("2. TYPE DESTINATION FIRST (already focused): type \"$destination\".\n")
-        append("   → Tap the best suggestion from the dropdown to confirm.\n")
+        append("2. TYPE DESTINATION FIRST (already focused): type \"$destination\" (5–7 chars).\n")
+        append("   → Wait for suggestions, then TAP the best match for \"$destination\".\n")
         if (!useCurrentPickup) {
             append("3. Now tap INSIDE the TOP pickup field's text area.\n")
-            append("   → A cursor must appear in the TOP field. Clear any existing text, then type \"$pickup\".\n")
-            append("   → Tap the best suggestion from the dropdown to confirm pickup.\n")
+            append("   → Cursor must appear. Tap × to clear existing text, then type \"$pickup\" (5–7 chars).\n")
+            append("   → Wait for suggestions, then TAP the best match for \"$pickup\".\n")
         } else {
             append("3. TOP pickup field already shows current GPS. DO NOT tap or clear it.\n")
             append("   If Rapido asks to confirm current location, tap Yes / Confirm.\n")
@@ -159,11 +167,11 @@ Rapido app UI guide:
         } else {
             append("3. Leave TOP pickup as current GPS — do not touch it.\n")
         }
-        append("4. Wait for ride options to load. $transportNote\n")
-        append("5. Read all fares. Do NOT book.\n\n")
-        append("FINAL REPLY:\n")
-        append("Rapido estimates:\n")
-        append("- <ride type> — ₹<fare> — Captain ETA <eta>\n")
-        append("(one per line)")
+        append("4. Wait for ride options to load. Scroll to see all options. $transportNote\n")
+        append("5. READ all visible fares and ETAs from the screen. Do NOT book.\n\n")
+        append("FINAL REPLY — read EXACT values from the screen, do NOT use placeholders:\n")
+        append("Rapido fares from ${if (useCurrentPickup) "current location" else pickup} to $destination:\n")
+        append("- [ride type]: ₹[exact fare] — Captain ETA [exact ETA]   ← one line per option\n")
+        append("Read every price and ETA from the screen. Do NOT invent numbers.")
     }
 }

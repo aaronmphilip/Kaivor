@@ -92,23 +92,32 @@ Ola app UI guide:
         if (pickup.isNotBlank()) append(" FROM \"$pickup\"") else append(" FROM current GPS location")
         append(" TO \"$destination\".\n\n")
 
+        append("═══ MANDATORY RULE: HOW TO ENTER ANY LOCATION ═══\n")
+        append("Every time you type text into a location field:\n")
+        append("  a) Tap the field — cursor must appear inside it.\n")
+        append("  b) Type 4–8 characters only.\n")
+        append("  c) STOP. Wait 1–2 seconds.\n")
+        append("  d) A suggestion list appears BELOW the field — a list of clickable place names.\n")
+        append("  e) TAP the suggestion that best matches. The field text changes and list disappears.\n")
+        append("NEVER press Enter, continue typing past first suggestions, or skip tapping a suggestion.\n")
+        append("NEVER tap the × icon to select — it only clears the field.\n\n")
+
         append("── HOW OLA'S LOCATION PICKER WORKS ──\n")
         append("Tapping 'Where to?' opens a sheet with TWO fields:\n")
         append("  TOP field    = PICKUP      — placeholder: 'Enter pickup location', 'Current location'\n")
         append("  BOTTOM field = DESTINATION — placeholder: 'Where to?', 'Enter destination'\n")
-        append("The BOTTOM (destination) field is AUTO-FOCUSED when the sheet opens.\n")
-        append("The X / clear icon clears a field — it does NOT select or focus it.\n")
-        append("After typing, always tap a suggestion from the dropdown to confirm.\n\n")
+        append("The BOTTOM (destination) field is AUTO-FOCUSED when the sheet opens.\n\n")
 
         append("── STEPS ──\n")
         append("1. Tap 'Where to?' on the Ola home screen.\n")
         append("   → Location picker opens. BOTTOM destination field is already focused.\n")
-        append("2. TYPE DESTINATION FIRST (already focused): type \"$destination\".\n")
-        append("   → Tap the best suggestion from the dropdown.\n")
+        append("2. TYPE DESTINATION FIRST (already focused): type \"$destination\" (5–7 chars).\n")
+        append("   → Wait for suggestions, then TAP the best match for \"$destination\".\n")
         if (!useCurrentPickup) {
             append("3. Now tap INSIDE the TOP pickup field's text area.\n")
-            append("   → Cursor must appear in the TOP field. Clear any existing text, then type \"$pickup\".\n")
-            append("   → Tap the best suggestion from the dropdown to confirm pickup.\n")
+            append("   → Cursor must appear in the TOP field.\n")
+            append("   → Tap the × icon to clear any existing text, then type \"$pickup\" (5–7 chars).\n")
+            append("   → Wait for suggestions, then TAP the best match for \"$pickup\".\n")
         } else {
             append("3. The TOP pickup field already shows current GPS location. DO NOT tap or clear it.\n")
         }
@@ -156,11 +165,11 @@ Ola app UI guide:
         } else {
             append("3. Leave TOP pickup as current GPS — do not touch it.\n")
         }
-        append("4. Wait for ride options. $transportNote\n")
-        append("5. Read all fares. Do NOT book.\n\n")
-        append("FINAL REPLY:\n")
-        append("Ola estimates:\n")
-        append("- <ride type> — ₹<fare> — Driver ETA <eta>\n")
-        append("(one per line)")
+        append("4. Wait for ride options to load. Scroll to see all options. $transportNote\n")
+        append("5. READ all visible fares and ETAs directly from the screen. Do NOT book.\n\n")
+        append("FINAL REPLY — read EXACT values from the screen, do NOT use placeholders:\n")
+        append("Ola fares from ${if (useCurrentPickup) "current location" else pickup} to $destination:\n")
+        append("- [ride type]: ₹[exact fare] — Driver ETA [exact ETA]   ← one line per option\n")
+        append("Read every price and ETA from the screen. Do NOT invent numbers.")
     }
 }

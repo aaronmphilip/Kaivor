@@ -112,7 +112,7 @@ class ScreenAgent(
         // Auto-retry once on failure — but ONLY for "stuck" failures (screen didn't change).
         // Do NOT retry "Reached step limit" — that means the task ran 25+ steps with real effects.
         if (result.startsWith("Could not complete") || result.startsWith("Stuck after")) {
-            if (stopRequested) { stopRequested = false; return "⛔ Stopped." }
+            if (stopRequested) { return "⛔ Stopped." }
             delay(1000)
             return executeGoalInternal(runner, goal, maxSteps / 2, isRetry = true, previousFailure = result)
         }
@@ -189,8 +189,10 @@ class ScreenAgent(
 
         for (step in 1..maxSteps) {
             // Check stop flag — user sent "stop" while task was running
+            // NOTE: do NOT clear stopRequested here — only clearStop() in AgentOrchestrator
+            // clears it (when the user sends a new deliberate command). This ensures any
+            // tasks that were already queued before the stop also get cancelled.
             if (stopRequested) {
-                stopRequested = false
                 return "⛔ Stopped. Left the app where it was."
             }
 
@@ -260,7 +262,6 @@ class ScreenAgent(
             // Check stop AFTER the AI call — AI calls take 5-15s so this fires much faster
             // than waiting for the next iteration's top-of-loop check
             if (stopRequested) {
-                stopRequested = false
                 return "⛔ Stopped."
             }
 

@@ -72,18 +72,35 @@ Google Maps UI guide:
                 """You are in Google Maps. The search bar already has "$destination" typed or autocomplete suggestions are visible.
 STEPS:
 1. Tap the most relevant autocomplete suggestion for "$destination"
-2. Wait for the place detail card to appear
+2. Wait for the place detail card to appear (shows name, address, rating, blue Directions button)
 3. Tap the blue "Directions" button
-4. Tap "Start" or "GO" to begin navigation
-5. Confirm navigation has started — report the route and ETA"""
+
+─── DIRECTIONS SCREEN (critical) ───────────────────────────────────────────
+After tapping Directions, Google Maps shows a new screen with TWO route fields at the top:
+  FIELD 1 (top / FROM):  "Your location"  ← already set — DO NOT touch this field
+  FIELD 2 (below / TO):  "$destination"   ← already set — DO NOT re-type
+The route is already calculated. Do NOT tap the FROM field. Do NOT type "$destination" into the FROM field.
+─────────────────────────────────────────────────────────────────────────────
+
+4. Tap "Start" or "GO" (the large blue button at the bottom right) to begin navigation
+5. Confirm navigation has started — report the first instruction, route, and ETA"""
 
             "directions" ->
                 """You are in Google Maps. The search bar has "$destination" typed.
 STEPS:
 1. Tap the best autocomplete match for "$destination"
 2. Tap "Directions" on the place detail card
-3. Read out the available routes — travel mode, estimated time, distance
-4. Do NOT tap Start"""
+
+─── DIRECTIONS SCREEN (critical) ───────────────────────────────────────────
+After tapping Directions, a new screen shows TWO fields:
+  FIELD 1 (FROM): "Your location"  ← already filled — DO NOT change this
+  FIELD 2 (TO):   "$destination"   ← already filled — DO NOT re-type
+Both fields are pre-filled. Do NOT tap the FROM field or type "$destination" into it.
+─────────────────────────────────────────────────────────────────────────────
+
+3. READ the available routes shown — travel mode (car/transit/walk), estimated time, distance
+4. Report what you see — time, distance, any alternate routes
+5. Do NOT tap Start"""
 
             "search" ->
                 """You are in Google Maps. The search bar has "$destination" typed.

@@ -287,7 +287,11 @@ class AgentOrchestrator(
         // â"€â"€ STOP — explicit stop command â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
         if (isStopCommand) {
             screenAgent.requestStop()
-            return "⛔ Stopping current task. Left everything where it was."
+            // Go back to home screen for a clean slate.
+            // stopRequested stays true — any tasks already queued will also be blocked
+            // until the user sends the next deliberate command (which calls clearStop).
+            AgentAccessibilityService.instance?.goHome()
+            return "⛔ Stopped. Back on the home screen — send a new task whenever you're ready."
         }
 
         // â"€â"€ Built-in commands â"€â"€
