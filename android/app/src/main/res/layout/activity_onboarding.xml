@@ -497,11 +497,353 @@
                 android:textColor="#FFFFFF"
                 android:layout_marginTop="6dp" />
 
+            <!-- Permission 3: Overlay (Notch) -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="3. Floating Notch Overlay (recommended)"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Shows a black pill on screen while tasks run. Tap × to cancel instantly. Drag it anywhere."
+                android:textColor="#AAAAAA"
+                android:textSize="13sp"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="6dp" />
+
+            <TextView
+                android:id="@+id/tvOverlayStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="✗ Not granted"
+                android:textColor="#AAAAAA"
+                android:textSize="13sp"
+                android:layout_marginTop="8dp" />
+
+            <Button
+                android:id="@+id/btnGrantOverlayOnboard"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Grant Display Over Other Apps"
+                android:backgroundTint="#1E1E1E"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="6dp" />
+
+            <Button
+                android:id="@+id/btnStep5Next"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Continue"
+                android:textSize="15sp"
+                android:backgroundTint="#FF5C00"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="32dp" />
+        </LinearLayout>
+
+        <!-- ═══════════════════════════════════ -->
+        <!--  STEP 6: Power Features + Launch   -->
+        <!-- ═══════════════════════════════════ -->
+        <LinearLayout
+            android:id="@+id/step6"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:visibility="gone"
+            android:layout_marginTop="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Power Features"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="These make BharatDroid 10× more powerful. All optional."
+                android:textColor="#AAAAAA"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp" />
+
+            <!-- ── Phone Setup Type ─────────────────────────────────────── -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Is this your second/dedicated AI phone?"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginTop="28dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="This helps us set up call answering and forwarding correctly."
+                android:textColor="#888888"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp">
+
+                <Button
+                    android:id="@+id/btnPhoneTypeDedicated"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:text="Yes, 2nd Phone"
+                    android:textSize="13sp"
+                    android:backgroundTint="#1E1E1E"
+                    android:textColor="#AAAAAA"
+                    android:layout_marginEnd="6dp"
+                    android:stateListAnimator="@null" />
+
+                <Button
+                    android:id="@+id/btnPhoneTypeMain"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:text="No, My Main Phone"
+                    android:textSize="13sp"
+                    android:backgroundTint="#1E1E1E"
+                    android:textColor="#AAAAAA"
+                    android:stateListAnimator="@null" />
+
+            </LinearLayout>
+
+            <!-- Dedicated phone guidance (shown when 2nd phone selected) -->
+            <LinearLayout
+                android:id="@+id/layoutDedicatedPhoneGuide"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:background="#0D1A0D"
+                android:padding="14dp"
+                android:layout_marginTop="12dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="✅  Dedicated AI Phone Setup"
+                    android:textColor="#00CC88"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Does this phone have an active SIM that can receive calls?"
+                    android:textColor="#CCCCCC"
+                    android:textSize="13sp"
+                    android:layout_marginTop="10dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <Button
+                        android:id="@+id/btnSimYes"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:text="Yes, it can"
+                        android:textSize="12sp"
+                        android:backgroundTint="#1E1E1E"
+                        android:textColor="#AAAAAA"
+                        android:layout_marginEnd="6dp"
+                        android:stateListAnimator="@null" />
+
+                    <Button
+                        android:id="@+id/btnSimNo"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:text="No / WiFi only"
+                        android:textSize="12sp"
+                        android:backgroundTint="#1E1E1E"
+                        android:textColor="#AAAAAA"
+                        android:stateListAnimator="@null" />
+                </LinearLayout>
+
+                <!-- SIM Yes guidance -->
+                <LinearLayout
+                    android:id="@+id/layoutSimYesGuide"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_marginTop="10dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Great! This phone can AI-answer any call made to its number.\n\nTo also forward calls from your main number to this phone:\n  1. On your MAIN phone → open Phone app\n  2. Settings → Call Forwarding (or Supplementary services)\n  3. Set 'Forward all calls' to this phone's number\n  4. Your callers dial your main number — this phone's AI answers\n\nOr just share this phone's number directly as your business/AI line."
+                        android:textColor="#AAAAAA"
+                        android:textSize="12sp"
+                        android:lineSpacingMultiplier="1.4" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="After setup: go to Settings → AI Call Answering → set your name, ElevenLabs voice, VIP numbers."
+                        android:textColor="#00CC88"
+                        android:textSize="11sp"
+                        android:layout_marginTop="8dp" />
+
+                </LinearLayout>
+
+                <!-- SIM No guidance -->
+                <LinearLayout
+                    android:id="@+id/layoutSimNoGuide"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_marginTop="10dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="No problem. You can still use BharatDroid for:\n  • All Telegram-based commands (no SIM needed)\n  • Notification relay via WiFi\n  • WhatsApp channel commands\n  • Research, routines, macros\n\nAI call answering requires an active SIM to receive calls."
+                        android:textColor="#AAAAAA"
+                        android:textSize="12sp"
+                        android:lineSpacingMultiplier="1.4" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Main phone guidance (shown when main phone selected) -->
+            <LinearLayout
+                android:id="@+id/layoutMainPhoneGuide"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:background="#1A1200"
+                android:padding="14dp"
+                android:layout_marginTop="12dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="📱  Main Phone Setup"
+                    android:textColor="#FFCC00"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="AI can still answer calls on this phone. When a call comes in:\n  • AI answers automatically\n  • You get a Telegram transcript in real time\n  • Tap 'Take Over' in the notification to jump into the call live\n  • VIP callers (Mom, Boss, Doctor) skip AI and alert you directly\n\nBest used with headphones in, or when you're busy and can't answer."
+                    android:textColor="#AAAAAA"
+                    android:textSize="12sp"
+                    android:lineSpacingMultiplier="1.4"
+                    android:layout_marginTop="8dp" />
+            </LinearLayout>
+
+            <!-- Agent Mode -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Agent Mode"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="24dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="⚡ Efficient — saves API credits, fast, great for everyday tasks.\n🔥 Ultra — goes all out. Vision on every step. Full context. Best results."
+                android:textColor="#888888"
+                android:textSize="12sp"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="6dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="10dp">
+
+                <Button
+                    android:id="@+id/btnOnboardEfficient"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:text="⚡ Efficient"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:backgroundTint="#00CC88"
+                    android:textColor="#000000"
+                    android:layout_marginEnd="6dp"
+                    android:stateListAnimator="@null" />
+
+                <Button
+                    android:id="@+id/btnOnboardUltra"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:text="🔥 Ultra"
+                    android:textSize="13sp"
+                    android:backgroundTint="#1E1E1E"
+                    android:textColor="#AAAAAA"
+                    android:stateListAnimator="@null" />
+            </LinearLayout>
+
+            <!-- WhatsApp Channel -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="WhatsApp Channel (optional)"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="24dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Install WhatsApp Business on this phone with a second SIM. Enter that number below. Message it from your main WhatsApp to give commands. Leave blank to skip."
+                android:textColor="#888888"
+                android:textSize="12sp"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="6dp" />
+
+            <EditText
+                android:id="@+id/etOnboardWaNumber"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="+91XXXXXXXXXX (leave blank to skip)"
+                android:inputType="phone"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#444444"
+                android:background="@drawable/input_bg"
+                android:padding="14dp"
+                android:fontFamily="monospace"
+                android:textSize="13sp"
+                android:layout_marginTop="10dp" />
+
+            <!-- Launch -->
             <Button
                 android:id="@+id/btnLaunchAgent"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:text="Launch Agent"
+                android:text="Launch BharatDroid"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:backgroundTint="#FF5C00"
@@ -511,13 +853,14 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Your data never leaves your phone.\nNo account needed. No tracking."
+                android:text="Your data never leaves your phone.\nNo account. No tracking. All local."
                 android:textColor="#555555"
                 android:textSize="12sp"
                 android:gravity="center"
                 android:lineSpacingMultiplier="1.4"
                 android:layout_marginTop="20dp"
                 android:layout_marginBottom="40dp" />
+
         </LinearLayout>
 
     </LinearLayout>

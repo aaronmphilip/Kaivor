@@ -16,6 +16,8 @@ class OnboardingActivity : AppCompatActivity() {
     private var chatId = -1L
     private var botUsername = ""  // The actual @username, not display name
     private var botDisplayName = ""
+    private var ultraMode = false
+    private var whatsappChannelNumber = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +37,7 @@ class OnboardingActivity : AppCompatActivity() {
         setupStep3()
         setupStep4()
         setupStep5()
+        setupStep6()
     }
 
     override fun onResume() {
@@ -56,6 +59,16 @@ class OnboardingActivity : AppCompatActivity() {
                 tv.setTextColor(0xFF00CC88.toInt())
             } else {
                 tv.text = "✗ Not enabled (optional — tap button below)"
+                tv.setTextColor(0xFFAAAAAA.toInt())
+            }
+        }
+        // Overlay permission status
+        findViewById<TextView>(R.id.tvOverlayStatus)?.let { tv ->
+            if (Settings.canDrawOverlays(this)) {
+                tv.text = "✓ Overlay granted — notch is ready"
+                tv.setTextColor(0xFF00CC88.toInt())
+            } else {
+                tv.text = "✗ Not granted (optional — tap below)"
                 tv.setTextColor(0xFFAAAAAA.toInt())
             }
         }
@@ -298,7 +311,7 @@ class OnboardingActivity : AppCompatActivity() {
         }
     }
 
-    // ── Step 5: Accessibility + Notification Access + Launch ────────
+    // ── Step 5: Accessibility + Notification Access + Overlay ────────
 
     private fun setupStep5() {
         findViewById<Button>(R.id.btnEnableAccess).setOnClickListener {
@@ -309,11 +322,104 @@ class OnboardingActivity : AppCompatActivity() {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
 
-        findViewById<Button>(R.id.btnLaunchAgent).setOnClickListener {
+        findViewById<Button>(R.id.btnGrantOverlayOnboard).setOnClickListener {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            startActivity(intent)
+        }
+
+        findViewById<Button>(R.id.btnStep5Next).setOnClickListener {
             if (!AgentAccessibilityService.isConnected) {
                 Toast.makeText(this, "Enable Accessibility Service first!", Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
+            showStep(6)
+        }
+    }
+
+    // ── Step 6: Power Features + Launch ─────────────────────────────
+
+    private fun setupStep6() {
+        // ── Phone type selection ─────────────────────────────────────────
+        val btnDedicated = findViewById<Button>(R.id.btnPhoneTypeDedicated)
+        val btnMainPhone = findViewById<Button>(R.id.btnPhoneTypeMain)
+        val layoutDedicated = findViewById<android.view.View>(R.id.layoutDedicatedPhoneGuide)
+        val layoutMain = findViewById<android.view.View>(R.id.layoutMainPhoneGuide)
+        val btnSimYes = findViewById<Button>(R.id.btnSimYes)
+        val btnSimNo = findViewById<Button>(R.id.btnSimNo)
+        val layoutSimYes = findViewById<android.view.View>(R.id.layoutSimYesGuide)
+        val layoutSimNo = findViewById<android.view.View>(R.id.layoutSimNoGuide)
+
+        fun selectPhoneType(dedicated: Boolean) {
+            getSharedPreferences("bharatdroid", MODE_PRIVATE).edit()
+                .putString("phone_setup_type", if (dedicated) "dedicated" else "main").apply()
+            if (dedicated) {
+                btnDedicated.setBackgroundColor(0xFF00CC88.toInt()); btnDedicated.setTextColor(0xFF000000.toInt())
+                btnMainPhone.setBackgroundColor(0xFF1E1E1E.toInt()); btnMainPhone.setTextColor(0xFFAAAAAA.toInt())
+                layoutDedicated.visibility = android.view.View.VISIBLE
+                layoutMain.visibility = android.view.View.GONE
+            } else {
+                btnMainPhone.setBackgroundColor(0xFFFFCC00.toInt()); btnMainPhone.setTextColor(0xFF000000.toInt())
+                btnDedicated.setBackgroundColor(0xFF1E1E1E.toInt()); btnDedicated.setTextColor(0xFFAAAAAA.toInt())
+                layoutMain.visibility = android.view.View.VISIBLE
+                layoutDedicated.visibility = android.view.View.GONE
+            }
+        }
+
+        fun selectSim(hasActive: Boolean) {
+            if (hasActive) {
+                btnSimYes.setBackgroundColor(0xFF00CC88.toInt()); btnSimYes.setTextColor(0xFF000000.toInt())
+                btnSimNo.setBackgroundColor(0xFF1E1E1E.toInt()); btnSimNo.setTextColor(0xFFAAAAAA.toInt())
+                layoutSimYes.visibility = android.view.View.VISIBLE
+                layoutSimNo.visibility = android.view.View.GONE
+            } else {
+                btnSimNo.setBackgroundColor(0xFF555555.toInt()); btnSimNo.setTextColor(0xFFFFFFFF.toInt())
+                btnSimYes.setBackgroundColor(0xFF1E1E1E.toInt()); btnSimYes.setTextColor(0xFFAAAAAA.toInt())
+                layoutSimNo.visibility = android.view.View.VISIBLE
+                layoutSimYes.visibility = android.view.View.GONE
+            }
+        }
+
+        btnDedicated.setOnClickListener { selectPhoneType(true) }
+        btnMainPhone.setOnClickListener { selectPhoneType(false) }
+        btnSimYes.setOnClickListener { selectSim(true) }
+        btnSimNo.setOnClickListener { selectSim(false) }
+
+        // ── Agent mode ───────────────────────────────────────────────────
+        val btnEfficient = findViewById<Button>(R.id.btnOnboardEfficient)
+        val btnUltra = findViewById<Button>(R.id.btnOnboardUltra)
+
+        fun selectEfficient() {
+            ultraMode = false
+            btnEfficient.setBackgroundColor(0xFF00CC88.toInt())
+            btnEfficient.setTextColor(0xFF000000.toInt())
+            btnUltra.setBackgroundColor(0xFF1E1E1E.toInt())
+            btnUltra.setTextColor(0xFFAAAAAA.toInt())
+        }
+
+        fun selectUltra() {
+            ultraMode = true
+            btnUltra.setBackgroundColor(0xFFFF5C00.toInt())
+            btnUltra.setTextColor(0xFFFFFFFF.toInt())
+            btnEfficient.setBackgroundColor(0xFF1E1E1E.toInt())
+            btnEfficient.setTextColor(0xFFAAAAAA.toInt())
+        }
+
+        btnEfficient.setOnClickListener { selectEfficient() }
+        btnUltra.setOnClickListener { selectUltra() }
+        selectEfficient()
+
+        findViewById<Button>(R.id.btnLaunchAgent).setOnClickListener {
+            whatsappChannelNumber = findViewById<EditText>(R.id.etOnboardWaNumber)
+                .text.toString().trim()
+
+            getSharedPreferences("bharatdroid", MODE_PRIVATE).edit()
+                .putBoolean("ultra_mode", ultraMode)
+                .putString("whatsapp_channel_number", whatsappChannelNumber)
+                .apply()
+
             startForegroundService(Intent(this, AgentForegroundService::class.java))
             startActivity(Intent(this, MainActivity::class.java))
             finish()
@@ -323,7 +429,7 @@ class OnboardingActivity : AppCompatActivity() {
     // ── Step Navigation ──────────────────────
 
     private fun showStep(step: Int) {
-        val steps = listOf(R.id.step1, R.id.step2, R.id.step3, R.id.step4, R.id.step5)
+        val steps = listOf(R.id.step1, R.id.step2, R.id.step3, R.id.step4, R.id.step5, R.id.step6)
         val incomingId = steps[step - 1]
         val incoming = findViewById<View>(incomingId)
 
@@ -352,7 +458,7 @@ class OnboardingActivity : AppCompatActivity() {
 
         val indicator = findViewById<TextView>(R.id.tvStepIndicator)
         indicator.animate().alpha(0f).setDuration(120).withEndAction {
-            indicator.text = "Step $step of 5"
+            indicator.text = "Step $step of 6"
             indicator.animate().alpha(1f).setDuration(180).start()
         }.start()
     }
