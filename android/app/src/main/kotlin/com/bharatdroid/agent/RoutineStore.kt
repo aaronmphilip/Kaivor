@@ -20,8 +20,8 @@ class RoutineStore(context: Context) {
         private const val SEPARATOR = "||||"
         private const val KV_SEP = ":::"
         private const val CMD_SEP = "~~~"
-        private const val MAX_STEPS = 10
-        private const val MAX_ROUTINES = 20
+        private const val MAX_STEPS = 50
+        private const val MAX_ROUTINES = 200
     }
 
     data class Routine(

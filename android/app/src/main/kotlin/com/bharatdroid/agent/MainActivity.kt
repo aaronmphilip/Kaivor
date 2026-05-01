@@ -17,33 +17,40 @@ class MainActivity : AppCompatActivity() {
     private var isAgentRunning = false
     private var agentStartElapsed: Long = 0L  // SystemClock.elapsedRealtime() when agent last started
 
-    // All skill metadata for the dashboard grid
+    // All skill metadata for the dashboard grid — grouped by category
     private val allSkills = listOf(
-        SkillCard("Swiggy", "Food delivery", "#FF6B00"),
-        SkillCard("Zomato", "Food delivery", "#E23744"),
-        SkillCard("Zepto", "10-min grocery", "#6C2DC7"),
-        SkillCard("YouTube", "Videos", "#FF0000"),
-        SkillCard("PhonePe", "UPI / Recharge", "#5F259F"),
-        SkillCard("Google Maps", "Navigation", "#1EA362"),
-        SkillCard("Flipkart", "Shopping", "#2874F0"),
-        SkillCard("GPay", "UPI Payments", "#4285F4"),
-        SkillCard("Paytm", "Wallet / Bills", "#00BAF2"),
-        SkillCard("CRED", "Bill payments", "#1A1A2E"),
-        SkillCard("Ola", "Cab booking", "#1C8C3C"),
-        SkillCard("Uber", "Cab booking", "#000000"),
-        SkillCard("Amazon", "Shopping", "#FF9900"),
-        SkillCard("Blinkit", "Grocery delivery", "#F8CB46"),
-        SkillCard("WhatsApp", "Messaging", "#25D366"),
-        SkillCard("Instagram", "Social media", "#E4405F"),
-        SkillCard("Chrome", "Web browsing", "#4285F4"),
-        SkillCard("Gmail", "Email", "#EA4335"),
-        SkillCard("Calendar", "Schedule", "#4285F4"),
-        SkillCard("Contacts", "Phone & Contacts", "#1A73E8"),
-        SkillCard("Notes", "Google Keep", "#FBBC04"),
-        SkillCard("Files", "File Manager", "#5F6368"),
-        SkillCard("Settings", "Phone Settings", "#607D8B"),
-        SkillCard("Screen", "Screen Reader", "#00BCD4"),
-        SkillCard("General", "Any Task", "#FF4500"),
+        // Food & Grocery
+        SkillCard("🍕 Swiggy",   "Food delivery",     "#FF6B00"),
+        SkillCard("🍽️ Zomato",   "Food delivery",     "#E23744"),
+        SkillCard("⚡ Zepto",    "10-min grocery",    "#6C2DC7"),
+        SkillCard("🥦 Blinkit",  "Grocery delivery",  "#F8CB46"),
+        // Rides
+        SkillCard("🚗 Ola",      "Cab booking",       "#1C8C3C"),
+        SkillCard("🚕 Uber",     "Cab booking",       "#555555"),
+        SkillCard("🏍️ Rapido",  "Bike taxi",         "#FF6B00"),
+        // Payments
+        SkillCard("💸 PhonePe",  "UPI / Recharge",    "#5F259F"),
+        SkillCard("💳 GPay",     "UPI Payments",      "#4285F4"),
+        SkillCard("💰 Paytm",    "Wallet / Bills",    "#00BAF2"),
+        SkillCard("🏦 CRED",     "Bill payments",     "#1A1A2E"),
+        // Shopping
+        SkillCard("📦 Amazon",   "Shopping",          "#FF9900"),
+        SkillCard("🛒 Flipkart", "Shopping",          "#2874F0"),
+        // Communication
+        SkillCard("💬 WhatsApp", "Messaging + Files", "#25D366"),
+        SkillCard("📸 Instagram","Social media",      "#E4405F"),
+        SkillCard("📧 Gmail",    "Email",             "#EA4335"),
+        // Productivity
+        SkillCard("🗺️ Maps",    "Navigation",        "#1EA362"),
+        SkillCard("🌐 Chrome",   "Web browsing",      "#4285F4"),
+        SkillCard("📅 Calendar", "Schedule",          "#4285F4"),
+        SkillCard("👤 Contacts", "Phone & Contacts",  "#1A73E8"),
+        SkillCard("📝 Notes",    "Google Keep",       "#FBBC04"),
+        SkillCard("📂 Files",    "Browse + Share",    "#5F6368"),
+        SkillCard("📺 YouTube",  "Videos",            "#FF0000"),
+        SkillCard("⚙️ Settings","Phone Settings",    "#607D8B"),
+        SkillCard("📱 Screen",   "Read + Summarize",  "#00BCD4"),
+        SkillCard("🤖 General",  "Any Task",          "#FF4500"),
     )
 
     data class SkillCard(val name: String, val description: String, val color: String)
@@ -168,6 +175,16 @@ class MainActivity : AppCompatActivity() {
             desc.text = "Every app notification → forwarded to your Telegram bot. Reply in Telegram → reply lands in the app."
             btn.text = "Enable in Settings → Notification Access"
         }
+
+        // Capability badges — Voice STT and Notif mini badge
+        val agentKey = prefs.getString("agent_api_key", prefs.getString("ai_api_key", ""))?.trim().orEmpty()
+        val sttText  = findViewById<TextView>(R.id.tvSttStatus)
+        sttText.text = if (agentKey.isNotBlank()) "Voice ON" else "Voice OFF"
+        sttText.setTextColor(if (agentKey.isNotBlank()) 0xFF00CC88.toInt() else 0xFFFF6B6B.toInt())
+
+        val notifMini = findViewById<TextView>(R.id.tvNotifBadgeMini)
+        notifMini.text = if (notifGranted) "Notifs ON" else "Notifs OFF"
+        notifMini.setTextColor(if (notifGranted) 0xFF00CC88.toInt() else 0xFF888888.toInt())
     }
 
     private fun setupToggleButton() {

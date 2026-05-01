@@ -41,11 +41,11 @@ class DocumentSummaryBrain(
     model: String = "",
 ) {
     companion object {
-        private const val DIRECT_TEXT_LIMIT = 12_000
-        private const val NOTE_CHUNK_LIMIT = 7_500
-        private const val MAX_TEXT_CHUNKS = 12
-        private const val MAX_PDF_VISION_PAGES = 12
-        private const val VISION_BATCH_SIZE = 3
+        private const val DIRECT_TEXT_LIMIT = 60_000
+        private const val NOTE_CHUNK_LIMIT = 20_000
+        private const val MAX_TEXT_CHUNKS = 100
+        private const val MAX_PDF_VISION_PAGES = 100
+        private const val VISION_BATCH_SIZE = 5
         private const val DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         private val TEXT_EXTENSIONS = setOf("txt", "md", "markdown", "csv", "json", "xml", "log")
         private val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")

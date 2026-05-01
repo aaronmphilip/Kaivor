@@ -19,7 +19,7 @@ class UserMemory(private val context: Context) {
         private const val PREFS = "bharatdroid_memory"
         private const val KEY_LEARNING_ENABLED = "learning_enabled"
         private const val KEY_MEMORY_LIST = "memory_list"
-        private const val MAX_MEMORIES = 30
+        private const val MAX_MEMORIES = 500
         private const val SEPARATOR = "|||"
 
         // Phrases that signal the user wants to teach the agent something

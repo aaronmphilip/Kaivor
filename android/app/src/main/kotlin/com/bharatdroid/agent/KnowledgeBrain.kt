@@ -15,8 +15,8 @@ enum class ResearchDepth(
     val pageFetchLimit: Int,
     val sourcePreviewCount: Int,
 ) {
-    QUICK(resultLimit = 5, pageFetchLimit = 3, sourcePreviewCount = 3),
-    DEEP(resultLimit = 8, pageFetchLimit = 5, sourcePreviewCount = 5),
+    QUICK(resultLimit = 12, pageFetchLimit = 6, sourcePreviewCount = 6),
+    DEEP(resultLimit = 25, pageFetchLimit = 12, sourcePreviewCount = 10),
 }
 
 class KnowledgeBrain(
@@ -254,7 +254,7 @@ Rules:
         val turns = history.getOrPut(chatId) { ArrayDeque() }
         turns.addLast(AIChatMessage(role = "user", content = userMessage.take(240)))
         turns.addLast(AIChatMessage(role = "assistant", content = answerSummary.take(400)))
-        while (turns.size > 8) turns.removeFirst()
+        while (turns.size > 30) turns.removeFirst()
     }
 
     private data class QueryPlan(

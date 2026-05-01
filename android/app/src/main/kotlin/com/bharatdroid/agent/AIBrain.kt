@@ -112,7 +112,7 @@ Do NOT return anything outside JSON.
 
     suspend fun process(chatId: Long, userMessage: String, contextHint: String = ""): AgentPlan {
         val chatHistory = history.getOrPut(chatId) { ArrayDeque() }
-        while (chatHistory.size > 8) chatHistory.removeFirst()
+        while (chatHistory.size > 30) chatHistory.removeFirst()
 
         val effectiveMessage = buildString {
             if (contextHint.isNotBlank()) {
@@ -145,7 +145,7 @@ Do NOT return anything outside JSON.
             )
 
         chatHistory.addLast(AIChatMessage(role = "assistant", content = assistantText))
-        while (chatHistory.size > 8) chatHistory.removeFirst()
+        while (chatHistory.size > 30) chatHistory.removeFirst()
 
         return parseResponse(assistantText)
     }

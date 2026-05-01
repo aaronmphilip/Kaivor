@@ -35,7 +35,7 @@ data class LogEntry(
 class ActivityLog(context: Context) {
     private val prefs = context.getSharedPreferences("bharatdroid_log", Context.MODE_PRIVATE)
     private val gson = Gson()
-    private val maxEntries = 50
+    private val maxEntries = 2000
 
     fun log(command: String, skill: String?, result: String, summary: String) {
         val entries = getAll().toMutableList()
@@ -43,7 +43,7 @@ class ActivityLog(context: Context) {
             command = command,
             skill = skill,
             result = result,
-            summary = summary.take(200),
+            summary = summary.take(1000),
         ))
         // Trim
         while (entries.size > maxEntries) entries.removeLast()
