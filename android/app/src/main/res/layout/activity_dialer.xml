@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#0A0A0A"
+    android:gravity="center_horizontal"
+    android:padding="24dp">
+
+    <View android:layout_width="match_parent" android:layout_height="3dp" android:background="#FF5C00"/>
+
+    <Button
+        android:id="@+id/btnDialerBack"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_gravity="start"
+        android:layout_marginTop="8dp"
+        android:text="←"
+        android:textSize="20sp"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#1A1A1A"
+        android:stateListAnimator="@null"
+        android:padding="0dp" />
+
+    <!-- Number display -->
+    <TextView
+        android:id="@+id/tvDialerNumber"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enter number"
+        android:textColor="#FFFFFF"
+        android:textSize="32sp"
+        android:gravity="center"
+        android:fontFamily="monospace"
+        android:layout_marginTop="24dp"
+        android:minHeight="60dp"
+        android:ellipsize="start"
+        android:singleLine="true" />
+
+    <!-- Numpad -->
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="3"
+        android:layout_marginTop="32dp"
+        android:useDefaultMargins="false">
+
+        <Button android:id="@+id/btnDial1" android:layout_width="0dp" android:layout_columnWeight="1"
+            android:layout_height="70dp" android:text="1" android:textSize="24sp"
+            android:textColor="#FFFFFF" android:backgroundTint="#1A1A1A" android:stateListAnimator="@null"
+            android:layout_margin="4dp"/>
+        <Button android:id="@+id/btnDial2" android:layout_width="0dp" android:layout_columnWeight="1"
+            android:layout_height="70dp" android:text="2" android:textSize="24sp"
+            android:textColor="#FFFFFF" android:backgroundTint="#1A1A1A" android:stateListAnimator="@null"
+            android:layout_margin="4dp"/>
+        <Button android:id="@+id/btnDial3" android:layout_width="0dp" android:layout_columnWeight="1"
+            android:layout_height="70dp" android:text="3" android:textSize="24sp"
+            android:textColor="#FFFFFF" android:backgroundTint="#1A1A1A" android:stateListAnimator="@null"
+            android:layout_margin="4dp"/>
+        <Button android:id="@+id/btnDial4" android:layout_width="0dp" android:layout_columnWeight="1"
+            android:layout_height="70dp" android:text="4" android:textSize="24sp"
+            android:textColor="#FFFFFF" android:backgroundTint="#1A1A1A" android:stateListAnimator="@null"
+            android:layout_margin="4dp"/>
+        <Button android:id="@+id/btnDial5" android:layout_width="0dp" android:layout_columnWeight="1"
+            android:layout_height="70dp" android:text="5" android:textSize="24sp"
+            android:textColor="#FFFFFF" android:backgroundTint="#1A1A1A" android:stateListAnimator="@null"
+            android:layout_margin="4dp"/>
+        <Button android:id="@+id/btnDial6" android:layout_width="0dp" android:layout_columnWeight="1"
+            android:layout_height="70dp" android:text="6" android:textSize="24sp"
+            android:textColor="#FFFFFF" android:backgroundTint="#1A1A1A" android:stateListAnimator="@null"
+            android:layout_margin="4dp"/>
+        <Button android:id="@+id/btnDial7" android:layout_width="0dp" android:layout_columnWeight="1"
+            android:layout_height="70dp" android:text="7" android:textSize="24sp"
+            android:textColor="#FFFFFF" android:backgroundTint="#1A1A1A" android:stateListAnimator="@null"
+            android:layout_margin="4dp"/>
+        <Button android:id="@+id/btnDial8" android:layout_width="0dp" android:layout_columnWeight="1"
+            android:layout_height="70dp" android:text="8" android:textSize="24sp"
+            android:textColor="#FFFFFF" android:backgroundTint="#1A1A1A" android:stateListAnimator="@null"
+            android:layout_margin="4dp"/>
+        <Button android:id="@+id/btnDial9" android:layout_width="0dp" android:layout_columnWeight="1"
+            android:layout_height="70dp" android:text="9" android:textSize="24sp"
+            android:textColor="#FFFFFF" android:backgroundTint="#1A1A1A" android:stateListAnimator="@null"
+            android:layout_margin="4dp"/>
+        <Button android:id="@+id/btnDialStar" android:layout_width="0dp" android:layout_columnWeight="1"
+            android:layout_height="70dp" android:text="*" android:textSize="24sp"
+            android:textColor="#FFFFFF" android:backgroundTint="#1A1A1A" android:stateListAnimator="@null"
+            android:layout_margin="4dp"/>
+        <Button android:id="@+id/btnDial0" android:layout_width="0dp" android:layout_columnWeight="1"
+            android:layout_height="70dp" android:text="0" android:textSize="24sp"
+            android:textColor="#FFFFFF" android:backgroundTint="#1A1A1A" android:stateListAnimator="@null"
+            android:layout_margin="4dp"/>
+        <Button android:id="@+id/btnDialHash" android:layout_width="0dp" android:layout_columnWeight="1"
+            android:layout_height="70dp" android:text="#" android:textSize="24sp"
+            android:textColor="#FFFFFF" android:backgroundTint="#1A1A1A" android:stateListAnimator="@null"
+            android:layout_margin="4dp"/>
+    </GridLayout>
+
+    <!-- Call + Delete row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btnDialDelete"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:text="⌫"
+            android:textSize="22sp"
+            android:textColor="#AAAAAA"
+            android:backgroundTint="#1A1A1A"
+            android:stateListAnimator="@null"
+            android:layout_marginEnd="16dp" />
+
+        <Button
+            android:id="@+id/btnDialCall"
+            android:layout_width="120dp"
+            android:layout_height="70dp"
+            android:text="📞"
+            android:textSize="28sp"
+            android:backgroundTint="#00CC44"
+            android:stateListAnimator="@null" />
+
+    </LinearLayout>
+
+</LinearLayout>
