@@ -15,17 +15,25 @@ import android.os.PowerManager
 import android.os.StatFs
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
+import android.util.Base64
 import com.bharatdroid.agent.skills.DeliveryMode
 import com.bharatdroid.agent.skills.RemoteSkill
 import com.bharatdroid.agent.skills.SkillResult
 import com.bharatdroid.agent.skills.SkillStore
 import com.bharatdroid.agent.skills.builtin.*
+import com.google.gson.Gson
+import com.google.gson.JsonParser
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class AgentOrchestrator(
     private val context: Context,
@@ -86,6 +94,7 @@ class AgentOrchestrator(
             model = config.agentModel,
             userMemory = userMemory,
             appKnowledge = appKnowledge,
+            ultraMode = config.ultraMode,
         )
 
         skillRunner = SkillRunner(
@@ -197,12 +206,49 @@ class AgentOrchestrator(
         // the manifest; this just hands it the poller/mute store/chat id. If the
         // user hasn't granted notification-access yet, rebind() is a no-op.
         config.authorizedChatIds.firstOrNull()?.let { chatId ->
-            NotificationRelay.attach(poller, muteStore, chatId)
+            NotificationRelay.attach(
+                p = poller,
+                m = muteStore,
+                authorizedChatId = chatId,
+                orch = this,
+                waNumber = config.whatsappChannelNumber,
+            )
             NotificationRelay.rebind(context)
         }
+
+        // Wire AI call answering — injects config so CallAnsweringService can answer calls.
+        CallAnsweringService.config = config
+        CallAnsweringService.orchestrator = this
     }
 
-    fun stop() { poller.stop() }
+    fun stop() {
+        CallAnsweringService.config = null
+        CallAnsweringService.orchestrator = null
+        poller.stop()
+    }
+
+    /** Entry point for WhatsApp channel commands — routed from NotificationRelay. */
+    suspend fun handleWhatsAppCommand(chatId: Long, text: String): String {
+        val fakeMsg = IncomingMessage(
+            updateId = System.currentTimeMillis(),
+            chatId = chatId,
+            text = text,
+            username = "whatsapp_channel",
+        )
+        return handleMessage(fakeMsg)
+    }
+
+    /** Reply back into WhatsApp via the accessibility skill. */
+    suspend fun sendWhatsAppReply(toNumber: String, reply: String) {
+        try {
+            skillRunner.execute(
+                skillId = "whatsapp",
+                params = mapOf("action" to "send", "contact" to toNumber, "message" to reply),
+                chatId = config.authorizedChatIds.first(),
+                userId = "whatsapp_channel",
+            )
+        } catch (_: Exception) {}
+    }
 
     private suspend fun handleMessage(msg: IncomingMessage): String {
         val trimmed = normalizeIncomingTelegramText(msg.text).trim()
@@ -244,7 +290,7 @@ class AgentOrchestrator(
                     )
                     poller.sendTyping(msg.chatId)
                     // Acquire wake lock for skill execution
-                    if (!wakeLock.isHeld) wakeLock.acquire(120_000L)
+                    if (!wakeLock.isHeld) wakeLock.acquire(600_000L)
                     return try {
                         screenAgent.clearStop()
                         val result = skillRunner.execute(skillId, params, msg.chatId,
@@ -299,12 +345,33 @@ class AgentOrchestrator(
 
         // â"€â"€ STOP — explicit stop command â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
         if (isStopCommand) {
+            // 1. Kill the AI call immediately (cancels OkHttp, unblocks coroutine)
             screenAgent.requestStop()
-            // Go back to home screen for a clean slate.
-            // stopRequested stays true — any tasks already queued will also be blocked
-            // until the user sends the next deliberate command (which calls clearStop).
+            // 2. Release wake lock right now — don't hold it open while we wind down
+            try { if (wakeLock.isHeld) wakeLock.release() } catch (_: Exception) {}
+            // 3. Capture screenshot BEFORE going home — shows exactly where the agent was
+            val stoppedAt = try {
+                AgentAccessibilityService.instance?.captureScreenshot()
+            } catch (_: Exception) { null }
+            // 4. Go home for a clean slate
+            NotchOverlay.hide()
             AgentAccessibilityService.instance?.goHome()
-            return "⛔ Stopped. Back on the home screen — send a new task whenever you're ready."
+            // 5. Send screenshot asynchronously (don't block the stop reply)
+            if (stoppedAt != null) {
+                scope.launch {
+                    try { poller.sendPhoto(msg.chatId, stoppedAt, "📍 Stopped here — this is where I was when you said stop.") }
+                    catch (_: Exception) {}
+                }
+            }
+            return "⛔ *Stopped immediately.*${if (stoppedAt != null) " Screenshot shows exactly where I was." else ""}\n\nBack on the home screen. Send a new command whenever you're ready."
+        }
+
+        // ── Hang up active AI call via Telegram ──
+        val isHangUpCommand = lower in setOf("hang up", "hangup", "cut the call", "disconnect call", "end call", "reject call") ||
+            lower.contains("hang up") || lower.contains("cut call")
+        if (isHangUpCommand && CallAnsweringService.activeInstance != null) {
+            CallAnsweringService.hangUpCurrentCall()
+            return "📵 Call ended."
         }
 
         // â"€â"€ Built-in commands â"€â"€
@@ -737,8 +804,13 @@ class AgentOrchestrator(
             // fixes this without losing the ability to stop a genuinely running task.
             screenAgent.clearStop()
 
+            // Show the floating notch pill so the user can see and cancel the task.
+            NotchOverlay.show(context, trimmed.take(48)) {
+                screenAgent.requestStop()
+            }
+
             // Wake screen so agent can interact with apps even if phone was sleeping.
-            if (!wakeLock.isHeld) wakeLock.acquire(180_000L) // 3 min max; released in finally
+            if (!wakeLock.isHeld) wakeLock.acquire(600_000L)
 
             // Dismiss lock screen — swipe up from bottom (swipe-only lock) or navigate home
             // to land on the actual app. No-op if screen is already unlocked.
@@ -763,6 +835,7 @@ class AgentOrchestrator(
                 actionOutcome.reply
             }
         } finally {
+            NotchOverlay.hide()
             try { if (wakeLock.isHeld) wakeLock.release() } catch (_: Exception) {}
             if (acquired != null) taskMutex.unlock()
         }
@@ -1357,7 +1430,9 @@ Tell me what to do — English or Hindi. I'll do it.
 📱 /open <app> — launch any installed app
 ⏰ /schedule <time> <cmd> — schedule one-time or daily tasks
 🔗 /routine <name> — run named command chains
-🎙️ Voice notes — send audio, I'll transcribe and execute
+🎙️ Voice notes — send any audio, I'll transcribe & execute the command
+📂 Share files — "Share invoice.pdf to Rahul on WhatsApp" — uses the share button
+📄 Read full files — "Read the report.pdf fully" — scrolls through and reads every page
 
 *Commands:*
 /help — show this guide
@@ -1388,11 +1463,121 @@ Tell me what to do — English or Hindi. I'll do it.
     """.trimIndent()
 
     // ── Voice note transcription ─────────────────────────────────────────────
+    /**
+     * Downloads the voice note, transcribes it with Gemini (audio inline_data)
+     * or OpenAI Whisper, echoes what was heard, then re-routes the text through
+     * the normal handleMessage pipeline so all skills and AI routing work as usual.
+     */
     private suspend fun handleVoiceNote(msg: IncomingMessage): String {
-        // LLMClient does not currently support audio transcription.
-        // Return a graceful message guiding the user to a compatible provider.
-        return "🎙️ Voice notes work with Gemini 2.0+. Set Gemini as your AI provider in Settings."
+        val attachment = msg.attachment ?: return "🎙️ No voice attachment found."
+        poller.sendTyping(msg.chatId)
+
+        val downloaded = poller.downloadAttachment(attachment)
+            ?: return "🎙️ Could not download the voice note — please try again."
+
+        return try {
+            val mimeType = attachment.mimeType.ifBlank { "audio/ogg" }
+            val transcript = transcribeAudio(downloaded.file, mimeType)
+
+            if (transcript.isNullOrBlank()) {
+                return when (config.agentProvider) {
+                    AIProvider.GEMINI ->
+                        "🎙️ Could not transcribe. Make sure your Gemini key supports audio (Gemini 2.0 Flash or later)."
+                    AIProvider.OPENAI ->
+                        "🎙️ Whisper transcription failed. Check your OpenAI API key in Settings."
+                    AIProvider.CLAUDE ->
+                        "🎙️ Claude doesn't support audio. Switch to Gemini 2.0+ or OpenAI in Settings → AI Provider."
+                }
+            }
+
+            // Echo what was understood so the user can verify
+            poller.sendMessage(msg.chatId, "🎙️ Heard: _\"${transcript.trim()}\"_")
+
+            // Re-run the transcription through the full pipeline — all skills work exactly as for text
+            handleMessage(msg.copy(text = transcript.trim(), attachment = null))
+        } catch (e: Exception) {
+            "🎙️ Voice transcription error: ${e.message}"
+        } finally {
+            runCatching { downloaded.file.delete() }
+        }
     }
+
+    /** Dispatch audio transcription to the right provider. */
+    private suspend fun transcribeAudio(file: java.io.File, mimeType: String): String? {
+        return when (config.agentProvider) {
+            AIProvider.GEMINI -> transcribeWithGemini(file, mimeType)
+            AIProvider.OPENAI -> transcribeWithWhisper(file, mimeType)
+            AIProvider.CLAUDE -> {
+                // Claude has no audio API — try Whisper if the key happens to be an OpenAI key
+                if (config.agentApiKey.startsWith("sk-")) transcribeWithWhisper(file, mimeType) else null
+            }
+        }
+    }
+
+    /**
+     * Gemini audio transcription — sends audio bytes as base64 inline_data.
+     * Requires Gemini 2.0 Flash or later (supports multimodal audio natively).
+     */
+    private suspend fun transcribeWithGemini(file: java.io.File, mimeType: String): String? =
+        withContext(Dispatchers.IO) {
+            try {
+                val audioBase64 = Base64.encodeToString(file.readBytes(), Base64.NO_WRAP)
+                val payload = Gson().toJson(mapOf(
+                    "contents" to listOf(mapOf(
+                        "parts" to listOf(
+                            mapOf("text" to
+                                "Transcribe this voice message exactly as spoken. " +
+                                "Return ONLY the transcription — no quotes, no explanation, no prefix. " +
+                                "If it is a command like 'order pizza from Swiggy', return exactly that."
+                            ),
+                            mapOf("inline_data" to mapOf("mime_type" to mimeType, "data" to audioBase64)),
+                        )
+                    )),
+                    "generationConfig" to mapOf("temperature" to 0.0),
+                ))
+                val req = okhttp3.Request.Builder()
+                    .url("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${config.agentApiKey}")
+                    .addHeader("content-type", "application/json")
+                    .post(payload.toRequestBody("application/json".toMediaType()))
+                    .build()
+                SharedHttpClient.imageInstance.newCall(req).execute().use { resp ->
+                    val raw = resp.body?.string() ?: return@use null
+                    val json = JsonParser.parseString(raw).asJsonObject
+                    if (json.has("error")) return@use null
+                    json.getAsJsonArray("candidates")
+                        ?.get(0)?.asJsonObject
+                        ?.getAsJsonObject("content")
+                        ?.getAsJsonArray("parts")
+                        ?.get(0)?.asJsonObject
+                        ?.get("text")?.asString?.trim()
+                }
+            } catch (_: Exception) { null }
+        }
+
+    /**
+     * OpenAI Whisper transcription — multipart POST to /v1/audio/transcriptions.
+     * Works with any OpenAI key. Supports ogg, mp3, mp4, wav, webm, m4a.
+     */
+    private suspend fun transcribeWithWhisper(file: java.io.File, mimeType: String): String? =
+        withContext(Dispatchers.IO) {
+            try {
+                val body = MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart("model", "whisper-1")
+                    .addFormDataPart("file", file.name, file.asRequestBody(mimeType.toMediaType()))
+                    .build()
+                val req = okhttp3.Request.Builder()
+                    .url("https://api.openai.com/v1/audio/transcriptions")
+                    .addHeader("Authorization", "Bearer ${config.agentApiKey}")
+                    .post(body)
+                    .build()
+                SharedHttpClient.imageInstance.newCall(req).execute().use { resp ->
+                    val raw = resp.body?.string() ?: return@use null
+                    if (!resp.isSuccessful) return@use null
+                    JsonParser.parseString(raw).asJsonObject.get("text")?.asString?.trim()
+                }
+            } catch (_: Exception) { null }
+        }
 
     // ── Device info helpers (for /status) ────────────────────────────────────
     private fun getBatteryLevel(): String {
@@ -1684,4 +1869,16 @@ data class AgentConfig(
     /** Optional. When set, "generate an image of X" sends a photo directly in Telegram. */
     val imageApiKey: String = "",
     val imageApiProvider: String = "together",
+    /** Ultra = vision ON, full context, best model. Efficient = no vision, trimmed context. */
+    val ultraMode: Boolean = false,
+    /** WhatsApp channel — authorized sender number that can send commands via WhatsApp. */
+    val whatsappChannelNumber: String = "",
+    /** AI call answering via ElevenLabs voice clone + Whisper STT. */
+    val callAnsweringEnabled: Boolean = false,
+    val elevenLabsApiKey: String = "",
+    val elevenLabsVoiceId: String = "",
+    /** Owner's name used in the AI greeting: "Hi, this is [ownerName]'s AI assistant." */
+    val ownerName: String = "",
+    /** Comma-separated numbers (any format) that should NOT be AI-answered — owner is alerted instead. */
+    val vipCallerNumbers: String = "",
 )

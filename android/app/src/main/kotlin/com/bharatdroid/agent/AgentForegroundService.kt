@@ -79,6 +79,14 @@ class AgentForegroundService : LifecycleService() {
         val imageApiKey = prefs.getString("image_api_key", "")?.trim().orEmpty()
         val imageApiProvider = prefs.getString("image_api_provider", "together") ?: "together"
 
+        val ultraMode = prefs.getBoolean("ultra_mode", false)
+        val whatsappChannelNumber = prefs.getString("whatsapp_channel_number", "")?.trim().orEmpty()
+        val callAnsweringEnabled = prefs.getBoolean("call_answering_enabled", false)
+        val elevenLabsApiKey = prefs.getString("elevenlabs_api_key", "")?.trim().orEmpty()
+        val elevenLabsVoiceId = prefs.getString("elevenlabs_voice_id", "")?.trim().orEmpty()
+        val ownerName = prefs.getString("owner_name", "")?.trim().orEmpty()
+        val vipCallerNumbers = prefs.getString("vip_caller_numbers", "")?.trim().orEmpty()
+
         val config = AgentConfig(
             telegramBotToken = botToken,
             agentApiKey = agentKey,
@@ -94,6 +102,13 @@ class AgentForegroundService : LifecycleService() {
             ttsVoice = ttsVoice,
             imageApiKey = imageApiKey,
             imageApiProvider = imageApiProvider,
+            ultraMode = ultraMode,
+            whatsappChannelNumber = whatsappChannelNumber,
+            callAnsweringEnabled = callAnsweringEnabled,
+            elevenLabsApiKey = elevenLabsApiKey,
+            elevenLabsVoiceId = elevenLabsVoiceId,
+            ownerName = ownerName,
+            vipCallerNumbers = vipCallerNumbers,
         )
 
         orchestrator = AgentOrchestrator(this, config)
