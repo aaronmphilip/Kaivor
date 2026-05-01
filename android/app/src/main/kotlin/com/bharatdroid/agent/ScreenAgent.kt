@@ -36,6 +36,7 @@ class ScreenAgent(
     private val model: String = "",
     private val userMemory: UserMemory? = null,
     private val appKnowledge: AppKnowledgeBase? = null,
+    private val ultraMode: Boolean = false,
 ) {
     // Stop flag — set by AgentOrchestrator when user sends "stop"
     // Checked at every step of the execution loop
@@ -99,7 +100,7 @@ class ScreenAgent(
     suspend fun executeGoal(
         runner: SandboxedRunner,
         goal: String,
-        maxSteps: Int = 25,
+        maxSteps: Int = 60,
     ): String {
         // NOTE: Do NOT check stopRequested here.
         // AgentOrchestrator.handleMessage calls requestStop() on every new message to kill
@@ -110,7 +111,6 @@ class ScreenAgent(
         val result = executeGoalInternal(runner, goal, maxSteps, isRetry = false)
 
         // Auto-retry once on failure — but ONLY for "stuck" failures (screen didn't change).
-        // Do NOT retry "Reached step limit" — that means the task ran 25+ steps with real effects.
         if (result.startsWith("Could not complete") || result.startsWith("Stuck after")) {
             if (stopRequested) { return "⛔ Stopped." }
             delay(1000)
@@ -164,7 +164,7 @@ class ScreenAgent(
         }
 
         // Generate a plan
-        val initialScreen = try { runner.readScreen().take(900) } catch (_: Exception) { "" }
+        val initialScreen = try { runner.readScreen().take(2500) } catch (_: Exception) { "" }
         val initialElements = runner.getClickableElements()
         val plan = generatePlan(contextualGoal, initialScreen, describeElements(initialElements))
 
@@ -203,7 +203,7 @@ class ScreenAgent(
             dismissObstructingPopups(runner)
 
             val elements = runner.getClickableElements()
-            val screenText = try { runner.readScreen().take(1200) } catch (_: Exception) { "" }
+            val screenText = try { runner.readScreen().take(3000) } catch (_: Exception) { "" }
 
             if (step == 1 && screenText.isBlank() && elements.isEmpty()) {
                 return "Screen is empty — make sure the target app is open."
@@ -244,10 +244,10 @@ class ScreenAgent(
                 }
             }.trim()
 
-            // Capture screenshot for vision-based decision making (Set-of-Mark)
-            val screenshot: Bitmap? = try {
-                runner.captureScreenshot()
-            } catch (_: Exception) { null }
+            // Capture screenshot for vision — Ultra mode only (expensive: thousands of tokens)
+            val screenshot: Bitmap? = if (ultraMode) {
+                try { runner.captureScreenshot() } catch (_: Exception) { null }
+            } else null
 
             val action = decideNextAction(
                 goal = contextualGoal,
@@ -449,10 +449,10 @@ class ScreenAgent(
             appendLine("GOAL: $goal")
             appendLine()
             appendLine("CURRENT SCREEN:")
-            appendLine(screenText.take(600))
+            appendLine(screenText.take(2000))
             appendLine()
             appendLine("CLICKABLE ELEMENTS:")
-            appendLine(elements.take(700))
+            appendLine(elements.take(2000))
             appendLine()
             appendLine("Write a numbered plan (4-10 steps) that:")
             appendLine("1. Does EXACTLY what the goal says — no extra steps, no assumptions")
@@ -817,10 +817,10 @@ class ScreenAgent(
                 appendLine("LOOK AT THE SCREENSHOT CAREFULLY. Use visual info to pick the right element.")
             } else {
                 appendLine("SCREEN TEXT:")
-                appendLine(screenText.take(900))
+                appendLine(screenText.take(2500))
                 appendLine()
                 appendLine("UI ELEMENTS (index, label, role, position, size, traits):")
-                appendLine(describeElements(elements).take(1000))
+                appendLine(describeElements(elements).take(2500))
             }
             appendLine()
             appendLine("═══ CRITICAL RULES ═══")

@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import android.content.Intent
 import android.provider.Settings
@@ -190,7 +190,7 @@ Tap the search icon (magnifier) at the top. Type '$searchQuery'. Tap the best ma
             }
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 10)
+        val result = agent.executeGoal(runner, goal, maxSteps = 70)
         return SkillResult.Success(result)
     }
 }

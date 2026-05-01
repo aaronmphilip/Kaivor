@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -92,7 +92,7 @@ Google Keep UI guide:
                 params["goal"] as? String ?: "Do this in Google Keep: $action $safeTitle $safeContent".trim()
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 15)
+        val result = agent.executeGoal(runner, goal, maxSteps = 40)
         return SkillResult.Success(result)
     }
 }

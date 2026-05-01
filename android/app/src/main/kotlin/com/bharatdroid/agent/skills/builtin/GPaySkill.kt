@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -86,7 +86,7 @@ $reportStep. Report: recipient name confirmed as shown on screen, amount ₹$amo
                 return SkillResult.NeedsConfirmation(
                     prompt = "💸 *Send via Google Pay*\n\nAmount: *₹$amount*\nTo: *$contact*${if (note.isNotBlank()) "\nNote: _${note}_" else ""}\n\n⚠️ You will need to enter your UPI PIN on the phone.\n\nReply *YES* to proceed.",
                     onConfirm = {
-                        val result = agent.executeGoal(runner, goal, maxSteps = 20)
+                        val result = agent.executeGoal(runner, goal, maxSteps = 55)
                         SkillResult.Success(result)
                     }
                 )
@@ -142,7 +142,7 @@ STEPS:
                 params["goal"] as? String ?: "Do this in Google Pay: $action $contact $amount".trim()
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 20)
+        val result = agent.executeGoal(runner, goal, maxSteps = 55)
         return SkillResult.Success(result)
     }
 }

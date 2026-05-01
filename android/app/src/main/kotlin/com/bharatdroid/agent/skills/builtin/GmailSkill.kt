@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -105,7 +105,7 @@ STRICT RULES:
                 return SkillResult.NeedsConfirmation(
                     prompt = "📧 *Send Email via Gmail*\n\nTo: *$to*\nSubject: *$subject*\nMessage: \"${body.take(120)}${if (body.length > 120) "…" else ""}\"\n\nReply *YES* to send.",
                     onConfirm = {
-                        val result = agent.executeGoal(runner, composeGoal, maxSteps = 22)
+                        val result = agent.executeGoal(runner, composeGoal, maxSteps = 60)
                         SkillResult.Success(result)
                     }
                 )
@@ -128,7 +128,7 @@ STRICT RULES:
                 return SkillResult.NeedsConfirmation(
                     prompt = "↩️ *Reply Email via Gmail*\n\n${if (emailContext.isNotBlank()) "Re: *$emailContext*\n" else ""}Reply: \"${body.take(120)}${if (body.length > 120) "…" else ""}\"\n\nReply *YES* to send.",
                     onConfirm = {
-                        val result = agent.executeGoal(runner, replyGoal, maxSteps = 20)
+                        val result = agent.executeGoal(runner, replyGoal, maxSteps = 55)
                         SkillResult.Success(result)
                     }
                 )
@@ -187,7 +187,7 @@ STEPS:
                 params["goal"] as? String ?: "Do this in Gmail: $action $to $search".trim()
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 22)
+        val result = agent.executeGoal(runner, goal, maxSteps = 60)
         return SkillResult.Success(result)
     }
 }

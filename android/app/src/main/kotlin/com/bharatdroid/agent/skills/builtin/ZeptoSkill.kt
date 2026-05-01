@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -94,7 +94,7 @@ ${if (searchDone) "5." else "8."} Report: what was added, weight, price, quantit
                 return SkillResult.NeedsConfirmation(
                     prompt = "🛒 *Order via Zepto*\n\nItem: *$item*\nQuantity: $quantity\n\nReply *YES* to search and add to cart.",
                     onConfirm = {
-                        val result = agent.executeGoal(runner, goal, maxSteps = 22)
+                        val result = agent.executeGoal(runner, goal, maxSteps = 60)
                         SkillResult.Success(result)
                     }
                 )
@@ -120,7 +120,7 @@ STEPS:
                 params["goal"] as? String ?: "Do this in Zepto: $action $item".trim()
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 22)
+        val result = agent.executeGoal(runner, goal, maxSteps = 60)
         return SkillResult.Success(result)
     }
 }

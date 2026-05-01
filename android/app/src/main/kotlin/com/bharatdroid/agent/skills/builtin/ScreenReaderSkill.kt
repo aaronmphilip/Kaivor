@@ -31,7 +31,7 @@ class ScreenReaderSkill : Skill {
             ?: params["summary"] as? String
             ?: question
         val target = params["target"] as? String ?: params["text"] as? String ?: ""
-        val scrollPasses = ((params["scrolls"] as? Number)?.toInt() ?: 3).coerceIn(0, 6)
+        val scrollPasses = ((params["scrolls"] as? Number)?.toInt() ?: 5).coerceIn(0, 50)
 
         return when (action) {
             "read", "describe" -> {
@@ -49,20 +49,19 @@ class ScreenReaderSkill : Skill {
                 summarizeVisibleContent(runner, instruction.orEmpty(), scrollPasses)
             }
 
-            "scroll_and_read", "full_read" -> {
+            "scroll_and_read", "full_read", "read_all", "deep_read" -> {
+                val maxScrolls = ((params["scrolls"] as? Number)?.toInt() ?: 20).coerceIn(1, 100)
                 if (wantsSummary(instruction)) {
-                    summarizeVisibleContent(runner, instruction.orEmpty(), scrollPasses)
+                    summarizeVisibleContent(runner, instruction.orEmpty(), maxScrolls)
                 } else {
-                    val sb = StringBuilder()
-                    sb.appendLine(runner.readScreen())
-                    repeat(3) { i ->
-                        runner.scrollDown()
-                        delay(700)
-                        sb.appendLine("── scroll ${i + 2} ──")
-                        sb.appendLine(runner.readScreen())
-                    }
+                    val content = captureFullDocumentDedup(runner, maxScrolls)
                     val header = if (question != null) "Q: $question\n\n" else ""
-                    SkillResult.Success("${header}📱 Full content:\n```\n${sb.toString().take(2000)}\n```")
+                    val preview = content.take(3500)
+                    val suffix = if (content.length > 3500) "\n_...${content.length} chars total — ask me to summarize for a concise version._" else ""
+                    SkillResult.Success(
+                        "${header}📱 Full content:\n```\n$preview\n```$suffix",
+                        delivery = DeliveryMode.LONG_TEXT,
+                    )
                 }
             }
 
@@ -123,6 +122,11 @@ class ScreenReaderSkill : Skill {
         return SkillResult.Success(summary, delivery = DeliveryMode.LONG_TEXT)
     }
 
+    /**
+     * Captures visible text across multiple scroll passes.
+     * Each pass reads the full screen — content is concatenated with scroll markers.
+     * Used for AI summarization (AI handles de-dup in its context window).
+     */
     private suspend fun captureVisibleDocument(
         runner: SandboxedRunner,
         scrollPasses: Int,
@@ -133,7 +137,7 @@ class ScreenReaderSkill : Skill {
 
         for (index in 0 until scrollPasses) {
             if (!runner.scrollDown()) break
-            delay(700)
+            delay(650)
             val nextScreen = runner.readScreen()
             if (nextScreen.isNotBlank()) {
                 sb.appendLine("── scroll ${index + 2} ──")
@@ -142,6 +146,49 @@ class ScreenReaderSkill : Skill {
         }
 
         return sb.toString().trim()
+    }
+
+    /**
+     * Deep document capture with deduplication — for full_read mode where we want
+     * unique content only. Stops automatically when no new content appears (end of doc).
+     * Uses line-level deduplication so repeated nav bars / headers are suppressed.
+     */
+    private suspend fun captureFullDocumentDedup(
+        runner: SandboxedRunner,
+        maxScrolls: Int,
+    ): String {
+        val seenLines = mutableSetOf<String>()
+        val output = StringBuilder()
+
+        fun addScreen(screen: String) {
+            screen.lines().forEach { raw ->
+                val line = raw.trim()
+                // Skip blank lines and very short noise (single chars, decorators)
+                if (line.length < 3) return@forEach
+                // Case-insensitive dedup — navigation bars repeat on every screen
+                if (seenLines.add(line.lowercase())) {
+                    output.appendLine(line)
+                }
+            }
+        }
+
+        addScreen(runner.readScreen())
+
+        var noNewCount = 0
+        for (i in 0 until maxScrolls) {
+            val prevLen = output.length
+            if (!runner.scrollDown()) break
+            delay(650)
+            addScreen(runner.readScreen())
+            if (output.length == prevLen) {
+                noNewCount++
+                if (noNewCount >= 2) break // end of document reached
+            } else {
+                noNewCount = 0
+            }
+        }
+
+        return output.toString().trim()
     }
 
     private fun wantsSummary(instruction: String?): Boolean {

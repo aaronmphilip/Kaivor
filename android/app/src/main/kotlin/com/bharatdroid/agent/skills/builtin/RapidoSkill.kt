@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -81,7 +81,7 @@ Rapido app UI guide:
             else -> params["goal"] as? String ?: "Do this in Rapido: $action to $destination"
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 28)
+        val result = agent.executeGoal(runner, goal, maxSteps = 70)
         return SkillResult.Success(result)
     }
 

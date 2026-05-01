@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -117,12 +117,12 @@ Swiggy UI guide:
             return SkillResult.NeedsConfirmation(
                 prompt = "🍽️ *Order via Swiggy*\n\nItem: *$query*${if (maxPrice != null) "\nMax price: ₹$maxPrice" else ""}${if (filterNote.isNotBlank()) "\nFilter: $filterNote" else ""}\n\nReply *YES* to search and add to cart.",
                 onConfirm = {
-                    val result = agent.executeGoal(runner, goal, maxSteps = 25)
+                    val result = agent.executeGoal(runner, goal, maxSteps = 65)
                     SkillResult.Success(result)
                 }
             )
         }
-        val result = agent.executeGoal(runner, goal, maxSteps = 25)
+        val result = agent.executeGoal(runner, goal, maxSteps = 65)
         return SkillResult.Success(result)
     }
 }

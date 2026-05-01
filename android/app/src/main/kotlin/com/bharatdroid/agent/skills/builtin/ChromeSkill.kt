@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -128,7 +128,7 @@ STEPS:
                 params["goal"] as? String ?: "Do this in Chrome: $action $query $url".trim()
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 22)
+        val result = agent.executeGoal(runner, goal, maxSteps = 60)
         return SkillResult.Success(result)
     }
 }

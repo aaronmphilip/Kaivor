@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -81,7 +81,7 @@ Contacts UI guide:
                 params["goal"] as? String ?: "Do this in Contacts: $action $query"
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 15)
+        val result = agent.executeGoal(runner, goal, maxSteps = 40)
         return SkillResult.Success(result)
     }
 }

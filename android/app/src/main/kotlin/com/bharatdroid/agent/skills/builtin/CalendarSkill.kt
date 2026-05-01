@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -85,7 +85,7 @@ Google Calendar UI guide:
                 return SkillResult.NeedsConfirmation(
                     prompt = "🗑️ *Delete Calendar Event*\n\nEvent: *$title*${if (date.isNotBlank()) "\nDate: $date" else ""}${if (time.isNotBlank()) "\nTime: $time" else ""}\n\n⚠️ This will permanently delete the event.\n\nReply *YES* to confirm.",
                     onConfirm = {
-                        val result = agent.executeGoal(runner, deleteGoal, maxSteps = 18)
+                        val result = agent.executeGoal(runner, deleteGoal, maxSteps = 50)
                         SkillResult.Success(result)
                     }
                 )

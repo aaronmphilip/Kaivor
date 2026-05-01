@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -49,7 +49,7 @@ class UberSkill : Skill {
             else       -> params["goal"] as? String ?: "Do this in Uber: $action $destination".trim()
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 36)
+        val result = agent.executeGoal(runner, goal, maxSteps = 85)
         return SkillResult.Success(result)
     }
 

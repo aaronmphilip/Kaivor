@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import android.graphics.Bitmap
 import com.bharatdroid.agent.DocumentSummaryBrain
@@ -54,19 +54,19 @@ class ReadingConciergeSkill : Skill {
             "whatsapp_pdf", "whatsapp_document", "whatsapp_doc", "whatsapp_file", "latest_whatsapp_pdf" -> {
                 prepareApp(runner, "com.whatsapp")
                 val goal = buildWhatsAppDocumentGoal(contact, query)
-                agent.executeGoal(runner, goal, maxSteps = 18)
+                agent.executeGoal(runner, goal, maxSteps = 50)
             }
 
             "whatsapp_article", "whatsapp_link", "latest_whatsapp_article" -> {
                 prepareApp(runner, "com.whatsapp")
                 val goal = buildWhatsAppArticleGoal(contact, query)
-                agent.executeGoal(runner, goal, maxSteps = 18)
+                agent.executeGoal(runner, goal, maxSteps = 50)
             }
 
             "article", "web_article", "chrome_article", "read_article", "summarize_article" -> {
                 prepareApp(runner, "com.android.chrome")
                 val goal = buildArticleGoal(query, url)
-                agent.executeGoal(runner, goal, maxSteps = 20)
+                agent.executeGoal(runner, goal, maxSteps = 55)
             }
 
             "current", "screen", "visible", "open_document" -> {
@@ -76,7 +76,7 @@ class ReadingConciergeSkill : Skill {
             else -> {
                 val goal = (params["goal"] as? String)?.takeIf { it.isNotBlank() }
                     ?: "Open the relevant document or article, stop when the readable content is visible, and do not send any message."
-                agent.executeGoal(runner, goal, maxSteps = 20)
+                agent.executeGoal(runner, goal, maxSteps = 55)
             }
         }
 

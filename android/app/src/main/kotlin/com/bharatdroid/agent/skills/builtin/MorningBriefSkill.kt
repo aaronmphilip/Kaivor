@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -58,7 +58,7 @@ class MorningBriefSkill : Skill {
             append("   If no events today, say: 'No events scheduled today'.\n\n")
             append("DO NOT create or modify events. Just READ.")
         }
-        val calResult = agent.executeGoal(runner, calGoal, maxSteps = 10)
+        val calResult = agent.executeGoal(runner, calGoal, maxSteps = 70)
 
         // ─── 2. Weather via Chrome ──────────────────────────────────────────────
         runner.openApp("com.android.chrome")
@@ -78,7 +78,7 @@ class MorningBriefSkill : Skill {
             append("6. Call done with summary EXACTLY like: 'Weather: 28°C, Partly cloudy, high 32°/ low 22°'.\n\n")
             append("DO NOT tap random results. DO NOT open other tabs.")
         }
-        val weatherResult = agent.executeGoal(runner, weatherGoal, maxSteps = 10)
+        val weatherResult = agent.executeGoal(runner, weatherGoal, maxSteps = 70)
 
         // ─── 3. Gmail (optional) ────────────────────────────────────────────────
         val mailResult = if (skipMail) "(skipped)" else {
@@ -97,7 +97,7 @@ class MorningBriefSkill : Skill {
                 append("   If inbox is all read or empty, say 'Inbox clear — no unread emails'.\n\n")
                 append("DO NOT open any email. DO NOT reply. Just READ the list.")
             }
-            agent.executeGoal(runner, mailGoal, maxSteps = 8)
+            agent.executeGoal(runner, mailGoal, maxSteps = 65)
         }
 
         // ─── Summary ────────────────────────────────────────────────────────────

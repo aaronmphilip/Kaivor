@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -80,7 +80,7 @@ class TravelPlannerSkill : Skill {
             append("DO NOT tap 'Start' or 'Go' — just READ the ETA and stop.")
         }
 
-        val mapsResult = agent.executeGoal(runner, mapsGoal, maxSteps = 18)
+        val mapsResult = agent.executeGoal(runner, mapsGoal, maxSteps = 50)
 
         // Parse ETA (minutes) from the Maps result string.
         val etaMinutes = parseEtaMinutes(mapsResult)

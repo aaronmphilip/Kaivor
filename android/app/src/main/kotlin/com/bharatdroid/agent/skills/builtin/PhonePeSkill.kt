@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -79,7 +79,7 @@ PhonePe UI guide:
                 return SkillResult.NeedsConfirmation(
                     prompt = "💸 *Send via PhonePe*\n\nAmount: *₹$amount*\nTo: *${upiId.ifBlank { mobile }}*${if (note.isNotBlank()) "\nNote: _${note}_" else ""}\n\n⚠️ You will need to enter your UPI PIN on the phone.\n\nReply *YES* to proceed.",
                     onConfirm = {
-                        val result = agent.executeGoal(runner, goal, maxSteps = 20)
+                        val result = agent.executeGoal(runner, goal, maxSteps = 55)
                         SkillResult.Success(result)
                     }
                 )
@@ -106,7 +106,7 @@ PhonePe UI guide:
                 return SkillResult.NeedsConfirmation(
                     prompt = "📱 *Mobile Recharge via PhonePe*\n\nNumber: *$mobile*\nAmount: *₹$amount*\n\n⚠️ You will need to enter your UPI PIN on the phone.\n\nReply *YES* to recharge now.",
                     onConfirm = {
-                        val result = agent.executeGoal(runner, goal, maxSteps = 20)
+                        val result = agent.executeGoal(runner, goal, maxSteps = 55)
                         SkillResult.Success(result)
                     }
                 )
@@ -123,7 +123,7 @@ STEPS: 1) Look for 'History' or 'Transaction History' in the bottom navigation o
                 params["goal"] as? String ?: "Do this in PhonePe: $action $mobile $upiId".trim()
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 20)
+        val result = agent.executeGoal(runner, goal, maxSteps = 55)
         return SkillResult.Success(result)
     }
 }

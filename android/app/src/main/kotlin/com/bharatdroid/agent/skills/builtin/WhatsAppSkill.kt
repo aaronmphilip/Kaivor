@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.ScreenAgent
 import com.bharatdroid.agent.ScreenElement
@@ -109,7 +109,7 @@ class WhatsAppSkill : Skill {
             else -> {
                 val goal = params["goal"] as? String
                     ?: "Do this in WhatsApp: $action ${contact.ifBlank { "" }} ${message.ifBlank { fileQuery }}".trim()
-                val result = agent.executeGoal(runner, goal, maxSteps = 20)
+                val result = agent.executeGoal(runner, goal, maxSteps = 55)
                 SkillResult.Success(result)
             }
         }
@@ -132,7 +132,7 @@ class WhatsAppSkill : Skill {
             val fallback = agent.executeGoal(
                 runner,
                 buildMessageTypingFallbackGoal(contact, message),
-                maxSteps = 8,
+                maxSteps = 65,
             )
             val screen = runner.readScreen()
             val verifyChunk = message.take(8)
@@ -243,7 +243,7 @@ class WhatsAppSkill : Skill {
         tapBestSearchResult(runner, contact)
         if (waitForChatToOpen(runner)) return true
 
-        agent.executeGoal(runner, buildContactFallbackGoal(contact), maxSteps = 8)
+        agent.executeGoal(runner, buildContactFallbackGoal(contact), maxSteps = 65)
         return waitForChatToOpen(runner)
     }
 

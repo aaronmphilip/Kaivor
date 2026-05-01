@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -105,7 +105,7 @@ STRICT RULES:
                 return SkillResult.NeedsConfirmation(
                     prompt = "💬 *Instagram Comment*\n\nOn: *${query.ifBlank { "first post in feed" }}*\nComment: \"$message\"\n\nReply *YES* to post.",
                     onConfirm = {
-                        val result = agent.executeGoal(runner, commentGoal, maxSteps = 22)
+                        val result = agent.executeGoal(runner, commentGoal, maxSteps = 60)
                         SkillResult.Success(result)
                     }
                 )
@@ -133,7 +133,7 @@ STRICT RULES:
                 return SkillResult.NeedsConfirmation(
                     prompt = "📩 *Instagram DM*\n\nTo: *$query*\nMessage: \"$message\"\n\nReply *YES* to send.",
                     onConfirm = {
-                        val result = agent.executeGoal(runner, dmGoal, maxSteps = 22)
+                        val result = agent.executeGoal(runner, dmGoal, maxSteps = 60)
                         SkillResult.Success(result)
                     }
                 )
@@ -179,7 +179,7 @@ STEPS:
                     ?: "Do this on Instagram: $action ${query.ifBlank { "" }} ${message.ifBlank { "" }}".trim()
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 22)
+        val result = agent.executeGoal(runner, goal, maxSteps = 60)
         return SkillResult.Success(result)
     }
 }

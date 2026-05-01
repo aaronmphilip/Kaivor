@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.ScreenAgent
 import com.bharatdroid.agent.skills.*
@@ -98,7 +98,7 @@ class BillSplitterSkill : Skill {
                     append("so after calling done, it's OK to return to the home screen.")
                 }
             }
-            val stepResult = agent.executeGoal(runner, goal, maxSteps = 14)
+            val stepResult = agent.executeGoal(runner, goal, maxSteps = 40)
             results += "• $contact → ₹$perHead : $stepResult"
 
             // Return to PhonePe home before next contact

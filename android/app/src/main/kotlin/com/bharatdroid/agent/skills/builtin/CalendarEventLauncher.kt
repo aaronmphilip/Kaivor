@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import android.content.Intent
 import android.provider.CalendarContract
@@ -87,7 +87,7 @@ internal suspend fun createCalendarEventViaIntent(
                 append("- Then tap Save.\n")
                 append("- Call done only after the event is saved.\n")
             },
-            maxSteps = 10,
+            maxSteps = 70,
         )
         return SkillResult.Success(result)
     }

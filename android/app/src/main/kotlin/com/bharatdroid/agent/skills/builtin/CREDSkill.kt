@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -74,7 +74,7 @@ CRED app UI guide:
                 return SkillResult.NeedsConfirmation(
                     prompt = "💳 *CRED Bill Payment*\n\nCard: *${card.ifBlank { "linked card" }}*\nAmount: *₹${amount.ifBlank { "total due" }}*\n\n⚠️ You will need to enter your UPI PIN on the phone.\n\nReply *YES* to proceed.",
                     onConfirm = {
-                        val result = agent.executeGoal(runner, payGoal, maxSteps = 20)
+                        val result = agent.executeGoal(runner, payGoal, maxSteps = 55)
                         SkillResult.Success(result)
                     }
                 )
@@ -114,7 +114,7 @@ CRED app UI guide:
                 params["goal"] as? String ?: "Do this in CRED: $action $card $amount".trim()
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 20)
+        val result = agent.executeGoal(runner, goal, maxSteps = 55)
         return SkillResult.Success(result)
     }
 }

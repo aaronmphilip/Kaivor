@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.Permission
 import com.bharatdroid.agent.skills.Skill
@@ -202,7 +202,7 @@ class ZomatoSkill : Skill {
             }
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 28)
+        val result = agent.executeGoal(runner, goal, maxSteps = 70)
         return SkillResult.Success(result)
     }
 }

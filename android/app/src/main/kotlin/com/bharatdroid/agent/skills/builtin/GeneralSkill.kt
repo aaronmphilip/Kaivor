@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import android.content.Intent
 import com.bharatdroid.agent.skills.*
@@ -65,7 +65,7 @@ class GeneralSkill : Skill {
             }
         }
 
-        val result = agent.executeGoal(context.runner, goal, maxSteps = 30)
+        val result = agent.executeGoal(context.runner, goal, maxSteps = 70)
         return SkillResult.Success(result)
     }
 

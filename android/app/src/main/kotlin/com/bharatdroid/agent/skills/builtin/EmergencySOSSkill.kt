@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.ScreenAgent
 import com.bharatdroid.agent.skills.*
@@ -95,7 +95,7 @@ class EmergencySOSSkill : Skill {
             append("\n⚠️ If any permission dialog appears (location, camera), tap 'Allow' or 'While using app'.\n")
             append("⚠️ DO NOT go back to the chat list before completing all steps.")
         }
-        val waResult = agent.executeGoal(runner, waGoal, maxSteps = 22)
+        val waResult = agent.executeGoal(runner, waGoal, maxSteps = 60)
 
         // ─── 2. Optional: place a call via the dialer ───────────────────────────
         val callResult = if (shouldCall) {
@@ -124,7 +124,7 @@ class EmergencySOSSkill : Skill {
                     append("3. Tap the phone/call icon next to their number to start the call.\n")
                     append("4. Call done as soon as the call is dialing (don't wait for pick-up).\n")
                 }
-                agent.executeGoal(runner, dialGoal, maxSteps = 10)
+                agent.executeGoal(runner, dialGoal, maxSteps = 70)
             }
         } else "(call disabled)"
 

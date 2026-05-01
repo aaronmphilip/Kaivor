@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -88,7 +88,7 @@ Flipkart UI guide:
                 return SkillResult.NeedsConfirmation(
                     prompt = "🛍️ *Add to Cart on Flipkart*\n\nItem: *$query*${if (maxPrice != null) "\nMax price: ₹$maxPrice" else ""}\n\nI'll search, find the best match, and add it to your cart.\n\nReply *YES* to proceed.",
                     onConfirm = {
-                        val result = agent.executeGoal(runner, goal, maxSteps = 20)
+                        val result = agent.executeGoal(runner, goal, maxSteps = 55)
                         SkillResult.Success(result)
                     }
                 )
@@ -109,7 +109,7 @@ Flipkart UI guide:
             }
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 20)
+        val result = agent.executeGoal(runner, goal, maxSteps = 55)
         return SkillResult.Success(result)
     }
 }

@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -61,7 +61,7 @@ class FoodDealFinderSkill : Skill {
             append("5. Call done with summary EXACTLY like: 'Swiggy: ₹180 at <Restaurant>, rating 4.3'.\n\n")
             append("DO NOT add to cart. DO NOT order. Just READ and report.")
         }
-        val swiggyResult = agent.executeGoal(runner, swiggyGoal, maxSteps = 14)
+        val swiggyResult = agent.executeGoal(runner, swiggyGoal, maxSteps = 40)
         val swiggyPrice = parsePrice(swiggyResult)
 
         // ─── Zomato leg ──────────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ class FoodDealFinderSkill : Skill {
             append("5. Call done with summary EXACTLY like: 'Zomato: ₹210 at <Restaurant>, rating 4.1'.\n\n")
             append("DO NOT add to cart. DO NOT order. Just READ and report.")
         }
-        val zomatoResult = agent.executeGoal(runner, zomatoGoal, maxSteps = 14)
+        val zomatoResult = agent.executeGoal(runner, zomatoGoal, maxSteps = 40)
         val zomatoPrice = parsePrice(zomatoResult)
 
         // ─── Compare ────────────────────────────────────────────────────────────

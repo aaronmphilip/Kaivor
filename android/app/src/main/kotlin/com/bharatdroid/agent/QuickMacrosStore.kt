@@ -25,7 +25,7 @@ class QuickMacrosStore(context: Context) {
         private const val KEY_MACROS = "quick_macros"
         private const val SEPARATOR = "|||"
         private const val KV_SEPARATOR = ":::"
-        private const val MAX_MACROS = 50
+        private const val MAX_MACROS = 500
     }
 
     /** Save a macro alias. Overwrites if the name already exists. */

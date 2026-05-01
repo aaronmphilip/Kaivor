@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -71,7 +71,7 @@ class PriceComparatorSkill : Skill {
             append("3. Call done with summary EXACTLY like: 'Amazon price: ₹74,900 for <product-name>'.\n\n")
             append("DO NOT tap the product. DO NOT scroll beyond the first result. Just READ.")
         }
-        val amazonResult = agent.executeGoal(runner, amazonGoal, maxSteps = 8)
+        val amazonResult = agent.executeGoal(runner, amazonGoal, maxSteps = 65)
         val amazonPrice = parsePrice(amazonResult)
 
         // ─── Flipkart leg ────────────────────────────────────────────────────────
@@ -101,7 +101,7 @@ class PriceComparatorSkill : Skill {
             append("3. Call done with summary EXACTLY like: 'Flipkart price: ₹69,900 for <product-name>'.\n\n")
             append("DO NOT tap the product. DO NOT scroll beyond the first result. Just READ.")
         }
-        val flipkartResult = agent.executeGoal(runner, flipkartGoal, maxSteps = 8)
+        val flipkartResult = agent.executeGoal(runner, flipkartGoal, maxSteps = 65)
         val flipkartPrice = parsePrice(flipkartResult)
 
         // ─── Compare & report ───────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -74,7 +74,7 @@ Paytm UI guide:
                 return SkillResult.NeedsConfirmation(
                     prompt = "📱 *Mobile Recharge via Paytm*\n\nNumber: *$number*\nAmount: *₹$amount*\n\n⚠️ You will need to enter your UPI PIN on the phone.\n\nReply *YES* to proceed.",
                     onConfirm = {
-                        val result = agent.executeGoal(runner, goal, maxSteps = 22)
+                        val result = agent.executeGoal(runner, goal, maxSteps = 60)
                         SkillResult.Success(result)
                     }
                 )
@@ -104,7 +104,7 @@ Paytm UI guide:
                 return SkillResult.NeedsConfirmation(
                     prompt = "💸 *Send Money via Paytm*\n\nAmount: *₹$amount*\nTo: *$recipient*\n\n⚠️ You will need to enter your UPI PIN on the phone.\n\nReply *YES* to proceed.",
                     onConfirm = {
-                        val result = agent.executeGoal(runner, goal, maxSteps = 20)
+                        val result = agent.executeGoal(runner, goal, maxSteps = 55)
                         SkillResult.Success(result)
                     }
                 )
@@ -144,7 +144,7 @@ Paytm UI guide:
                 params["goal"] as? String ?: "Do this in Paytm: $action $contact $mobile $amount".trim()
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 22)
+        val result = agent.executeGoal(runner, goal, maxSteps = 60)
         return SkillResult.Success(result)
     }
 }

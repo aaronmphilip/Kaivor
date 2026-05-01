@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.ScreenAgent
 import com.bharatdroid.agent.skills.Permission
@@ -233,7 +233,7 @@ class RideConciergeSkill : Skill {
                 destination = destination,
                 modeLabel = modeLabel,
             ),
-            maxSteps = 18,
+            maxSteps = 50,
         )
         delay(450)
 
@@ -244,7 +244,7 @@ class RideConciergeSkill : Skill {
                 destination = destination,
                 modeLabel = modeLabel,
             ),
-            maxSteps = 10,
+            maxSteps = 70,
         )
 
         var pickupText = extractRouteField(readResult, "pickup")
@@ -265,7 +265,7 @@ class RideConciergeSkill : Skill {
                     destination = destination,
                     modeLabel = modeLabel,
                 ),
-                maxSteps = 16,
+                maxSteps = 45,
             )
         } else {
             ""
@@ -280,7 +280,7 @@ class RideConciergeSkill : Skill {
                     destination = destination,
                     modeLabel = modeLabel,
                 ),
-                maxSteps = 8,
+                maxSteps = 65,
             )
 
             val secondPickup = extractRouteField(secondRead, "pickup")
@@ -332,7 +332,7 @@ class RideConciergeSkill : Skill {
                 destination = destination,
                 transport = transport,
             ),
-            maxSteps = 26,
+            maxSteps = 65,
         )
         return parseEstimate("uber", result)
     }
@@ -353,7 +353,7 @@ class RideConciergeSkill : Skill {
                 destination = destination,
                 transport = transport,
             ),
-            maxSteps = 26,
+            maxSteps = 65,
         )
         return parseEstimate("ola", result)
     }
@@ -376,7 +376,7 @@ class RideConciergeSkill : Skill {
                 transport = transport,
                 chosen = chosen,
             ),
-            maxSteps = 34,
+            maxSteps = 80,
         )
         return SkillResult.Success(result)
     }
@@ -399,7 +399,7 @@ class RideConciergeSkill : Skill {
                 transport = transport,
                 chosen = chosen,
             ),
-            maxSteps = 34,
+            maxSteps = 80,
         )
         return SkillResult.Success(result)
     }
@@ -420,7 +420,7 @@ class RideConciergeSkill : Skill {
                 destination = destination,
                 transport = transport,
             ),
-            maxSteps = 26,
+            maxSteps = 65,
         )
         return parseEstimate("rapido", result)
     }
@@ -443,7 +443,7 @@ class RideConciergeSkill : Skill {
                 transport = transport,
                 chosen = chosen,
             ),
-            maxSteps = 34,
+            maxSteps = 80,
         )
         return SkillResult.Success(result)
     }

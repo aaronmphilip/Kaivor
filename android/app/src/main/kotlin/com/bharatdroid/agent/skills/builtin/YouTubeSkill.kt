@@ -1,4 +1,4 @@
-package com.bharatdroid.agent.skills.builtin
+﻿package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.ScreenAgent
 import com.bharatdroid.agent.ScreenElement
@@ -85,14 +85,14 @@ SHARE LINK: The Share button is in the action row BELOW the video player (same r
             "channel", "goal" -> {
                 val rawGoal = goal.ifBlank { query }
                 val fullGoal = buildFullGoal(rawGoal, query)
-                val result = agent.executeGoal(runner, fullGoal, maxSteps = 35)
+                val result = agent.executeGoal(runner, fullGoal, maxSteps = 80)
                 SkillResult.Success(result)
             }
 
             else -> {
                 val fallback = goal.ifBlank { query.ifBlank { action } }
                 val fullGoal = buildFullGoal(fallback, query)
-                val result = agent.executeGoal(runner, fullGoal, maxSteps = 30)
+                val result = agent.executeGoal(runner, fullGoal, maxSteps = 70)
                 SkillResult.Success(result)
             }
         }
@@ -133,7 +133,7 @@ STRICT RULES:
 - Do NOT go back or navigate away from the video.
 """.trimIndent()
 
-        agent.executeGoal(runner, copyGoal, maxSteps = 12)
+        agent.executeGoal(runner, copyGoal, maxSteps = 35)
         delay(500)
 
         // Step 4: Read the clipboard
@@ -192,7 +192,7 @@ STRICT RULES:
 - Stop as soon as the link is sent.
 """.trimIndent()
 
-        agent.executeGoal(runner, sendGoal, maxSteps = 20)
+        agent.executeGoal(runner, sendGoal, maxSteps = 55)
 
         return SkillResult.Success("🔗 Sent YouTube link to *$contact*:\n$link\n_(video: $videoTitle)_")
     }

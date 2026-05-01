@@ -30,10 +30,10 @@ class ConversationContextStore(context: Context) {
     ) {
         update(chatId) { current ->
             current.copy(
-                lastKnowledgeQuery = query.take(200),
-                lastKnowledgeTopic = topic.take(160),
-                lastKnowledgeSummary = summary.take(800),
-                lastKnowledgeSources = sources.take(5),
+                lastKnowledgeQuery = query.take(1000),
+                lastKnowledgeTopic = topic.take(500),
+                lastKnowledgeSummary = summary.take(3000),
+                lastKnowledgeSources = sources.take(20),
                 updatedAt = System.currentTimeMillis(),
             )
         }
@@ -42,8 +42,8 @@ class ConversationContextStore(context: Context) {
     fun rememberAction(chatId: Long, request: String, result: String) {
         update(chatId) { current ->
             current.copy(
-                lastActionRequest = request.take(200),
-                lastActionResult = result.take(400),
+                lastActionRequest = request.take(1000),
+                lastActionResult = result.take(2000),
                 updatedAt = System.currentTimeMillis(),
             )
         }

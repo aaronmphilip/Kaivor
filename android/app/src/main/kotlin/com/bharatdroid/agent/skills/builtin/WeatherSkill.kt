@@ -34,7 +34,7 @@ class WeatherSkill : Skill {
             ?.trim()
             ?: return SkillResult.Failure("Which city's weather do you want?")
 
-        val days = (params["days"] as? Number)?.toInt()?.coerceIn(1, 3) ?: 1
+        val days = (params["days"] as? Number)?.toInt()?.coerceIn(1, 14) ?: 1
 
         return withContext(Dispatchers.IO) {
             try {

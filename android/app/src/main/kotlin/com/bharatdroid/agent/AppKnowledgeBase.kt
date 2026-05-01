@@ -23,7 +23,7 @@ class AppKnowledgeBase(private val context: Context) {
 
     companion object {
         private const val PREFS = "bharatdroid_appknowledge"
-        private const val MAX_NOTES_PER_APP = 12
+        private const val MAX_NOTES_PER_APP = 100
     }
 
     data class AppNote(
@@ -89,7 +89,7 @@ class AppKnowledgeBase(private val context: Context) {
 
         return buildString {
             appendLine("📖 KNOWLEDGE BASE — What worked before in this app (use these patterns):")
-            notes.take(6).forEachIndexed { i, n ->
+            notes.forEachIndexed { i, n ->
                 val countStr = if (n.successCount > 1) " (worked ${n.successCount}×)" else ""
                 appendLine("${i + 1}. ${n.note}$countStr")
             }
