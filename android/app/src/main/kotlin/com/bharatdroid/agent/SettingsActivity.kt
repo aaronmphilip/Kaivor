@@ -1,7 +1,12 @@
 package com.bharatdroid.agent
 
+import android.app.role.RoleManager
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
+import android.telecom.TelecomManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -17,6 +22,9 @@ class SettingsActivity : AppCompatActivity() {
     private var learningEnabled = true
     private var ttsEnabled = false
     private var ttsVoice = "alloy"
+    private var notchEnabled = true
+    private var ultraMode = false
+    private var callAnsweringEnabled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,6 +41,9 @@ class SettingsActivity : AppCompatActivity() {
             .getBoolean("learning_enabled", true)
         ttsEnabled = prefs.getBoolean("tts_enabled", false)
         ttsVoice = prefs.getString("tts_voice", "alloy") ?: "alloy"
+        notchEnabled = prefs.getBoolean("notch_overlay_enabled", true)
+        ultraMode = prefs.getBoolean("ultra_mode", false)
+        callAnsweringEnabled = prefs.getBoolean("call_answering_enabled", false)
 
         val agentKeyField = findViewById<EditText>(R.id.etApiKey)
         val agentModelField = findViewById<EditText>(R.id.etModel)
@@ -49,6 +60,21 @@ class SettingsActivity : AppCompatActivity() {
 
         val imageApiKeyField = findViewById<EditText?>(R.id.etImageApiKey)
         imageApiKeyField?.setText(prefs.getString("image_api_key", "") ?: "")
+
+        val waNumberField = findViewById<EditText?>(R.id.etWhatsappNumber)
+        waNumberField?.setText(prefs.getString("whatsapp_channel_number", "") ?: "")
+
+        val elevenLabsKeyField = findViewById<EditText?>(R.id.etElevenLabsKey)
+        elevenLabsKeyField?.setText(prefs.getString("elevenlabs_api_key", "") ?: "")
+
+        val elevenLabsVoiceIdField = findViewById<EditText?>(R.id.etElevenLabsVoiceId)
+        elevenLabsVoiceIdField?.setText(prefs.getString("elevenlabs_voice_id", "") ?: "")
+
+        val ownerNameField = findViewById<EditText?>(R.id.etOwnerName)
+        ownerNameField?.setText(prefs.getString("owner_name", "") ?: "")
+
+        val vipNumbersField = findViewById<EditText?>(R.id.etVipNumbers)
+        vipNumbersField?.setText(prefs.getString("vip_caller_numbers", "") ?: "")
 
         setupProviderSection(
             initialProvider = selectedAgentProvider,
@@ -74,6 +100,9 @@ class SettingsActivity : AppCompatActivity() {
         setupLearningToggle()
         setupTtsToggle()
         setupVoicePicker()
+        setupNotchToggle()
+        setupModeToggle()
+        setupCallAnswering()
 
         findViewById<Button>(R.id.btnBack).setOnClickListener { finish() }
 
@@ -90,6 +119,10 @@ class SettingsActivity : AppCompatActivity() {
 
             val ttsKey = ttsKeyField.text.toString().trim()
             val imageApiKey = imageApiKeyField?.text?.toString()?.trim().orEmpty()
+            val elevenLabsKey = elevenLabsKeyField?.text?.toString()?.trim().orEmpty()
+            val elevenLabsVoiceId = elevenLabsVoiceIdField?.text?.toString()?.trim().orEmpty()
+            val ownerName = ownerNameField?.text?.toString()?.trim().orEmpty()
+            val vipNumbers = vipNumbersField?.text?.toString()?.trim().orEmpty()
             prefs.edit()
                 .putString("agent_ai_key", agentKey)
                 .putString("agent_ai_provider", selectedAgentProvider.name)
@@ -105,6 +138,14 @@ class SettingsActivity : AppCompatActivity() {
                 .putBoolean("tts_enabled", ttsEnabled)
                 .putString("tts_voice", ttsVoice)
                 .putString("image_api_key", imageApiKey)
+                .putBoolean("notch_overlay_enabled", notchEnabled)
+                .putBoolean("ultra_mode", ultraMode)
+                .putString("whatsapp_channel_number", waNumberField?.text?.toString()?.trim().orEmpty())
+                .putBoolean("call_answering_enabled", callAnsweringEnabled)
+                .putString("elevenlabs_api_key", elevenLabsKey)
+                .putString("elevenlabs_voice_id", elevenLabsVoiceId)
+                .putString("owner_name", ownerName)
+                .putString("vip_caller_numbers", vipNumbers)
                 .apply()
 
             getSharedPreferences("bharatdroid_memory", MODE_PRIVATE)
@@ -285,6 +326,110 @@ class SettingsActivity : AppCompatActivity() {
         btnNova.setOnClickListener { render("nova") }
         btnShimmer.setOnClickListener { render("shimmer") }
         render(ttsVoice)
+    }
+
+    private fun setupNotchToggle() {
+        val btnOn = findViewById<Button>(R.id.btnNotchOn)
+        val btnOff = findViewById<Button>(R.id.btnNotchOff)
+        val btnGrant = findViewById<Button>(R.id.btnGrantOverlay)
+
+        fun render(enabled: Boolean) {
+            notchEnabled = enabled
+            if (enabled) {
+                btnOn.setBackgroundColor(0xFF00CC88.toInt())
+                btnOn.setTextColor(0xFF000000.toInt())
+                btnOff.setBackgroundColor(0xFF1A1A1A.toInt())
+                btnOff.setTextColor(0xFFAAAAAA.toInt())
+            } else {
+                btnOff.setBackgroundColor(0xFF555555.toInt())
+                btnOff.setTextColor(0xFFFFFFFF.toInt())
+                btnOn.setBackgroundColor(0xFF1A1A1A.toInt())
+                btnOn.setTextColor(0xFFAAAAAA.toInt())
+            }
+        }
+
+        btnOn.setOnClickListener {
+            if (!Settings.canDrawOverlays(this)) {
+                Toast.makeText(this, "Grant 'Display over other apps' first →", Toast.LENGTH_SHORT).show()
+            } else {
+                render(true)
+            }
+        }
+        btnOff.setOnClickListener { render(false) }
+        btnGrant.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")))
+        }
+
+        // Hide grant button if permission already granted
+        btnGrant.visibility = if (Settings.canDrawOverlays(this))
+            android.view.View.GONE else android.view.View.VISIBLE
+
+        render(notchEnabled)
+    }
+
+    private fun setupModeToggle() {
+        val btnEfficient = findViewById<Button>(R.id.btnModeEfficient)
+        val btnUltra = findViewById<Button>(R.id.btnModeUltra)
+
+        fun render(ultra: Boolean) {
+            ultraMode = ultra
+            if (!ultra) {
+                btnEfficient.setBackgroundColor(0xFF00CC88.toInt())
+                btnEfficient.setTextColor(0xFF000000.toInt())
+                btnUltra.setBackgroundColor(0xFF1A1A1A.toInt())
+                btnUltra.setTextColor(0xFFAAAAAA.toInt())
+            } else {
+                btnUltra.setBackgroundColor(0xFFFF5C00.toInt())
+                btnUltra.setTextColor(0xFFFFFFFF.toInt())
+                btnEfficient.setBackgroundColor(0xFF1A1A1A.toInt())
+                btnEfficient.setTextColor(0xFFAAAAAA.toInt())
+            }
+        }
+
+        btnEfficient.setOnClickListener { render(false) }
+        btnUltra.setOnClickListener { render(true) }
+        render(ultraMode)
+    }
+
+    private fun setupCallAnswering() {
+        val btnOn = findViewById<Button>(R.id.btnCallAnswerOn)
+        val btnOff = findViewById<Button>(R.id.btnCallAnswerOff)
+        val btnDialer = findViewById<Button>(R.id.btnSetDefaultDialer)
+
+        fun render(enabled: Boolean) {
+            callAnsweringEnabled = enabled
+            if (enabled) {
+                btnOn.setBackgroundColor(0xFF00CC88.toInt())
+                btnOn.setTextColor(0xFF000000.toInt())
+                btnOff.setBackgroundColor(0xFF1A1A1A.toInt())
+                btnOff.setTextColor(0xFFAAAAAA.toInt())
+            } else {
+                btnOff.setBackgroundColor(0xFF555555.toInt())
+                btnOff.setTextColor(0xFFFFFFFF.toInt())
+                btnOn.setBackgroundColor(0xFF1A1A1A.toInt())
+                btnOn.setTextColor(0xFFAAAAAA.toInt())
+            }
+        }
+
+        btnOn.setOnClickListener { render(true) }
+        btnOff.setOnClickListener { render(false) }
+        render(callAnsweringEnabled)
+
+        btnDialer.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val rm = getSystemService(RoleManager::class.java)
+                if (!rm.isRoleHeld(RoleManager.ROLE_DIALER)) {
+                    startActivityForResult(rm.createRequestRoleIntent(RoleManager.ROLE_DIALER), 99)
+                } else {
+                    Toast.makeText(this, "BharatDroid is already the default Phone app.", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                val intent = Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)
+                    .putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName)
+                startActivity(intent)
+            }
+        }
     }
 
     private fun parseProvider(raw: String, fallback: AIProvider): AIProvider {
