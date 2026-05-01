@@ -52,6 +52,10 @@ class NotificationRelay : NotificationListenerService() {
         @Volatile var chatId: Long = -1L
         private val bootstrapped = AtomicBoolean(false)
 
+        // WhatsApp channel — when set, messages from this number act as agent commands
+        @Volatile var whatsappChannelNumber: String = ""
+        @Volatile var orchestrator: AgentOrchestrator? = null
+
         // telegram outgoing message_id → notification we forwarded (for reply routing)
         private val notifMap = ConcurrentHashMap<Long, NotifRecord>()
 
@@ -63,10 +67,18 @@ class NotificationRelay : NotificationListenerService() {
          * Safe to call before the service itself has bound — it stores the config statically
          * and requestRebind() kicks the service to connect.
          */
-        fun attach(p: TelegramPoller, m: MuteStore, authorizedChatId: Long) {
+        fun attach(
+            p: TelegramPoller,
+            m: MuteStore,
+            authorizedChatId: Long,
+            orch: AgentOrchestrator? = null,
+            waNumber: String = "",
+        ) {
             poller = p
             muteStore = m
             chatId = authorizedChatId
+            orchestrator = orch
+            whatsappChannelNumber = waNumber.trim()
         }
 
         /** Ask Android to (re)bind the listener. Needs POST-boot + user grant. */
@@ -187,6 +199,31 @@ class NotificationRelay : NotificationListenerService() {
         if (recentHashes.size > 500) {
             val cutoff = now - 30_000L
             recentHashes.entries.removeAll { it.value < cutoff }
+        }
+
+        // ── WhatsApp channel: route commands from authorized number ──────────
+        // If this notification is from WhatsApp and the sender matches the configured
+        // authorized number, treat the message body as an agent command instead of
+        // forwarding it to Telegram as a regular notification.
+        val waPackages = setOf("com.whatsapp", "com.whatsapp.w4b")
+        if (pkg in waPackages && whatsappChannelNumber.isNotBlank() && body.isNotBlank()) {
+            val senderNorm = title.filter { it.isDigit() }
+            val authNorm   = whatsappChannelNumber.filter { it.isDigit() }.takeLast(10)
+            val isSelf     = senderNorm.endsWith(authNorm) || title.contains("You", ignoreCase = true)
+            if (isSelf) {
+                val orch = orchestrator
+                val cid  = chatId.takeIf { it > 0 }
+                if (orch != null && cid != null) {
+                    scope.launch {
+                        val reply = orch.handleWhatsAppCommand(cid, body)
+                        if (reply.isNotBlank()) {
+                            // Send reply back into WhatsApp via the skill runner
+                            orch.sendWhatsAppReply(whatsappChannelNumber, reply)
+                        }
+                    }
+                }
+                return   // don't forward this as a normal Telegram notification
+            }
         }
 
         // Extract RemoteInput for reply (first action that has one).
