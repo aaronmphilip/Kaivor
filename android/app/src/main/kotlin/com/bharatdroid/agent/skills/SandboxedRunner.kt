@@ -11,9 +11,13 @@ import kotlinx.coroutines.delay
 
 class SandboxedRunner(
     private val manifest: SkillManifest,
-    private val service: AgentAccessibilityService,
+    private val serviceOrNull: AgentAccessibilityService?,
     private val context: Context,
 ) {
+    private val service: AgentAccessibilityService
+        get() = serviceOrNull
+            ?: throw IllegalStateException("Accessibility service is not running.")
+
     fun getScreenSize(): Pair<Int, Int> {
         val metrics = context.resources.displayMetrics
         return Pair(metrics.widthPixels, metrics.heightPixels)

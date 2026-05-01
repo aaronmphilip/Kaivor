@@ -145,6 +145,15 @@ class AgentOrchestrator(
             runner.register(PhoneFinderSkill())
             // â"€â"€ General Agent (catch-all) â"€â"€
             runner.register(GeneralSkill())
+            // â"€â"€ API-powered Skills (no phone UI needed) â"€â"€
+            runner.register(WeatherSkill())
+            runner.register(CurrencySkill())
+            runner.register(QrCodeSkill())
+            runner.register(PdfCreatorSkill())
+            runner.register(PptxCreatorSkill())
+            if (config.imageApiKey.isNotBlank()) {
+                runner.register(ImageGeneratorSkill(config.imageApiKey, config.imageApiProvider))
+            }
 
             // Load community skills
             skillStore.loadAll().forEach { remote ->
@@ -170,12 +179,16 @@ class AgentOrchestrator(
             model = config.agentModel,
         )
 
+        val pollerPrefs = context.getSharedPreferences("bharatdroid_poller", Context.MODE_PRIVATE)
+        val savedOffset = pollerPrefs.getLong("last_update_id", 0L)
         poller = TelegramPoller(
             botToken = config.telegramBotToken,
             authorizedChatIds = config.authorizedChatIds,
             downloadDir = java.io.File(context.cacheDir, "telegram"),
             commands = buildTelegramCommands(),
             onMessage = ::handleMessage,
+            saveOffset = { id -> pollerPrefs.edit().putLong("last_update_id", id).apply() },
+            initialOffset = savedOffset,
         )
 
         poller.start()
@@ -783,7 +796,7 @@ class AgentOrchestrator(
             is SkillResult.Failure -> {
                 activityLog.log(userText, skillId, "failure", result.reason)
                 ActionExecutionOutcome(
-                    reply = "Error: ${result.reason}",
+                    reply = "❌ ${result.reason}",
                     contextSummary = "Error: ${result.reason}",
                 )
             }
@@ -791,6 +804,18 @@ class AgentOrchestrator(
                 reply = result.prompt,
                 contextSummary = result.prompt,
             )
+            is SkillResult.Media -> {
+                activityLog.log(userText, skillId, "success", result.caption.take(100))
+                if (result.isImage) {
+                    poller.sendPhotoBytes(msg.chatId, result.bytes, result.caption, result.mimeType)
+                } else {
+                    poller.sendDocumentBytes(msg.chatId, result.bytes, result.filename, result.caption, result.mimeType)
+                }
+                ActionExecutionOutcome(
+                    reply = "",
+                    contextSummary = result.caption.ifBlank { "Generated ${result.filename} and sent to chat." },
+                )
+            }
         }
     }
 
@@ -830,6 +855,15 @@ class AgentOrchestrator(
                 is SkillResult.NeedsConfirmation -> {
                     results.add("Paused Step $stepNum (${step.skillId}): ${result.prompt}")
                     break
+                }
+                is SkillResult.Media -> {
+                    activityLog.log("$userText [step $stepNum]", step.skillId, "success", result.caption.take(100))
+                    if (result.isImage) {
+                        poller.sendPhotoBytes(msg.chatId, result.bytes, result.caption, result.mimeType)
+                    } else {
+                        poller.sendDocumentBytes(msg.chatId, result.bytes, result.filename, result.caption, result.mimeType)
+                    }
+                    results.add("OK Step $stepNum/${totalSteps}: ${result.caption.ifBlank { result.filename }}")
                 }
             }
         }
@@ -1647,4 +1681,7 @@ data class AgentConfig(
     val ttsProvider: TtsProvider = TtsProvider.OFF,
     val ttsApiKey: String = "",
     val ttsVoice: String = "alloy",
+    /** Optional. When set, "generate an image of X" sends a photo directly in Telegram. */
+    val imageApiKey: String = "",
+    val imageApiProvider: String = "together",
 )

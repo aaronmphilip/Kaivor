@@ -164,6 +164,7 @@ class RideConciergeSkill : Skill {
                     is SkillResult.Success -> bookingResult.message
                     is SkillResult.Failure -> return@confirm bookingResult
                     is SkillResult.NeedsConfirmation -> return@confirm bookingResult
+                    is SkillResult.Media -> return@confirm SkillResult.Failure("Ride booking returned media instead of a booking result.")
                 }
 
                 val messageText = if (contact.isBlank()) {
@@ -183,6 +184,7 @@ class RideConciergeSkill : Skill {
                         is SkillResult.Success -> messageResult.message
                         is SkillResult.Failure -> "Ride booked, but WhatsApp failed: ${messageResult.reason}"
                         is SkillResult.NeedsConfirmation -> "Ride booked. WhatsApp needs extra confirmation."
+                        is SkillResult.Media -> "Ride booked. WhatsApp returned media instead of a message result."
                     }
                 }
 

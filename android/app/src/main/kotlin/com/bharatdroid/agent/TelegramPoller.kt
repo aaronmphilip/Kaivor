@@ -59,6 +59,9 @@ class TelegramPoller(
     private val downloadDir: File,
     private val commands: List<TelegramBotCommand> = emptyList(),
     private val onMessage: suspend (msg: IncomingMessage) -> String,
+    /** Persists lastUpdateId so commands don't replay after service restart / reboot. */
+    private val saveOffset: (Long) -> Unit = {},
+    initialOffset: Long = 0L,
 ) {
     private val client = OkHttpClient.Builder()
         .callTimeout(35, java.util.concurrent.TimeUnit.SECONDS)
@@ -66,7 +69,8 @@ class TelegramPoller(
 
     private val gson = Gson()
     private val baseUrl = "https://api.telegram.org/bot$botToken"
-    private var lastUpdateId = 0L
+    // Restored from SharedPreferences — prevents command replay after restart/reboot.
+    private var lastUpdateId = initialOffset
     private var commandsSynced = false
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -83,7 +87,8 @@ class TelegramPoller(
                     }
                     val updates = fetchUpdates()
                     for (msg in updates) {
-                        lastUpdateId = maxOf(lastUpdateId, msg.updateId)
+                        val newId = maxOf(lastUpdateId, msg.updateId)
+                        if (newId != lastUpdateId) { lastUpdateId = newId; saveOffset(newId) }
 
                         if (msg.chatId !in authorizedChatIds) {
                             sendMessage(msg.chatId, "This is a private BharatDroid agent. Unauthorized.")
@@ -384,6 +389,53 @@ class TelegramPoller(
             } catch (_: Exception) {
                 false
             }
+        }
+    }
+
+    /** Send raw image bytes (PNG, JPEG, WebP) as a Telegram photo — appears inline in chat. */
+    suspend fun sendPhotoBytes(chatId: Long, bytes: ByteArray, caption: String = "", mimeType: String = "image/png") {
+        val ext = when {
+            mimeType.contains("jpeg") || mimeType.contains("jpg") -> "jpg"
+            mimeType.contains("webp") -> "webp"
+            else -> "png"
+        }
+        val body = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("chat_id", chatId.toString())
+            .addFormDataPart("caption", caption.take(1024))
+            .addFormDataPart("photo", "image.$ext", bytes.toRequestBody(mimeType.toMediaType()))
+            .apply {
+                buildCommandKeyboard()?.let { addFormDataPart("reply_markup", gson.toJson(it)) }
+            }
+            .build()
+        val request = Request.Builder().url("$baseUrl/sendPhoto").post(body).build()
+        withContext(Dispatchers.IO) {
+            try { client.newCall(request).execute().close() }
+            catch (_: IOException) { sendMessage(chatId, caption.ifBlank { "📷 Image generated." }) }
+        }
+    }
+
+    /** Send raw bytes as a file/document — user can download it from Telegram. */
+    suspend fun sendDocumentBytes(
+        chatId: Long,
+        bytes: ByteArray,
+        filename: String,
+        caption: String = "",
+        mimeType: String = "application/octet-stream",
+    ) {
+        val body = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("chat_id", chatId.toString())
+            .addFormDataPart("caption", caption.take(1024))
+            .addFormDataPart("document", filename, bytes.toRequestBody(mimeType.toMediaType()))
+            .apply {
+                buildCommandKeyboard()?.let { addFormDataPart("reply_markup", gson.toJson(it)) }
+            }
+            .build()
+        val request = Request.Builder().url("$baseUrl/sendDocument").post(body).build()
+        withContext(Dispatchers.IO) {
+            try { client.newCall(request).execute().close() }
+            catch (_: IOException) { sendMessage(chatId, caption.ifBlank { "📎 File generated." }) }
         }
     }
 

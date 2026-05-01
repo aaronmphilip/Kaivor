@@ -110,6 +110,7 @@ class TravelPlannerSkill : Skill {
             is SkillResult.Success -> calendarResult.message
             is SkillResult.Failure -> calendarResult.reason
             is SkillResult.NeedsConfirmation -> "Calendar creation needs confirmation."
+            is SkillResult.Media -> "Calendar returned media instead of an event result."
         }
 
         return SkillResult.Success(

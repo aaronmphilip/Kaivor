@@ -75,6 +75,10 @@ class AgentForegroundService : LifecycleService() {
         val ttsProvider = if (ttsEnabled) TtsProvider.OPENAI else TtsProvider.OFF
         val ttsVoice = prefs.getString("tts_voice", "alloy") ?: "alloy"
 
+        // Optional Image Generation — "generate an image of X" sends photo in Telegram.
+        val imageApiKey = prefs.getString("image_api_key", "")?.trim().orEmpty()
+        val imageApiProvider = prefs.getString("image_api_provider", "together") ?: "together"
+
         val config = AgentConfig(
             telegramBotToken = botToken,
             agentApiKey = agentKey,
@@ -88,6 +92,8 @@ class AgentForegroundService : LifecycleService() {
             ttsProvider = ttsProvider,
             ttsApiKey = ttsKey,
             ttsVoice = ttsVoice,
+            imageApiKey = imageApiKey,
+            imageApiProvider = imageApiProvider,
         )
 
         orchestrator = AgentOrchestrator(this, config)

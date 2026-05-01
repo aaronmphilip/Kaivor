@@ -47,6 +47,9 @@ class SettingsActivity : AppCompatActivity() {
         val ttsKeyField = findViewById<EditText>(R.id.etTtsKey)
         ttsKeyField.setText(prefs.getString("tts_api_key", "") ?: "")
 
+        val imageApiKeyField = findViewById<EditText?>(R.id.etImageApiKey)
+        imageApiKeyField?.setText(prefs.getString("image_api_key", "") ?: "")
+
         setupProviderSection(
             initialProvider = selectedAgentProvider,
             geminiButtonId = R.id.btnProvGemini,
@@ -86,6 +89,7 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             val ttsKey = ttsKeyField.text.toString().trim()
+            val imageApiKey = imageApiKeyField?.text?.toString()?.trim().orEmpty()
             prefs.edit()
                 .putString("agent_ai_key", agentKey)
                 .putString("agent_ai_provider", selectedAgentProvider.name)
@@ -100,6 +104,7 @@ class SettingsActivity : AppCompatActivity() {
                 .putString("tts_api_key", ttsKey)
                 .putBoolean("tts_enabled", ttsEnabled)
                 .putString("tts_voice", ttsVoice)
+                .putString("image_api_key", imageApiKey)
                 .apply()
 
             getSharedPreferences("bharatdroid_memory", MODE_PRIVATE)

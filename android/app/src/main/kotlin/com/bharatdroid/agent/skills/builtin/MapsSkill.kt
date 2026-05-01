@@ -9,7 +9,7 @@ class MapsSkill : Skill {
         id = "maps",
         name = "Google Maps Navigation",
         version = "6.0.0",
-        description = "Navigate, search places, get directions, explore nearby on Google Maps",
+        description = "Navigate, get directions, compare ETA across travel modes, search places and explore nearby on Google Maps. Supports custom pickup/origin address.",
         author = "bharatdroid-team",
         trusted = true,
         permissions = setOf(
@@ -18,7 +18,7 @@ class MapsSkill : Skill {
             Permission.NAVIGATE_BACK,
         ),
         allowedPackages = setOf("com.google.android.apps.maps"),
-        exampleParamsHint = """{"action": "navigate", "destination": "Connaught Place, Delhi"}""",
+        exampleParamsHint = """{"action": "navigate", "destination": "Connaught Place, Delhi", "pickup": "Indiranagar"} | {"action": "eta_compare", "destination": "Airport"} | {"action": "directions", "destination": "Lajpat Nagar"}""",
         uiKnowledge = """
 Google Maps UI guide:
 - Home screen: search bar at top reads "Search here"; blue dot on map = your current location
@@ -40,6 +40,8 @@ Google Maps UI guide:
         val action = (params["action"] as? String)?.lowercase() ?: "navigate"
         val destination = params["destination"] as? String ?: params["query"] as? String
             ?: params["place"] as? String ?: params["goal"] as? String
+        val pickup = (params["pickup"] as? String ?: params["from"] as? String ?: params["origin"] as? String)
+            ?.trim()?.takeIf { it.isNotBlank() && !it.equals("current location", ignoreCase = true) && !it.equals("my location", ignoreCase = true) }
 
         runner.openApp("com.google.android.apps.maps")
         runner.waitForApp("com.google.android.apps.maps", timeoutMs = 7000)
@@ -52,60 +54,33 @@ Google Maps UI guide:
             val typed = runner.typeInFieldWithHint("Search here", destination)
                 || runner.typeInFieldWithHint("Search", destination)
             if (typed) {
-                delay(1200) // wait for autocomplete
+                delay(1500) // wait for autocomplete
             } else {
                 // Fallback: tap the search bar at the top (~7% from top, centered)
                 val (w, h) = runner.getScreenSize()
                 runner.tapAtPoint(w * 0.5f, h * 0.07f)
                 delay(500)
                 runner.typeReliably(destination)
-                delay(1200)
+                delay(1500)
             }
         }
 
-        if (destination == null && action !in setOf("nearby", "home", "goal")) {
+        if (destination == null && action !in setOf("nearby", "home", "goal", "eta_compare")) {
             return SkillResult.Failure("Where do you want to go?")
         }
 
         val goal = when (action) {
-            "navigate" ->
-                """You are in Google Maps. The search bar already has "$destination" typed or autocomplete suggestions are visible.
-STEPS:
-1. Tap the most relevant autocomplete suggestion for "$destination"
-2. Wait for the place detail card to appear (shows name, address, rating, blue Directions button)
-3. Tap the blue "Directions" button
+            "navigate" -> buildNavigateGoal(destination!!, pickup)
 
-─── DIRECTIONS SCREEN (critical) ───────────────────────────────────────────
-After tapping Directions, Google Maps shows a new screen with TWO route fields at the top:
-  FIELD 1 (top / FROM):  "Your location"  ← already set — DO NOT touch this field
-  FIELD 2 (below / TO):  "$destination"   ← already set — DO NOT re-type
-The route is already calculated. Do NOT tap the FROM field. Do NOT type "$destination" into the FROM field.
-─────────────────────────────────────────────────────────────────────────────
+            "directions" -> buildDirectionsGoal(destination!!, pickup)
 
-4. Tap "Start" or "GO" (the large blue button at the bottom right) to begin navigation
-5. Confirm navigation has started — report the first instruction, route, and ETA"""
-
-            "directions" ->
-                """You are in Google Maps. The search bar has "$destination" typed.
-STEPS:
-1. Tap the best autocomplete match for "$destination"
-2. Tap "Directions" on the place detail card
-
-─── DIRECTIONS SCREEN (critical) ───────────────────────────────────────────
-After tapping Directions, a new screen shows TWO fields:
-  FIELD 1 (FROM): "Your location"  ← already filled — DO NOT change this
-  FIELD 2 (TO):   "$destination"   ← already filled — DO NOT re-type
-Both fields are pre-filled. Do NOT tap the FROM field or type "$destination" into it.
-─────────────────────────────────────────────────────────────────────────────
-
-3. READ the available routes shown — travel mode (car/transit/walk), estimated time, distance
-4. Report what you see — time, distance, any alternate routes
-5. Do NOT tap Start"""
+            "eta_compare" -> buildEtaCompareGoal(destination ?: "", pickup)
 
             "search" ->
                 """You are in Google Maps. The search bar has "$destination" typed.
 STEPS:
 1. Tap the best autocomplete suggestion for "$destination"
+   CRITICAL: Do NOT type again. Look for text items appearing below the search bar and tap one.
 2. When the place detail card opens, read out: name, address, rating, opening hours, phone number if visible
 3. Report what you found"""
 
@@ -131,7 +106,105 @@ STEPS:
                 params["goal"] as? String ?: "Do this in Google Maps: $action ${destination ?: ""}".trim()
         }
 
-        val result = agent.executeGoal(runner, goal, maxSteps = 18)
+        val maxSteps = if (action == "eta_compare") 30 else 22
+        val result = agent.executeGoal(runner, goal, maxSteps = maxSteps)
         return SkillResult.Success(result)
+    }
+
+    private fun buildNavigateGoal(destination: String, pickup: String?): String = buildString {
+        appendLine("You are in Google Maps. The search bar already has \"$destination\" typed and autocomplete suggestions should be visible below it.")
+        appendLine()
+        appendLine("══════ CRITICAL — READ THIS BEFORE DOING ANYTHING ══════")
+        appendLine("The destination is ALREADY typed. Do NOT type it again. Do NOT press a search button.")
+        appendLine("Autocomplete suggestions (clickable text items) are appearing BELOW the search bar.")
+        appendLine("Your FIRST action must be: TAP THE BEST AUTOCOMPLETE SUGGESTION for \"$destination\".")
+        appendLine("If no suggestions are visible yet, wait 2 seconds then look again before doing anything.")
+        appendLine("═════════════════════════════════════════════════════════")
+        appendLine()
+        appendLine("STEPS:")
+        appendLine("1. TAP the most relevant autocomplete suggestion for \"$destination\" from the list below the search bar.")
+        appendLine("   → The search bar closes. A place detail card appears (name, address, rating, blue Directions button).")
+        appendLine("2. Wait for the place detail card to fully load.")
+        appendLine("3. Tap the blue \"Directions\" button on the place detail card.")
+        appendLine()
+        appendLine("─── DIRECTIONS SCREEN — READ THIS CAREFULLY ───────────────────────────────")
+        appendLine("After tapping Directions, a new screen opens with TWO route input fields at the top:")
+        if (pickup != null) {
+            appendLine("  FIELD 1 (top / FROM): currently shows your location — TAP THIS FIELD and change it to \"$pickup\"")
+            appendLine("    → Tap the FROM field text area, clear existing text, type \"$pickup\" (5–7 chars), tap best suggestion.")
+            appendLine("  FIELD 2 (bottom / TO): shows \"$destination\" — DO NOT touch this field, it is already set correctly.")
+        } else {
+            appendLine("  FIELD 1 (top / FROM): \"Your location\" — DO NOT touch this field, it is already set correctly.")
+            appendLine("  FIELD 2 (bottom / TO): \"$destination\" — DO NOT touch this field, it is already set correctly.")
+        }
+        appendLine("DO NOT re-type \"$destination\" into the FROM field. DO NOT search again.")
+        appendLine("────────────────────────────────────────────────────────────────────────────")
+        appendLine()
+        appendLine("4. Wait for the route to calculate (time and distance appear).")
+        appendLine("5. Tap \"Start\" or \"GO\" (the large blue button at the bottom right) to begin navigation.")
+        appendLine("6. Report the first turn instruction, route ETA, and distance.")
+    }
+
+    private fun buildDirectionsGoal(destination: String, pickup: String?): String = buildString {
+        appendLine("You are in Google Maps. The search bar already has \"$destination\" typed and autocomplete suggestions should be visible below it.")
+        appendLine()
+        appendLine("══════ CRITICAL — READ THIS BEFORE DOING ANYTHING ══════")
+        appendLine("The destination is ALREADY typed. Do NOT type it again. Do NOT press a search button.")
+        appendLine("Autocomplete suggestions (clickable text items) are appearing BELOW the search bar.")
+        appendLine("Your FIRST action must be: TAP THE BEST AUTOCOMPLETE SUGGESTION for \"$destination\".")
+        appendLine("If no suggestions are visible yet, wait 2 seconds then look again before doing anything.")
+        appendLine("═════════════════════════════════════════════════════════")
+        appendLine()
+        appendLine("STEPS:")
+        appendLine("1. TAP the best autocomplete suggestion for \"$destination\".")
+        appendLine("2. Tap \"Directions\" on the place detail card.")
+        appendLine()
+        appendLine("─── DIRECTIONS SCREEN ───────────────────────────────────────────────────────")
+        if (pickup != null) {
+            appendLine("  FIELD 1 (top / FROM): tap it and change to \"$pickup\" — type 5–7 chars, tap best suggestion.")
+            appendLine("  FIELD 2 (bottom / TO): \"$destination\" — DO NOT change this.")
+        } else {
+            appendLine("  FIELD 1 (top / FROM): \"Your location\" — DO NOT change this.")
+            appendLine("  FIELD 2 (bottom / TO): \"$destination\" — DO NOT change this.")
+        }
+        appendLine("────────────────────────────────────────────────────────────────────────────")
+        appendLine()
+        appendLine("3. Select the driving (car) mode tab if not already selected.")
+        appendLine("4. READ the route information shown: ETA, distance, alternate routes.")
+        appendLine("5. Do NOT tap Start. Report what you see — time, distance, any alternate routes.")
+    }
+
+    private fun buildEtaCompareGoal(destination: String, pickup: String?): String = buildString {
+        appendLine("You are in Google Maps. Compare travel time from ${pickup ?: "current location"} to \"$destination\" across different travel modes.")
+        appendLine()
+        if (destination.isNotBlank()) {
+            appendLine("STEPS:")
+            appendLine("1. Tap the search bar and type \"$destination\" (5–7 chars).")
+            appendLine("2. Tap the best autocomplete suggestion.")
+            appendLine("3. Tap the \"Directions\" button on the place detail card.")
+            appendLine()
+            if (pickup != null) {
+                appendLine("4. On the directions screen, tap the FROM (top) field and change it to \"$pickup\".")
+                appendLine("   Type \"$pickup\" (5–7 chars), tap best suggestion.")
+            } else {
+                appendLine("4. Leave the FROM (top) field as current location.")
+            }
+            appendLine()
+            appendLine("5. Check each travel mode tab and read the ETA and distance for each:")
+            appendLine("   - Driving (car icon) — ETA and distance")
+            appendLine("   - Transit/Bus (bus icon) — ETA and transit options")
+            appendLine("   - Walking (person icon) — ETA and distance")
+            appendLine("   - Two-wheeler (bike/scooter icon, if available) — ETA and distance")
+            appendLine("6. Do NOT tap Start or Go.")
+            appendLine()
+            appendLine("FINAL REPLY — list EXACT values from screen for each mode:")
+            appendLine("ETA comparison to $destination:")
+            appendLine("- Driving: [time] ([distance])")
+            appendLine("- Transit: [time]")
+            appendLine("- Walking: [time]")
+            appendLine("- Two-wheeler: [time] (if shown)")
+        } else {
+            appendLine("Read the current directions screen and report ETAs for all visible travel modes.")
+        }
     }
 }

@@ -26,6 +26,7 @@ Rapido app UI guide:
 - Location fields: placeholder text ("Pick-up location", "Where to?", "Current location") are labels only — never type them. Tap the text area to focus; a cursor must appear before typing.
 - Clear / X icon: the × inside a field clears it — it does NOT confirm selection. Always pick a suggestion from the dropdown after typing.
 - Suggestion dropdown: 3–6 results appear below the active field while typing. Tap one to confirm; never skip this step.
+- ADD A STOP button: there is a "+" or "Add a stop" button between the pickup and destination fields — this adds an INTERMEDIATE WAYPOINT, NOT a pickup location. NEVER tap this button under any circumstances.
 - Confirm pickup map: may appear after destination — shows a pin on the map with "Confirm pickup" button. Verify the address matches, then tap the button. If wrong, go back and re-enter.
 - Ride options screen: shows horizontal tabs (Bike, Auto, Cab) or a scrollable vertical list. Each card has vehicle icon, fare (Rs), and captain ETA.
 - Bike tab: Rapido's signature offering; cheapest and fastest for short distances.
@@ -96,13 +97,20 @@ Rapido app UI guide:
 
         append("═══ MANDATORY RULE: HOW TO ENTER ANY LOCATION ═══\n")
         append("Every time you type text into a location field:\n")
-        append("  a) Tap the field — cursor must appear inside it.\n")
-        append("  b) Type 4–8 characters only.\n")
-        append("  c) STOP. Wait 1–2 seconds.\n")
+        append("  a) Tap the field text area — cursor must appear inside it.\n")
+        append("  b) Type 5–7 characters of the place name.\n")
+        append("  c) STOP. Wait 2 seconds.\n")
         append("  d) A suggestion list appears BELOW the field — tap the best matching place name.\n")
-        append("  e) The field text changes and the list disappears — location is confirmed.\n")
+        append("  e) The field text changes to the selected place and the list disappears — confirmed.\n")
+        append("  If NO suggestions appear after 2 seconds: type 2–3 more characters and wait again.\n")
         append("NEVER skip tapping a suggestion. NEVER press Enter or continue typing past suggestions.\n")
-        append("NEVER tap the × icon to select — it only clears.\n\n")
+        append("NEVER tap the × icon to select — it only clears the field.\n\n")
+
+        append("══════ CRITICAL WARNING: DO NOT ADD A STOP ══════\n")
+        append("Between the pickup and destination fields there is a '+ Add a stop' or '+' button.\n")
+        append("Tapping it adds an INTERMEDIATE WAYPOINT — it does NOT set the pickup location.\n")
+        append("NEVER tap '+ Add stop', 'Add a stop', or any '+' button between the two fields.\n")
+        append("If you accidentally tapped it, tap the × on that stop immediately and redo.\n\n")
 
         append("── HOW RAPIDO'S LOCATION PICKER WORKS ──\n")
         append("Tapping the destination bar opens a sheet with TWO fields:\n")
@@ -114,11 +122,12 @@ Rapido app UI guide:
         append("1. Tap 'Where to?' or the destination bar on the Rapido home screen.\n")
         append("   → Location picker opens. BOTTOM destination field is already focused.\n")
         append("2. TYPE DESTINATION FIRST (already focused): type \"$destination\" (5–7 chars).\n")
-        append("   → Wait for suggestions, then TAP the best match for \"$destination\".\n")
+        append("   → Wait 2 sec for suggestions, then TAP the best match for \"$destination\".\n")
         if (!useCurrentPickup) {
-            append("3. Now tap INSIDE the TOP pickup field's text area.\n")
-            append("   → Cursor must appear. Tap × to clear existing text, then type \"$pickup\" (5–7 chars).\n")
-            append("   → Wait for suggestions, then TAP the best match for \"$pickup\".\n")
+            append("3. Now tap INSIDE the TOP pickup field's TEXT AREA (NOT the × icon, NOT the '+' between fields).\n")
+            append("   → Cursor must appear inside the TOP field.\n")
+            append("   → If there is existing text, tap and hold to select all, then delete it.\n")
+            append("   → Type \"$pickup\" (5–7 chars). Wait 2 sec. TAP the best suggestion.\n")
         } else {
             append("3. TOP pickup field already shows current GPS. DO NOT tap or clear it.\n")
             append("   If Rapido asks to confirm current location, tap Yes / Confirm.\n")
@@ -132,9 +141,10 @@ Rapido app UI guide:
         append("7. STOP before any payment PIN entry.\n\n")
 
         append("── STRICT RULES ──\n")
-        append("- Type DESTINATION in BOTTOM field, PICKUP in TOP field. Never swap.\n")
-        append("- Always tap a suggestion after typing. Never skip.\n")
-        append("- Never use the X icon to focus a field — it only clears.\n")
+        append("- DESTINATION goes in the BOTTOM field; PICKUP goes in the TOP field. Never swap.\n")
+        append("- NEVER tap '+ Add stop' — it creates an intermediate stop, not a pickup.\n")
+        append("- Always tap a dropdown suggestion after typing. Never skip.\n")
+        append("- Never tap the × icon to focus a field — it only clears.\n")
         append("- Do not type placeholder labels into any field.\n")
         append("- Do not tap Schedule or future-booking options.\n")
         append("- Dismiss promo/notification popups and continue.\n")
@@ -158,12 +168,13 @@ Rapido app UI guide:
         append("You are in the Rapido app. Get a fare estimate")
         if (pickup.isNotBlank()) append(" from \"$pickup\"") else append(" from current GPS location")
         append(" to \"$destination\".\n\n")
+        append("══ DO NOT ADD A STOP: never tap '+ Add stop' between the two fields ══\n\n")
         append("STEPS:\n")
         append("1. Tap the destination bar on the home screen.\n")
         append("   → BOTTOM destination field is auto-focused.\n")
-        append("2. Type \"$destination\" (already focused). Tap best suggestion.\n")
+        append("2. Type \"$destination\" (5–7 chars, already focused). Wait 2 sec. Tap best suggestion.\n")
         if (!useCurrentPickup) {
-            append("3. Tap INSIDE the TOP pickup field. Type \"$pickup\". Tap best suggestion.\n")
+            append("3. Tap INSIDE the TOP pickup text area (NOT '+ Add stop'). Type \"$pickup\" (5–7 chars). Tap best suggestion.\n")
         } else {
             append("3. Leave TOP pickup as current GPS — do not touch it.\n")
         }

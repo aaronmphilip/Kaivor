@@ -59,4 +59,13 @@ sealed class SkillResult {
         val onConfirm: suspend () -> SkillResult,
         val onCancel: SkillResult = Failure("Cancelled by user."),
     ) : SkillResult()
+    /** Send an image or file directly into the Telegram chat — no phone UI needed. */
+    data class Media(
+        val bytes: ByteArray,
+        val caption: String = "",
+        val mimeType: String = "image/png",
+        val filename: String = "result.png",
+    ) : SkillResult() {
+        val isImage: Boolean get() = mimeType.startsWith("image/")
+    }
 }

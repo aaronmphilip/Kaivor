@@ -35,11 +35,19 @@ class SkillRunner(
         val skill = registry[skillId]
             ?: return SkillResult.Failure("Skill '$skillId' not found. Available: ${registry.keys.joinToString()}")
 
+        val uiPermissions = setOf(
+            Permission.READ_SCREEN, Permission.TAP, Permission.TYPE,
+            Permission.SCROLL, Permission.OPEN_APP, Permission.NAVIGATE_BACK,
+            Permission.CLIPBOARD, Permission.SCREENSHOT,
+        )
+        val needsAccessibility = skill.manifest.permissions.any { it in uiPermissions }
         val service = AgentAccessibilityService.instance
-            ?: return SkillResult.Failure(
+        if (needsAccessibility && service == null) {
+            return SkillResult.Failure(
                 "Accessibility service is not running. " +
                 "Open BharatDroid app and enable it in Settings."
             )
+        }
 
         // ── Safety Gate 1: Community skill warning ──
         if (!skill.manifest.trusted && permissionsStore.shouldAsk("community")) {
@@ -64,7 +72,7 @@ class SkillRunner(
         }
 
         // ── Execute ──
-        val sandboxedRunner = SandboxedRunner(skill.manifest, service, context)
+        val sandboxedRunner = SandboxedRunner(skill.manifest, service, context)  // service may be null for API-only skills
         val skillContext = SkillContext(
             runner = sandboxedRunner,
             chatId = chatId,
@@ -75,17 +83,19 @@ class SkillRunner(
         return try {
             val result = skill.execute(skillContext, params)
 
-            // Check for password screen after execution
-            val passwordScreen = sandboxedRunner.detectPasswordScreen()
-            if (passwordScreen != null) {
-                val screen = sandboxedRunner.readScreen()
-                notifyUser(chatId,
-                    "A *password/PIN screen* appeared: *$passwordScreen*\n\n" +
-                    "Screen:\n```\n${screen.take(300)}\n```\n\n" +
-                    "Enter the PIN on your phone, then reply *CONTINUE* to proceed."
-                )
-                val continued = requestConfirmation(chatId, "")
-                if (!continued) return SkillResult.Failure("User cancelled at password screen.")
+            // Check for password screen after UI skills only. API-only skills may not have Accessibility running.
+            if (Permission.READ_SCREEN in skill.manifest.permissions) {
+                val passwordScreen = sandboxedRunner.detectPasswordScreen()
+                if (passwordScreen != null) {
+                    val screen = sandboxedRunner.readScreen()
+                    notifyUser(chatId,
+                        "A *password/PIN screen* appeared: *$passwordScreen*\n\n" +
+                        "Screen:\n```\n${screen.take(300)}\n```\n\n" +
+                        "Enter the PIN on your phone, then reply *CONTINUE* to proceed."
+                    )
+                    val continued = requestConfirmation(chatId, "")
+                    if (!continued) return SkillResult.Failure("User cancelled at password screen.")
+                }
             }
 
             // Handle NeedsConfirmation

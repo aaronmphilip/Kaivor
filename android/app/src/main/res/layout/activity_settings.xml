@@ -472,6 +472,51 @@
         </LinearLayout>
 
         <!-- ═══════════════════════════════════════ -->
+        <!--  SECTION: IMAGE GENERATION              -->
+        <!-- ═══════════════════════════════════════ -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="IMAGE GENERATION"
+            android:textColor="#666666"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.15"
+            android:layout_marginTop="36dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Image API Key"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:layout_marginTop="14dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Optional · Together AI or OpenAI key · Say &#34;generate an image of X&#34; and the photo arrives in this chat"
+            android:textColor="#777777"
+            android:textSize="12sp"
+            android:lineSpacingMultiplier="1.3"
+            android:layout_marginTop="2dp" />
+
+        <EditText
+            android:id="@+id/etImageApiKey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Together AI or OpenAI key (optional)"
+            android:inputType="textPassword"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#444444"
+            android:background="@drawable/input_bg"
+            android:padding="14dp"
+            android:fontFamily="monospace"
+            android:textSize="13sp"
+            android:layout_marginTop="10dp" />
+
+        <!-- ═══════════════════════════════════════ -->
         <!--  SECTION: PERMISSION MODE               -->
         <!-- ═══════════════════════════════════════ -->
         <TextView

@@ -94,11 +94,12 @@ Ola app UI guide:
 
         append("═══ MANDATORY RULE: HOW TO ENTER ANY LOCATION ═══\n")
         append("Every time you type text into a location field:\n")
-        append("  a) Tap the field — cursor must appear inside it.\n")
-        append("  b) Type 4–8 characters only.\n")
-        append("  c) STOP. Wait 1–2 seconds.\n")
-        append("  d) A suggestion list appears BELOW the field — a list of clickable place names.\n")
-        append("  e) TAP the suggestion that best matches. The field text changes and list disappears.\n")
+        append("  a) Tap the field text area — cursor must appear inside it.\n")
+        append("  b) Type 5–7 characters of the place name.\n")
+        append("  c) STOP. Wait 2 seconds.\n")
+        append("  d) A suggestion list appears BELOW the field — tap the best matching place name.\n")
+        append("  e) The field text changes to the selected place and the list disappears — confirmed.\n")
+        append("  If NO suggestions appear after 2 seconds: type 2–3 more characters and wait again.\n")
         append("NEVER press Enter, continue typing past first suggestions, or skip tapping a suggestion.\n")
         append("NEVER tap the × icon to select — it only clears the field.\n\n")
 
@@ -112,12 +113,12 @@ Ola app UI guide:
         append("1. Tap 'Where to?' on the Ola home screen.\n")
         append("   → Location picker opens. BOTTOM destination field is already focused.\n")
         append("2. TYPE DESTINATION FIRST (already focused): type \"$destination\" (5–7 chars).\n")
-        append("   → Wait for suggestions, then TAP the best match for \"$destination\".\n")
+        append("   → Wait 2 sec for suggestions, then TAP the best match for \"$destination\".\n")
         if (!useCurrentPickup) {
-            append("3. Now tap INSIDE the TOP pickup field's text area.\n")
+            append("3. Now tap INSIDE the TOP pickup field's TEXT AREA (the text itself, not the × or any + button).\n")
             append("   → Cursor must appear in the TOP field.\n")
-            append("   → Tap the × icon to clear any existing text, then type \"$pickup\" (5–7 chars).\n")
-            append("   → Wait for suggestions, then TAP the best match for \"$pickup\".\n")
+            append("   → If there is existing text, tap and hold → select all → delete it.\n")
+            append("   → Type \"$pickup\" (5–7 chars). Wait 2 sec. TAP the best suggestion.\n")
         } else {
             append("3. The TOP pickup field already shows current GPS location. DO NOT tap or clear it.\n")
         }
