@@ -15,12 +15,14 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <!-- Floating notch overlay — requires user to grant "Display over other apps" -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <!-- AI call answering -->
+    <!-- AI call answering + outbound calls -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
     <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!-- Resolve contact names → phone numbers for outbound AI calls -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <!-- Needed so we can detect and launch any installed app -->
     <queries>

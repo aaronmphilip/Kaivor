@@ -374,6 +374,23 @@ class AgentOrchestrator(
             return "📵 Call ended."
         }
 
+        // ── Owner relay: if AI is waiting on owner's answer, feed this reply in ──
+        // When AI says [ASK_OWNER: question], it suspends waiting for the owner's
+        // Telegram reply. Any non-command text while a call is active routes here first.
+        if (CallAnsweringService.activeInstance != null &&
+            CallAnsweringService.provideOwnerReply(trimmed)) {
+            return "✅ Reply relayed to the AI — it will continue the call now."
+        }
+
+        // ── Outbound AI call — "go talk to them" superpower ──────────────────────
+        // Patterns: "call Rahul about the invoice"
+        //           "call +919876543210 and tell them to reschedule"
+        //           "go talk to Priya about the payment"
+        //           "call 9876543210 and say we need the report by Friday"
+        parseOutboundCallCommand(lower, trimmed)?.let { (target, briefing) ->
+            return placeOutboundAICall(msg.chatId, target, briefing)
+        }
+
         // â"€â"€ Built-in commands â"€â"€
         command?.let { parsed ->
             when (parsed.name) {
@@ -1192,6 +1209,136 @@ You can also open a document on the phone and say:
     suspend fun sendAlert(chatId: Long, message: String) {
         poller.sendMessage(chatId, message)
     }
+
+    // ── Outbound AI call ────────────────────────────────────────────────────────
+
+    /**
+     * Parses natural-language outbound call requests.
+     *
+     * Supported patterns (lowercased input):
+     *   "call rahul about the invoice"
+     *   "call +919876543210 and tell them to confirm the delivery"
+     *   "go talk to priya about the project deadline"
+     *   "call 9876543210 and say we need the report by Friday"
+     *
+     * Returns Pair(target: String, briefing: String) or null if not a call command.
+     */
+    private fun parseOutboundCallCommand(lower: String, original: String): Pair<String, String>? {
+        // Must start with call/go talk/go call
+        val isCallIntent = lower.startsWith("call ") ||
+            lower.startsWith("go talk to ") ||
+            lower.startsWith("go call ") ||
+            lower.startsWith("please call ")
+        if (!isCallIntent) return null
+
+        // Extract target (first word(s) after the verb) and briefing (after connector)
+        val body = when {
+            lower.startsWith("call ")         -> original.substringAfter("call ", "").trim()
+            lower.startsWith("go talk to ")   -> original.substringAfter("go talk to ", "").trim()
+            lower.startsWith("go call ")      -> original.substringAfter("go call ", "").trim()
+            lower.startsWith("please call ")  -> original.substringAfter("please call ", "").trim()
+            else -> return null
+        }
+        if (body.isBlank()) return null
+
+        // Split on connector keywords: "about", "and tell", "and say", "and ask", "and inform", "regarding"
+        val connectorRegex = Regex(
+            "\\s+(about|and tell them|and say|and ask|and inform|and let them know|regarding|to tell them|to say|to ask|to inform)\\s+",
+            RegexOption.IGNORE_CASE
+        )
+        val match = connectorRegex.find(body)
+
+        val target: String
+        val briefing: String
+
+        if (match != null) {
+            target   = body.substring(0, match.range.first).trim()
+            briefing = body.substring(match.range.last + 1).trim()
+        } else {
+            // No connector found — might just be "call Rahul" with no briefing
+            target   = body.trim()
+            briefing = "General inquiry / catch-up"
+        }
+
+        if (target.isBlank()) return null
+        return Pair(target, briefing)
+    }
+
+    /**
+     * Resolves the target (name or number), sets [CallAnsweringService.pendingOutbound],
+     * places the call via Intent.ACTION_CALL, and confirms to the owner.
+     */
+    private fun placeOutboundAICall(chatId: Long, target: String, briefing: String): String {
+        if (!config.callAnsweringEnabled) {
+            return "❌ AI Call Answering is not enabled. Enable it in Settings → AI Call Answering."
+        }
+
+        // Resolve target → phone number
+        // If target looks like a number already, use it directly
+        val rawNumber = target.filter { it.isDigit() || it == '+' }
+        val (displayName, dialNumber) = if (rawNumber.length >= 7) {
+            Pair(target, rawNumber)
+        } else {
+            // Try to find it in Contacts
+            val resolved = resolveContactNumber(target)
+            if (resolved != null) {
+                Pair(target, resolved)
+            } else {
+                return "❌ Couldn't find a phone number for \"$target\".\n" +
+                    "Try: `call +919876543210 about the invoice` with the number directly."
+            }
+        }
+
+        // Set the outbound session before placing the call
+        CallAnsweringService.pendingOutbound = CallAnsweringService.OutboundSession(
+            targetName   = displayName,
+            targetNumber = dialNumber,
+            briefing     = briefing,
+            chatId       = chatId,
+        )
+
+        return try {
+            val callIntent = Intent(Intent.ACTION_CALL,
+                android.net.Uri.parse("tel:${android.net.Uri.encode(dialNumber)}")
+            ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+            context.startActivity(callIntent)
+            "📲 *Placing outbound AI call to ${md(displayName)}\\.*\n\n" +
+            "🎯 *Briefing:* ${md(briefing)}\n\n" +
+            "I'll send you the live transcript as the call progresses\\.\n" +
+            "When I need your input, I'll ask you directly — just type your reply\\.\n" +
+            "_Reply *hang up* anytime to end the call\\._"
+        } catch (e: Exception) {
+            CallAnsweringService.pendingOutbound = null
+            "❌ Could not place call: ${e.message}"
+        }
+    }
+
+    /**
+     * Looks up a contact name in the Contacts provider and returns their primary phone number.
+     */
+    private fun resolveContactNumber(name: String): String? {
+        return try {
+            val cursor = context.contentResolver.query(
+                android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(
+                    android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                    android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER,
+                ),
+                "${android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} LIKE ?",
+                arrayOf("%$name%"),
+                null,
+            ) ?: return null
+            cursor.use { c ->
+                if (c.moveToFirst()) {
+                    c.getString(c.getColumnIndexOrThrow(
+                        android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER
+                    ))?.filter { it.isDigit() || it == '+' }
+                } else null
+            }
+        } catch (_: Exception) { null }
+    }
+
+    private fun md(s: String) = s.replace("_", "\\_").replace("*", "\\*").replace("`", "\\`")
 
     private fun buildMutedListMessage(): String {
         val muted = muteStore.list()

@@ -45,6 +45,13 @@ class CallAudioBridge(
     private val onTranscript: suspend (callerText: String, aiText: String) -> Unit,
     private val onOwnerRequested: suspend () -> Unit,
     private val onCallEnded: suspend (fullTranscript: String, summary: String) -> Unit,
+    // ── Outbound-call extensions ───────────────────────────────────────────────
+    private val isOutbound: Boolean = false,
+    private val outboundBriefing: String = "",
+    /** Fires when AI needs to relay a question to the owner. Suspends until owner replies. */
+    private val onOwnerQuery: (suspend (question: String) -> String)? = null,
+    /** Fires when AI signals [CALL_END] — caller disconnects cleanly. */
+    private val onCallShouldEnd: (() -> Unit)? = null,
 ) {
     companion object {
         private const val SAMPLE_RATE = 16_000
@@ -213,12 +220,13 @@ class CallAudioBridge(
         val transcript = transcribeWhisper(wav)?.takeIf { it.length >= 3 } ?: return
         history.add(AIChatMessage("user", transcript))
 
-        // ── Owner-request detection ─────────────────────────────────────────────
-        // Fast keyword check (no LLM cost). Fire at most once per call.
         val lower = transcript.lowercase()
-        val wantsOwner = !ownerAlertSent && OWNER_REQUEST_PHRASES.any { lower.contains(it) }
 
-        val aiReply = if (wantsOwner) {
+        // ── Inbound: owner-request detection ────────────────────────────────────
+        // Fast keyword check (no LLM cost). Fire at most once per call.
+        val wantsOwner = !isOutbound && !ownerAlertSent && OWNER_REQUEST_PHRASES.any { lower.contains(it) }
+
+        val rawAiReply = if (wantsOwner) {
             ownerAlertSent = true
             scope.launch { onOwnerRequested() }
             val displayName = ownerName.ifBlank { "them" }
@@ -227,24 +235,86 @@ class CallAudioBridge(
             generateResponse(transcript)
         }
 
-        history.add(AIChatMessage("assistant", aiReply))
-        onTranscript(transcript, aiReply)
-        speakToCall(aiReply)
+        // ── Outbound: parse sentinels ────────────────────────────────────────────
+        // [ASK_OWNER: question] → block, relay to owner via Telegram, feed answer back
+        // [CALL_END]            → speak goodbye, then trigger clean hang-up
+        if (isOutbound && rawAiReply.contains("[ASK_OWNER:")) {
+            val question = rawAiReply.substringAfter("[ASK_OWNER:").substringBefore("]").trim()
+            val cleanReply = rawAiReply.replace(Regex("\\[ASK_OWNER:[^]]*]"), "").trim()
+            history.add(AIChatMessage("assistant", cleanReply))
+            onTranscript(transcript, cleanReply)
+            speakToCall(cleanReply)
+
+            // Block until owner types a reply (or 120s timeout)
+            val ownerAnswer = try { onOwnerQuery?.invoke(question) } catch (_: Exception) { null }
+            if (!ownerAnswer.isNullOrBlank()) {
+                // Feed owner's answer into conversation as a hidden system note
+                val ownerNote = "[${ownerName.ifBlank { "Owner" }} says: $ownerAnswer]"
+                history.add(AIChatMessage("user", ownerNote))
+                val followUp = generateResponse(ownerNote)
+                history.add(AIChatMessage("assistant", followUp))
+                onTranscript("", followUp)
+                speakToCall(followUp)
+            }
+            return
+        }
+
+        if (isOutbound && rawAiReply.trimEnd().endsWith("[CALL_END]")) {
+            val goodbye = rawAiReply.removeSuffix("[CALL_END]").trim()
+            history.add(AIChatMessage("assistant", goodbye))
+            onTranscript(transcript, goodbye)
+            if (goodbye.isNotBlank()) speakToCall(goodbye)
+            delay(1_200)
+            onCallShouldEnd?.invoke()
+            return
+        }
+
+        history.add(AIChatMessage("assistant", rawAiReply))
+        onTranscript(transcript, rawAiReply)
+        speakToCall(rawAiReply)
     }
 
     // ── LLM ────────────────────────────────────────────────────────────────────
 
     private suspend fun generateResponse(input: String?): String {
         val display = ownerName.ifBlank { "the owner" }
-        val systemPrompt = if (input == null) {
-            "You are $display's AI assistant answering their phone calls. " +
-            "Greet the caller and introduce yourself as \"$display's AI assistant\". " +
-            "Let them know $display is currently unavailable but you can take a message or help. " +
-            "Sound natural, warm, human. 1-2 sentences only."
-        } else {
-            "You are $display's AI assistant answering their phone calls. " +
-            "Be natural, brief, warm. Take messages, answer simple questions, " +
-            "say $display will call back soon. Keep replies under 25 words."
+
+        val systemPrompt = when {
+            // ── Outbound mode ────────────────────────────────────────────────────
+            isOutbound && input == null -> {
+                // Opening greeting — keep it crisp
+                "You are $display's AI assistant making an outbound phone call. " +
+                "Purpose of this call: $outboundBriefing. " +
+                "Generate a warm, natural opening: introduce yourself as \"$display's AI assistant\", " +
+                "state your purpose in one sentence, and ask if it is a good time. " +
+                "Maximum 2 sentences. Sound human, not robotic."
+            }
+            isOutbound -> {
+                // Ongoing outbound conversation — include sentinel instructions
+                "You are $display's AI assistant conducting an outbound call. " +
+                "Purpose of this call: $outboundBriefing. " +
+                "Keep replies under 30 words unless you are explaining something important. " +
+                "Be natural, warm, professional. " +
+                "SENTINEL RULES (strictly follow):\n" +
+                "• If you need to check something with $display that you cannot answer yourself, " +
+                "include exactly [ASK_OWNER: your question for $display] in your reply (verbatim brackets), " +
+                "preceded by a holding phrase like 'Let me check that with $display — one moment.'.\n" +
+                "• When the call is complete (purpose achieved, caller says bye/no thanks/nothing else, " +
+                "or after you say goodbye), append exactly [CALL_END] at the very end of your response.\n" +
+                "• Never include both sentinels in the same response."
+            }
+            // ── Inbound mode ─────────────────────────────────────────────────────
+            input == null -> {
+                "You are $display's AI assistant answering their phone calls. " +
+                "Greet the caller and introduce yourself as \"$display's AI assistant\". " +
+                "Let them know $display is currently unavailable but you can take a message or help. " +
+                "Sound natural, warm, human. 1-2 sentences only."
+            }
+            else -> {
+                "You are $display's AI assistant answering their phone calls. " +
+                "Be natural, brief, warm. Take messages, answer simple questions, " +
+                "say $display will call back soon. Keep replies under 25 words."
+            }
         }
         val msgs = if (input == null) emptyList() else history.takeLast(10)
         return try {
