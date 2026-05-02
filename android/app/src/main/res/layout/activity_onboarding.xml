@@ -733,26 +733,63 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone"
-                android:background="#1A1200"
+                android:background="#0D1A0D"
                 android:padding="14dp"
                 android:layout_marginTop="12dp">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="📱  Main Phone Setup"
-                    android:textColor="#FFCC00"
+                    android:text="📱  Main Phone — Recommended Setup"
+                    android:textColor="#00CC88"
                     android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <!-- Notification relay recommendation -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🔔  Option 1 — Notification Relay (Recommended)"
+                    android:textColor="#FFCC00"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="10dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Don't want to change your default Phone app? Use Notification Relay instead:\n\n  • Every call that comes in shows up in Telegram\n  • You see the caller name, missed calls, voicemails\n  • Reply directly from Telegram to any app's notifications\n  • Your normal Phone app stays exactly as it is\n\nEnable in Settings → Notifications → Device &amp; App Notifications → BharatDroid → Allow."
+                    android:textColor="#AAAAAA"
+                    android:textSize="12sp"
+                    android:lineSpacingMultiplier="1.4"
+                    android:layout_marginTop="6dp" />
+
+                <!-- Divider -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#2A2A2A"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- AI call answering option -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🤖  Option 2 — AI Call Answering (Power Mode)"
+                    android:textColor="#FF5C00"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="AI can still answer calls on this phone. When a call comes in:\n  • AI answers automatically\n  • You get a Telegram transcript in real time\n  • Tap 'Take Over' in the notification to jump into the call live\n  • VIP callers (Mom, Boss, Doctor) skip AI and alert you directly\n\nBest used with headphones in, or when you're busy and can't answer."
+                    android:text="Want AI to answer calls on your behalf? Set BharatDroid as your default Phone app in Settings → AI Call Answering.\n\nWhat you get:\n  • BharatDroid becomes your Phone app — its own dialer for outgoing calls\n  • Incoming calls: AI answers, speaks in your cloned voice, live-transcripts to Telegram\n  • VIP callers (family, boss) skip AI — you get an urgent Telegram alert instead\n  • Tap 'Take Over' in the notification to jump into any call live\n  • After every call: full transcript + AI summary sent to Telegram\n\n⚠️  Your normal Phone app stays installed — you can still open it for contacts and recents. Calls will just go through BharatDroid's dialer.\n\nFor outgoing calls: use BharatDroid's dialer or say in Telegram:\n\"call Rahul about the invoice\" → AI makes the call for you."
                     android:textColor="#AAAAAA"
                     android:textSize="12sp"
                     android:lineSpacingMultiplier="1.4"
-                    android:layout_marginTop="8dp" />
+                    android:layout_marginTop="6dp" />
+
             </LinearLayout>
 
             <!-- Agent Mode -->

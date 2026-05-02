@@ -161,6 +161,73 @@ BharatDroid has two operating modes, selectable in Settings → Agent Mode.
 
 ---
 
+### AI Call Answering — Your Phone Never Goes Unanswered
+
+When you enable AI Call Answering (Settings → AI Call Answering) and set BharatDroid as your default Phone app, every incoming call becomes managed automatically.
+
+**Inbound flow:**
+1. A call comes in while you're busy.
+2. BharatDroid answers after 2 rings using your ElevenLabs cloned voice.
+3. You get an instant Telegram alert: "📞 Incoming call from Rahul — AI answering."
+4. The AI conducts the conversation: takes messages, answers basic questions, handles queries.
+5. You see the live transcript in Telegram as it happens.
+6. Call ends → you receive the full transcript + a 2–3 line AI summary.
+
+**VIP callers — skip the AI:**
+Add important numbers (family, your biggest client, your doctor) to the VIP list in Settings. When a VIP calls, AI does NOT answer — you get an urgent Telegram alert instead so you can pick up yourself.
+
+**Take Over — jump in mid-call:**
+A persistent "Take Over" notification shows during every AI-answered call. Tap it anytime to join the call directly. The AI stops, speaker switches to your ear.
+
+**Hang up via Telegram:**
+Send `hang up` in Telegram to end any active call remotely.
+
+---
+
+### Outbound AI Calls — "Go Talk to Them" Superpower
+
+This is the most powerful call feature. Instead of you calling someone, BharatDroid calls them on your behalf and handles the entire conversation.
+
+**How to trigger it:**
+```
+call Rahul about the overdue invoice
+call +919876543210 and tell them we need to reschedule to Friday
+go talk to Priya about the project deadline
+call Shyam Electricals and ask for a revised quote by tomorrow
+```
+
+**What happens:**
+1. BharatDroid looks up the contact in your phone (or dials the number directly).
+2. Places the call and starts the AI bridge as soon as it connects.
+3. AI introduces itself: "Hi, I'm calling on behalf of [your name] regarding [your briefing]."
+4. You receive live transcript in Telegram as the conversation progresses.
+5. If the AI can't answer something, it says "Let me check with [your name]" and sends you:
+   ```
+   ❓ AI needs your input for the call with Rahul:
+   "He's asking whether we can accept payment in two installments."
+   Type your answer and I'll relay it to the AI.
+   ```
+   You type back "yes, two equal installments of ₹5000 each, first by Friday" — the AI receives it and continues the call.
+6. When the purpose is achieved, AI closes politely: "Is there anything else? … Great, I'll let [your name] know. Goodbye."
+7. After the call: full transcript + AI summary sent to Telegram.
+
+**You can hang up at any time** by replying `hang up` in Telegram.
+
+**Best for:**
+- Chasing overdue payments without the awkwardness
+- Scheduling or rescheduling client meetings
+- Getting quotes from vendors
+- Following up on pending deliveries or documents
+- Calls you know will be short but you're too busy to make right now
+
+---
+
+### Floating Notch Overlay — Visual Task Status (already covered above, this clarifies new behavior)
+
+The notch also shows during AI calls. While an inbound call is being answered, you'll see the caller's name and that the AI is active. During outbound AI calls, you'll see the call target and "AI conducting call."
+
+---
+
 ### App Skills — What BharatDroid Can Do in Each App
 
 #### Food & Groceries
@@ -581,6 +648,25 @@ Add numbers to your VIP list — your biggest client, your CA, your spouse. When
 
 The AI receptionist runs 24/7, including Sundays and public holidays, without a salary, without sick days, and without forgetting to take a message.
 
+**Outbound calling — the other half of the receptionist.**
+Not just answering calls — making them. When you're in back-to-back meetings and need to chase someone:
+
+```
+call Mahesh from Apex Traders and tell him the payment is processed, reference UTR 2394871, and ask him to dispatch by Thursday
+```
+
+```
+call the Koramangala clinic number and ask if Dr. Rao has availability on Friday after 4 PM
+```
+
+```
+go talk to Vikram about the revised scope document — tell him we can approve up to 30% increase but need the timeline updated
+```
+
+BharatDroid places the call, conducts the conversation in your voice, live-transcripts it to your Telegram, and if the other person asks something you need to answer personally — pauses the AI and asks you directly via Telegram. You type your answer, it relays it and continues. You get a full call summary the moment it ends.
+
+One founder using this has replaced the entire "call vendor, get put on hold, chase three times, finally get answer" cycle with a single Telegram message sent from their dining table. The AI makes the call, gets the answer, and reports back in under 3 minutes.
+
 ---
 
 ### 3. Remote Office Management — Vendors, Staff, and Payments
@@ -837,6 +923,21 @@ Send WhatsApp to Meena Sharma: "Hi Meena, your order #4521 has been dispatched t
 **12. End-of-week staff update**
 ```
 Send WhatsApp to my Staff Updates group: "Week ending 2 May 2026. Reminder to submit your weekly reports by Sunday 8 PM. Next week's targets will be shared Monday morning."
+```
+
+**13. Outbound AI call — payment follow-up**
+```
+call Suresh from Mehta Distributors and tell him the payment of ₹18,500 is cleared via NEFT, UTR number 4829301, and ask him to send the delivery challan by end of day
+```
+
+**14. Outbound AI call — reschedule a meeting**
+```
+call Anjali and tell her I need to push our 3 PM meeting to 5 PM today, and ask if that works for her
+```
+
+**15. Outbound AI call — vendor quote**
+```
+go talk to Ramesh Electricals and ask for a quote on installing 10 LED lights in a 1000 sq ft office, ask if they can visit for a site check this week
 ```
 
 ---
