@@ -64,7 +64,7 @@ class AgentOrchestrator(
             PowerManager.FULL_WAKE_LOCK or
             PowerManager.ACQUIRE_CAUSES_WAKEUP or
             PowerManager.ON_AFTER_RELEASE,
-            "bharatdroid:agent_task"
+            "BharatClaw:agent_task"
         )
     }
     // Thread-safe: TelegramPoller fires scope.launch per message, so multiple
@@ -1064,7 +1064,7 @@ class AgentOrchestrator(
             return if (AgentAccessibilityService.isConnected) {
                 "📸 Accessibility service is connected but not responding — try restarting the agent."
             } else {
-                "📸 Accessibility Service not connected.\n\nGo to Settings → Accessibility → Installed Services → *BharatDroid Agent* → Enable."
+                "📸 Accessibility Service not connected.\n\nGo to Settings → Accessibility → Installed Services → *BharatClaw Agent* → Enable."
             }
         }
         if (android.os.Build.VERSION.SDK_INT < 30) {
@@ -1397,7 +1397,7 @@ You can also open a document on the phone and say:
     private fun buildMutedListMessage(): String {
         val muted = muteStore.list()
         val granted = NotificationRelay.isPermissionGranted(context)
-        val header = if (granted) "âœ… Notification relay: ON" else "âš ï¸ Notification relay needs permission. Settings â†' Notifications â†' Device & app notifications â†' BharatDroid â†' Allow."
+        val header = if (granted) "âœ… Notification relay: ON" else "âš ï¸ Notification relay needs permission. Settings â†' Notifications â†' Device & app notifications â†' BharatClaw â†' Allow."
         if (muted.isEmpty()) {
             return "$header\n\n🔔 No apps muted. All notifications are forwarded.\n\n*Commands:*\n`/mute WhatsApp` or `/mute com.whatsapp`\n`/unmute WhatsApp`"
         }
@@ -1574,7 +1574,7 @@ You can also open a document on the phone and say:
     )
 
     private fun buildWelcomeMessage(): String = """
-*BharatDroid Agent* is live on this phone.
+*BharatClaw Agent* is live on this phone.
 
 Tell me what to do — English or Hindi. I'll do it.
 
@@ -1895,7 +1895,7 @@ Tell me what to do — English or Hindi. I'll do it.
         val uptime = getUptimeString()
         val health = buildPermissionsHealth(notifGranted, mutedCount)
         return buildString {
-            appendLine("*BharatDroid Status*")
+            appendLine("*BharatClaw Status*")
             appendLine()
             appendLine("🤖 *Agent*")
             appendLine("Running · $uptime uptime · $count commands today")
@@ -1912,7 +1912,7 @@ Tell me what to do — English or Hindi. I'll do it.
     }
 
     /**
-     * Checks every special permission BharatDroid needs.
+     * Checks every special permission BharatClaw needs.
      * ✅ = granted, ❌ = critical missing, ⚠️ = optional missing.
      */
     private fun buildPermissionsHealth(notifGranted: Boolean, mutedCount: Int): String {
@@ -1925,7 +1925,7 @@ Tell me what to do — English or Hindi. I'll do it.
                 appendLine("✅ Accessibility Service — on-screen control active")
             } else {
                 appendLine("❌ *Accessibility Service* — CRITICAL, nothing works without this")
-                appendLine("   Fix: Settings → Accessibility → BharatDroid → ON")
+                appendLine("   Fix: Settings → Accessibility → BharatClaw → ON")
             }
 
             // 2. Battery Optimisation
@@ -1935,21 +1935,21 @@ Tell me what to do — English or Hindi. I'll do it.
                 appendLine("✅ Battery Optimisation — unrestricted, agent stays alive")
             } else {
                 appendLine("❌ *Battery Optimisation* — agent will die in background!")
-                appendLine("   Fix: Settings → Battery → App battery usage → BharatDroid → Unrestricted")
+                appendLine("   Fix: Settings → Battery → App battery usage → BharatClaw → Unrestricted")
                 val mfr = android.os.Build.MANUFACTURER.lowercase()
                 when (mfr) {
                     "xiaomi", "redmi", "poco" ->
-                        appendLine("   MIUI: Settings → Apps → BharatDroid → Battery Saver → No restrictions + Autostart ON")
+                        appendLine("   MIUI: Settings → Apps → BharatClaw → Battery Saver → No restrictions + Autostart ON")
                     "samsung" ->
-                        appendLine("   Samsung: Device Care → Battery → Background usage limits → Never sleeping → Add BharatDroid")
+                        appendLine("   Samsung: Device Care → Battery → Background usage limits → Never sleeping → Add BharatClaw")
                     "oneplus" ->
-                        appendLine("   OnePlus: Settings → Battery → Battery Optimisation → BharatDroid → Don't optimise")
+                        appendLine("   OnePlus: Settings → Battery → Battery Optimisation → BharatClaw → Don't optimise")
                     "oppo", "realme" ->
-                        appendLine("   ColorOS: Settings → Battery → Power Saving → BharatDroid → Don't restrict")
+                        appendLine("   ColorOS: Settings → Battery → Power Saving → BharatClaw → Don't restrict")
                     "vivo" ->
-                        appendLine("   FunTouchOS: Settings → Battery → Background Power → BharatDroid → No restrictions")
+                        appendLine("   FunTouchOS: Settings → Battery → Background Power → BharatClaw → No restrictions")
                     "huawei", "honor" ->
-                        appendLine("   EMUI: Settings → Apps → BharatDroid → Battery → Run in background → Enable")
+                        appendLine("   EMUI: Settings → Apps → BharatClaw → Battery → Run in background → Enable")
                 }
             }
 
@@ -1958,7 +1958,7 @@ Tell me what to do — English or Hindi. I'll do it.
                 appendLine("✅ Notification Access — relay active${if (mutedCount > 0) " ($mutedCount muted)" else ""}")
             } else {
                 appendLine("⚠️ Notification Access — relay disabled")
-                appendLine("   Fix: Settings → Notification Access → BharatDroid → ON")
+                appendLine("   Fix: Settings → Notification Access → BharatClaw → ON")
             }
 
             // 4. Exact Alarms (Android 12+)
@@ -1970,7 +1970,7 @@ Tell me what to do — English or Hindi. I'll do it.
                 appendLine("✅ Alarms & Reminders — /schedule fires on time")
             } else {
                 appendLine("⚠️ Alarms & Reminders — /schedule may fire late")
-                appendLine("   Fix: Settings → Apps → Special app access → Alarms & reminders → BharatDroid → Allow")
+                appendLine("   Fix: Settings → Apps → Special app access → Alarms & reminders → BharatClaw → Allow")
             }
 
             // 5. Contacts
@@ -1981,7 +1981,7 @@ Tell me what to do — English or Hindi. I'll do it.
                 appendLine("✅ Contacts — ContactsSkill can read your contacts")
             } else {
                 appendLine("⚠️ Contacts — ContactsSkill limited")
-                appendLine("   Fix: Settings → Apps → BharatDroid → Permissions → Contacts → Allow")
+                appendLine("   Fix: Settings → Apps → BharatClaw → Permissions → Contacts → Allow")
             }
 
             // 6. Calendar
@@ -1992,7 +1992,7 @@ Tell me what to do — English or Hindi. I'll do it.
                 appendLine("✅ Calendar — CalendarSkill can read your events")
             } else {
                 appendLine("⚠️ Calendar — CalendarSkill limited")
-                appendLine("   Fix: Settings → Apps → BharatDroid → Permissions → Calendar → Allow")
+                appendLine("   Fix: Settings → Apps → BharatClaw → Permissions → Calendar → Allow")
             }
 
             // 7. Storage (only needed Android 9 and below)
@@ -2004,7 +2004,7 @@ Tell me what to do — English or Hindi. I'll do it.
                 appendLine("✅ Storage — file access available")
             } else {
                 appendLine("⚠️ Storage — FileManagerSkill limited")
-                appendLine("   Fix: Settings → Apps → BharatDroid → Permissions → Storage → Allow")
+                appendLine("   Fix: Settings → Apps → BharatClaw → Permissions → Storage → Allow")
             }
 
             // 8. Usage Access (app foreground detection)
@@ -2021,7 +2021,7 @@ Tell me what to do — English or Hindi. I'll do it.
                 appendLine("✅ Usage Access — foreground app detection is precise")
             } else {
                 appendLine("⚠️ Usage Access — app detection uses accessibility fallback (still works)")
-                appendLine("   Optional: Settings → Apps → Special app access → Usage access → BharatDroid")
+                appendLine("   Optional: Settings → Apps → Special app access → Usage access → BharatClaw")
             }
 
             // 9. OEM Autostart warning
@@ -2031,12 +2031,12 @@ Tell me what to do — English or Hindi. I'll do it.
                 appendLine()
                 appendLine("⚠️ *${android.os.Build.MANUFACTURER} phone* — enable Autostart or agent stops after reboot")
                 when (mfr) {
-                    "xiaomi", "redmi", "poco" -> appendLine("   MIUI: Settings → Apps → Manage apps → BharatDroid → Autostart → ON")
+                    "xiaomi", "redmi", "poco" -> appendLine("   MIUI: Settings → Apps → Manage apps → BharatClaw → Autostart → ON")
                     "samsung" -> appendLine("   Settings → Device Care → Battery → Background usage limits → Never sleeping → Add")
-                    "oneplus" -> appendLine("   Settings → Battery → Battery Optimisation → BharatDroid → Don't optimise")
-                    "oppo", "realme" -> appendLine("   Settings → Battery → Power Saving → BharatDroid → Don't restrict")
-                    "vivo" -> appendLine("   Settings → Battery → Background Power → BharatDroid → No restrictions")
-                    "huawei", "honor" -> appendLine("   Settings → Apps → BharatDroid → Battery → Run in background → Enable")
+                    "oneplus" -> appendLine("   Settings → Battery → Battery Optimisation → BharatClaw → Don't optimise")
+                    "oppo", "realme" -> appendLine("   Settings → Battery → Power Saving → BharatClaw → Don't restrict")
+                    "vivo" -> appendLine("   Settings → Battery → Background Power → BharatClaw → No restrictions")
+                    "huawei", "honor" -> appendLine("   Settings → Apps → BharatClaw → Battery → Run in background → Enable")
                 }
             }
 

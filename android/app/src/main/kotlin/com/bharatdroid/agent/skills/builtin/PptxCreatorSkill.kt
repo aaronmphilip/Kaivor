@@ -17,7 +17,7 @@ class PptxCreatorSkill : Skill {
         name = "PowerPoint Creator",
         version = "1.0.0",
         description = "Create a PowerPoint (.pptx) presentation and send it directly in Telegram. Provide a title and slides with headings and bullet points. No API key needed.",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = emptySet(),
         exampleParamsHint = """{"title":"Q1 Review","slides":[{"heading":"Overview","points":["Revenue up 20%","New markets entered"]},{"heading":"Next Steps","points":["Hire 5 engineers","Launch v2"]}]} | {"title":"My Plan","content":"# Slide 1\n- Bullet A\n- Bullet B\n# Slide 2\n- Point X"}""",

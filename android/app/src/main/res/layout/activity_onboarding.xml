@@ -21,7 +21,7 @@
             android:id="@+id/tvStepIndicator"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Step 1 of 5"
+            android:text="Step 1 of 6"
             android:textColor="#FF5C00"
             android:textSize="12sp"
             android:layout_marginTop="20dp" />
@@ -41,7 +41,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="BharatDroid"
+                android:text="BharatClaw"
                 android:textColor="#FFFFFF"
                 android:textSize="40sp"
                 android:textStyle="bold"
@@ -50,7 +50,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Your AI agent that controls your phone.\nTell it what to do via Telegram.\nIt does the rest."
+                android:text="Personal Android agent. Send a Telegram command; BharatClaw opens apps, reads screens, fills forms, and asks when information is missing."
                 android:textColor="#AAAAAA"
                 android:textSize="16sp"
                 android:gravity="center"
@@ -60,7 +60,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="&quot;Order biryani from Swiggy under ₹200&quot;\n&quot;Recharge my phone ₹239 on PhonePe&quot;\n&quot;Navigate to Connaught Place&quot;\n&quot;Play Arijit Singh on YouTube&quot;"
+                android:text="&quot;Fill this website form with my details&quot;\n&quot;Find the best ride and message me the ETA&quot;\n&quot;Read the PDF in Downloads&quot;\n&quot;Reply to that WhatsApp notification&quot;"
                 android:textColor="#00CC88"
                 android:textSize="14sp"
                 android:gravity="center"
@@ -71,7 +71,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Setup takes 2 minutes. No coding required."
+                android:text="Setup takes a few minutes. The required parts are Telegram, an AI key, and Accessibility."
                 android:textColor="#666666"
                 android:textSize="13sp"
                 android:gravity="center"
@@ -103,7 +103,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Create Your Telegram Bot"
+                android:text="Connect Telegram"
                 android:textColor="#FFFFFF"
                 android:textSize="24sp"
                 android:textStyle="bold" />
@@ -111,7 +111,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="This is how you&apos;ll talk to your agent.\n\n1. Open Telegram\n2. Search for @BotFather\n3. Send /newbot\n4. Choose a name (e.g. &quot;My Agent&quot;)\n5. Choose a username (e.g. &quot;myagent_bot&quot;)\n6. Copy the token it gives you"
+                android:text="This is the control channel. Create a private bot, paste its token here, then BharatClaw will only listen to your chat."
                 android:textColor="#AAAAAA"
                 android:textSize="14sp"
                 android:lineSpacingMultiplier="1.5"
@@ -181,8 +181,8 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Pair Your Account"
                 android:textColor="#FFFFFF"
+                android:text="Pair Your Telegram"
                 android:textSize="24sp"
                 android:textStyle="bold" />
 
@@ -190,7 +190,7 @@
                 android:id="@+id/tvPairInstructions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Now open Telegram and send /start to your bot.\n\nWaiting..."
+                android:text="Open Telegram and send /start to your bot. BharatClaw will detect your chat automatically."
                 android:textColor="#AAAAAA"
                 android:textSize="15sp"
                 android:lineSpacingMultiplier="1.5"
@@ -249,7 +249,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Connect AI Brain"
+                android:text="Connect AI"
                 android:textColor="#FFFFFF"
                 android:textSize="24sp"
                 android:textStyle="bold" />
@@ -257,7 +257,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Choose your AI provider. Gemini is FREE."
+                android:text="Choose the model provider that will plan and execute phone actions."
                 android:textColor="#AAAAAA"
                 android:textSize="15sp"
                 android:layout_marginTop="16dp" />
@@ -327,7 +327,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Agent Mode:"
+                android:text="Execution Mode"
                 android:textColor="#CCCCCC"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -336,7 +336,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Ask Permission = confirms before acting\nJust Do It = executes immediately, no questions"
+                android:text="Ask Permission confirms before sensitive actions. Just Do It runs faster but needs more trust."
                 android:textColor="#888888"
                 android:textSize="12sp"
                 android:layout_marginTop="4dp" />
@@ -414,11 +414,10 @@
             android:gravity="center_horizontal"
             android:visibility="gone"
             android:layout_marginTop="24dp">
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="One Last Step"
+                android:text="Phone Permissions"
                 android:textColor="#FFFFFF"
                 android:textSize="24sp"
                 android:textStyle="bold" />
@@ -436,7 +435,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Lets BharatDroid control apps on your behalf — tap, type, scroll."
+                android:text="Lets BharatClaw control apps on your behalf: tap, type, scroll."
                 android:textColor="#AAAAAA"
                 android:textSize="13sp"
                 android:lineSpacingMultiplier="1.4"
@@ -446,7 +445,7 @@
                 android:id="@+id/tvAccessStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="✗ Not enabled"
+                android:text="Not enabled"
                 android:textColor="#FF6B6B"
                 android:textSize="13sp"
                 android:layout_marginTop="8dp" />
@@ -464,7 +463,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="2. Notification Access (for 24×7 relay)"
+                android:text="2. Notification Access (always-on relay)"
                 android:textColor="#FFFFFF"
                 android:textSize="15sp"
                 android:textStyle="bold"
@@ -473,7 +472,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Forwards every app notification to your Telegram. Reply in Telegram to reply in the app.\n\nOptional — skip if you don't want this."
+                android:text="Forwards app notifications to Telegram. Reply in Telegram to reply inside the original app.\n\nOptional. Skip if you do not want this."
                 android:textColor="#AAAAAA"
                 android:textSize="13sp"
                 android:lineSpacingMultiplier="1.4"
@@ -483,7 +482,7 @@
                 android:id="@+id/tvNotifStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="✗ Not enabled"
+                android:text="Not enabled"
                 android:textColor="#FF6B6B"
                 android:textSize="13sp"
                 android:layout_marginTop="8dp" />
@@ -510,7 +509,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Shows a black pill on screen while tasks run. Tap × to cancel instantly. Drag it anywhere."
+                android:text="Shows a black pill while tasks run. Tap X to cancel instantly. Drag it anywhere."
                 android:textColor="#AAAAAA"
                 android:textSize="13sp"
                 android:lineSpacingMultiplier="1.4"
@@ -520,7 +519,7 @@
                 android:id="@+id/tvOverlayStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="✗ Not granted"
+                android:text="Not granted"
                 android:textColor="#AAAAAA"
                 android:textSize="13sp"
                 android:layout_marginTop="8dp" />
@@ -560,7 +559,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Power Features"
+                android:text="Finish Setup"
                 android:textColor="#FFFFFF"
                 android:textSize="24sp"
                 android:textStyle="bold" />
@@ -568,7 +567,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="These make BharatDroid 10× more powerful. All optional."
+                android:text="Choose how BharatClaw should run on this phone. You can change this later."
                 android:textColor="#AAAAAA"
                 android:textSize="14sp"
                 android:layout_marginTop="8dp" />
@@ -636,7 +635,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="✅  Dedicated AI Phone Setup"
+                    android:text="Dedicated AI phone setup"
                     android:textColor="#00CC88"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -691,7 +690,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Great! This phone can AI-answer any call made to its number.\n\nTo also forward calls from your main number to this phone:\n  1. On your MAIN phone → open Phone app\n  2. Settings → Call Forwarding (or Supplementary services)\n  3. Set 'Forward all calls' to this phone's number\n  4. Your callers dial your main number — this phone's AI answers\n\nOr just share this phone's number directly as your business/AI line."
+                        android:text="This phone can AI-answer calls made to its number. To forward calls from your main number, open call forwarding on your main phone and forward calls to this phone. Or share this number as your AI line."
                         android:textColor="#AAAAAA"
                         android:textSize="12sp"
                         android:lineSpacingMultiplier="1.4" />
@@ -699,7 +698,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="After setup: go to Settings → AI Call Answering → set your name, ElevenLabs voice, VIP numbers."
+                        android:text="After setup: open Settings, then AI Call Answering, to set your name, ElevenLabs voice, and VIP numbers."
                         android:textColor="#00CC88"
                         android:textSize="11sp"
                         android:layout_marginTop="8dp" />
@@ -718,7 +717,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="No problem. You can still use BharatDroid for:\n  • All Telegram-based commands (no SIM needed)\n  • Notification relay via WiFi\n  • WhatsApp channel commands\n  • Research, routines, macros\n\nAI call answering requires an active SIM to receive calls."
+                        android:text="No problem. BharatClaw still works for Telegram commands, notification relay, WhatsApp channel commands, research, routines, and macros. AI call answering needs an active SIM."
                         android:textColor="#AAAAAA"
                         android:textSize="12sp"
                         android:lineSpacingMultiplier="1.4" />
@@ -740,7 +739,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="📱  Main Phone — Recommended Setup"
+                    android:text="Main phone setup"
                     android:textColor="#00CC88"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -749,7 +748,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="🔔  Option 1 — Notification Relay (Recommended)"
+                    android:text="Option 1: Notification Relay (Recommended)"
                     android:textColor="#FFCC00"
                     android:textSize="13sp"
                     android:textStyle="bold"
@@ -758,7 +757,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Don't want to change your default Phone app? Use Notification Relay instead:\n\n  • Every call that comes in shows up in Telegram\n  • You see the caller name, missed calls, voicemails\n  • Reply directly from Telegram to any app's notifications\n  • Your normal Phone app stays exactly as it is\n\nEnable in Settings → Notifications → Device &amp; App Notifications → BharatDroid → Allow."
+                    android:text="Use Notification Relay if you do not want to change your default Phone app. Calls and app notifications appear in Telegram, and your normal Phone app stays unchanged.\n\nEnable it in Android Settings under Notifications, Device and app notifications, BharatClaw, Allow."
                     android:textColor="#AAAAAA"
                     android:textSize="12sp"
                     android:lineSpacingMultiplier="1.4"
@@ -776,7 +775,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="🤖  Option 2 — AI Call Answering (Power Mode)"
+                    android:text="Option 2: AI Call Answering (Power Mode)"
                     android:textColor="#FF5C00"
                     android:textSize="13sp"
                     android:textStyle="bold" />
@@ -784,7 +783,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Want AI to answer calls on your behalf? Set BharatDroid as your default Phone app in Settings → AI Call Answering.\n\nWhat you get:\n  • BharatDroid becomes your Phone app — its own dialer for outgoing calls\n  • Incoming calls: AI answers, speaks in your cloned voice, live-transcripts to Telegram\n  • VIP callers (family, boss) skip AI — you get an urgent Telegram alert instead\n  • Tap \'Take Over\' in the notification to jump into any call live\n  • After every call: full transcript + AI summary sent to Telegram\n\n⚠️  Your normal Phone app stays installed — you can still open it for contacts and recents. Calls will just go through BharatDroid\'s dialer.\n\nFor outgoing calls: use BharatDroid\'s dialer or say in Telegram:\n&quot;call Rahul about the invoice&quot; → AI makes the call for you."
+                    android:text="Set BharatClaw as your default Phone app only if you want AI call answering. Incoming calls can be answered by AI, transcribed to Telegram, and handed back to you with Take Over. Your normal Phone app stays installed for contacts and recents."
                     android:textColor="#AAAAAA"
                     android:textSize="12sp"
                     android:lineSpacingMultiplier="1.4"
@@ -805,7 +804,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="⚡ Efficient — saves API credits, fast, great for everyday tasks.\n🔥 Ultra — goes all out. Vision on every step. Full context. Best results."
+                android:text="Efficient: saves API credits, fast, good for everyday tasks.\nUltra: vision on every step, full context, maximum steps."
                 android:textColor="#888888"
                 android:textSize="12sp"
                 android:lineSpacingMultiplier="1.4"
@@ -822,7 +821,7 @@
                     android:layout_width="0dp"
                     android:layout_height="46dp"
                     android:layout_weight="1"
-                    android:text="⚡ Efficient"
+                    android:text="Efficient"
                     android:textSize="13sp"
                     android:textStyle="bold"
                     android:backgroundTint="#00CC88"
@@ -835,7 +834,7 @@
                     android:layout_width="0dp"
                     android:layout_height="46dp"
                     android:layout_weight="1"
-                    android:text="🔥 Ultra"
+                    android:text="Ultra"
                     android:textSize="13sp"
                     android:backgroundTint="#1E1E1E"
                     android:textColor="#AAAAAA"
@@ -880,7 +879,7 @@
                 android:id="@+id/btnLaunchAgent"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:text="Launch BharatDroid"
+                android:text="Launch BharatClaw"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:backgroundTint="#FF5C00"

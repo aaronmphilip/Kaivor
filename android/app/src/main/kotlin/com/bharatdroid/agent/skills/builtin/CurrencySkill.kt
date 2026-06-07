@@ -17,7 +17,7 @@ class CurrencySkill : Skill {
         name = "Currency Converter",
         version = "1.0.0",
         description = "Convert between currencies and get live exchange rates — works instantly via API without opening any app. Supports USD, EUR, GBP, INR, JPY, AED, SGD, AUD, CAD, and 30+ more.",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = emptySet(),
         exampleParamsHint = """{"amount":100,"from":"USD","to":"INR"} | {"amount":50,"from":"AED","to":"INR"} | {"from":"EUR","to":"INR"}""",

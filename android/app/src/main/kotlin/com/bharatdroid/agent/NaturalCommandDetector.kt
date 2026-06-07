@@ -3,7 +3,7 @@ package com.bharatdroid.agent
 /**
  * NaturalCommandDetector — converts free-form user phrases into internal slash commands.
  *
- * The slash was invented for public Telegram bots. BharatDroid is a personal agent —
+ * The slash was invented for public Telegram bots. BharatClaw is a personal agent —
  * the user should never need to type "/" for anything. This class is the knowledge
  * layer that spots intent in plain language and maps it to the right command.
  *
@@ -78,7 +78,7 @@ object NaturalCommandDetector {
 
         val patterns = listOf(
             Regex("""(?:what(?:'s| is)|show|check|tell me|give me)(?: my| the| agent)? (?:status|uptime|health|stats)"""),
-            Regex("""(?:how(?:'s| is)(?: the| my)? (?:agent|bot|assistant|bharatdroid) (?:doing|running|working))"""),
+            Regex("""(?:how(?:'s| is)(?: the| my)? (?:agent|bot|assistant|BharatClaw) (?:doing|running|working))"""),
             Regex("""(?:battery|wifi|network|storage)(?: status| level| info)?"""),
         )
         return if (patterns.any { it.containsMatchIn(l) }) "/status" else null

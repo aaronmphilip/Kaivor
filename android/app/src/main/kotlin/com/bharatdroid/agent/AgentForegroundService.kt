@@ -168,7 +168,7 @@ class AgentForegroundService : LifecycleService() {
             PendingIntent.FLAG_IMMUTABLE,
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("BharatDroid Agent")
+            .setContentTitle("BharatClaw Agent")
             .setContentText("Listening for your Telegram commands...")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(openApp)
@@ -179,7 +179,7 @@ class AgentForegroundService : LifecycleService() {
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "BharatDroid Agent",
+            "BharatClaw Agent",
             NotificationManager.IMPORTANCE_LOW,
         ).apply {
             description = "Keeps the AI agent running in background"

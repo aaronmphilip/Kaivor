@@ -89,7 +89,7 @@ class NotificationRelay : NotificationListenerService() {
             } catch (_: Throwable) { /* not granted yet or unsupported */ }
         }
 
-        /** True if the user has granted notification-access to BharatDroid. */
+        /** True if the user has granted notification-access to BharatClaw. */
         fun isPermissionGranted(context: Context): Boolean {
             val enabled = android.provider.Settings.Secure.getString(
                 context.contentResolver, "enabled_notification_listeners"

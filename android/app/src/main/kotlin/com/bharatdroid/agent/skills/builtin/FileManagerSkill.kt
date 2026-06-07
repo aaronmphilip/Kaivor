@@ -1,4 +1,4 @@
-﻿package com.bharatdroid.agent.skills.builtin
+package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -10,7 +10,7 @@ class FileManagerSkill : Skill {
         name = "File Manager",
         version = "3.0.0",
         description = "Browse files, search documents, open and read entire files by scrolling, share files to WhatsApp or any app via the share button, manage downloads on Android.",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
             Permission.OPEN_APP, Permission.READ_SCREEN,
@@ -26,7 +26,7 @@ class FileManagerSkill : Skill {
         exampleParamsHint = """{"action":"share_to_whatsapp","file":"invoice.pdf","contact":"Rahul"} | {"action":"read_file","file":"report.pdf"} | {"action":"browse","folder":"Downloads"}""",
     )
 
-    // Supported file manager packages — tried in preference order
+    // Supported file manager packages � tried in preference order
     private val fileApps = listOf(
         "com.google.android.apps.nbu.files",    // Google Files (most common)
         "com.google.android.documentsui",        // Android stock Document UI
@@ -47,20 +47,20 @@ class FileManagerSkill : Skill {
             ?: "").trim()
         val contact = (params["contact"] as? String ?: params["to"] as? String ?: "").trim()
 
-        // ── Share to WhatsApp — uses Android share sheet; no need to open file manager first ──
+        // -- Share to WhatsApp � uses Android share sheet; no need to open file manager first --
         if (action in setOf("share_to_whatsapp", "share", "send_to_whatsapp", "whatsapp_share")) {
             if (query.isBlank()) return SkillResult.Failure("Which file should I share? (e.g. invoice.pdf)")
             if (contact.isBlank()) return SkillResult.Failure("Who should I share \"$query\" with on WhatsApp?")
             return shareToWhatsApp(runner, agent, query, contact)
         }
 
-        // ── Read file by scrolling — opens file in viewer and reads all content ──
+        // -- Read file by scrolling � opens file in viewer and reads all content --
         if (action in setOf("read_file", "read", "open_read", "view_file")) {
             if (query.isBlank()) return SkillResult.Failure("Which file should I read?")
             return readFileByScrolling(runner, agent, query)
         }
 
-        // ── All other actions need the file manager to be open ──
+        // -- All other actions need the file manager to be open --
         val opened = openFileManager(runner)
         if (!opened) return SkillResult.Failure("No file manager found. Install Google Files from the Play Store.")
         delay(600)
@@ -81,7 +81,7 @@ class FileManagerSkill : Skill {
         return SkillResult.Success(result)
     }
 
-    // ── Share a file to a WhatsApp contact using the Android share sheet ───────
+    // -- Share a file to a WhatsApp contact using the Android share sheet -------
     private suspend fun shareToWhatsApp(
         runner: SandboxedRunner,
         agent: com.bharatdroid.agent.ScreenAgent,
@@ -99,26 +99,26 @@ class FileManagerSkill : Skill {
 Share the file "$fileName" to "$contactName" on WhatsApp using the file manager share button.
 
 STEP-BY-STEP:
-1. Tap the search icon (🔍 magnifying glass at the top). Type "$fileName". Wait for results.
-2. When "$fileName" appears in results, LONG-PRESS it for ~1 second — a checkmark or selection indicator appears.
-3. Look for a SHARE icon in the toolbar (bent arrow ↗, or three dots → Share). Tap it.
+1. Tap the search icon (?? magnifying glass at the top). Type "$fileName". Wait for results.
+2. When "$fileName" appears in results, LONG-PRESS it for ~1 second � a checkmark or selection indicator appears.
+3. Look for a SHARE icon in the toolbar (bent arrow ?, or three dots ? Share). Tap it.
 4. An Android share sheet pops up listing apps. Find "WhatsApp" (green icon) and TAP it.
 5. WhatsApp opens with a contact/chat chooser. TAP the search bar at the top.
 6. Type "$contactName". Tap the contact from search results.
-7. WhatsApp shows a preview of the file. Tap the green SEND button (arrow ➤ at bottom-right).
-8. DONE — report "Shared $fileName to $contactName on WhatsApp ✅".
+7. WhatsApp shows a preview of the file. Tap the green SEND button (arrow ? at bottom-right).
+8. DONE � report "Shared $fileName to $contactName on WhatsApp ?".
 
 RULES:
 - If "$fileName" is not found in search, try browsing Downloads folder and look there.
-- Do NOT tap any chat directly without searching — you might open the wrong chat.
-- The share button may appear as 3 dots (⋮) menu → Share if no direct icon is visible.
+- Do NOT tap any chat directly without searching � you might open the wrong chat.
+- The share button may appear as 3 dots (?) menu ? Share if no direct icon is visible.
         """.trimIndent()
 
         val result = agent.executeGoal(runner, goal, maxSteps = 65)
         return SkillResult.Success(result)
     }
 
-    // ── Open a file in its viewer and read ALL content by scrolling through it ─
+    // -- Open a file in its viewer and read ALL content by scrolling through it -
     private suspend fun readFileByScrolling(
         runner: SandboxedRunner,
         agent: com.bharatdroid.agent.ScreenAgent,
@@ -137,7 +137,7 @@ STEPS:
 1. Tap the search icon and type "$fileName".
 2. When the file appears, TAP it once to open it in its viewer (PDF viewer, document reader, etc.).
 3. Wait for the file to fully load. Report what you see on the first screen.
-4. done — report the first screen content and that the file is open.
+4. done � report the first screen content and that the file is open.
         """.trimIndent()
 
         // First, open the file
@@ -181,12 +181,12 @@ STEPS:
         val preview = content.take(4000)
         val suffix = if (content.length > 4000) "\n\n_...content truncated. ${content.length} chars total._" else ""
         return SkillResult.Success(
-            "📄 *$fileName*\n\n```\n$preview\n```$suffix",
+            "?? *$fileName*\n\n```\n$preview\n```$suffix",
             delivery = DeliveryMode.LONG_TEXT,
         )
     }
 
-    // ── File manager helpers ──────────────────────────────────────────────────
+    // -- File manager helpers --------------------------------------------------
 
     private suspend fun openFileManager(runner: SandboxedRunner): Boolean {
         for (app in fileApps) {
@@ -204,27 +204,27 @@ STEPS:
 STEPS:
 1. Look for "$target" in the sidebar or the main category list.
 2. Tap it to open.
-3. Read and list all files visible — name, size, date if shown.
+3. Read and list all files visible � name, size, date if shown.
 4. Scroll down to see more files if needed.
-5. done — report the files found."""
+5. done � report the files found."""
     }
 
     private fun buildSearchGoal(query: String): String =
         """You are in a File Manager. Search for "$query".
 STEPS:
-1. Tap the search icon (magnifying glass 🔍) at the top of the screen.
+1. Tap the search icon (magnifying glass ??) at the top of the screen.
 2. Type "$query" in the search field.
 3. Press Enter or wait for results.
 4. Read all matching file names, sizes, and locations.
-5. done — report what was found."""
+5. done � report what was found."""
 
     private fun buildDownloadsGoal(): String =
         """You are in a File Manager. Open the Downloads folder.
 STEPS:
 1. Tap "Downloads" from the sidebar or main categories.
-2. List the files — name, size, date modified if visible.
+2. List the files � name, size, date modified if visible.
 3. Scroll down to see more if needed.
-4. done — report the file list."""
+4. done � report the file list."""
 
     private fun buildOpenGoal(query: String): String =
         """You are in a File Manager. Open the file "$query".
@@ -232,7 +232,7 @@ STEPS:
 1. If not visible on screen, tap the search icon and search for "$query".
 2. Tap the file once to open it.
 3. If asked which app to use, tap the most appropriate viewer.
-4. done — report what app it opened in and what is visible."""
+4. done � report what app it opened in and what is visible."""
 
     private suspend fun handleDelete(
         runner: SandboxedRunner,
@@ -246,9 +246,9 @@ STEPS:
 2. Long-press the file to select it (a checkmark appears).
 3. Tap the Delete or Trash icon in the toolbar.
 4. Confirm deletion if a dialog appears.
-5. done — report success or not found."""
+5. done � report success or not found."""
         return SkillResult.NeedsConfirmation(
-            prompt = "🗑️ *Delete File*\n\nFile: *$query*\n\n⚠️ Permanently deletes this file. Cannot be undone.\n\nReply *YES* to confirm.",
+            prompt = "??? *Delete File*\n\nFile: *$query*\n\n?? Permanently deletes this file. Cannot be undone.\n\nReply *YES* to confirm.",
             onConfirm = {
                 val result = agent.executeGoal(runner, deleteGoal, maxSteps = 40)
                 SkillResult.Success(result)

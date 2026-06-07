@@ -91,7 +91,7 @@ class TelegramPoller(
                         if (newId != lastUpdateId) { lastUpdateId = newId; saveOffset(newId) }
 
                         if (msg.chatId !in authorizedChatIds) {
-                            sendMessage(msg.chatId, "This is a private BharatDroid agent. Unauthorized.")
+                            sendMessage(msg.chatId, "This is a private BharatClaw agent. Unauthorized.")
                             continue
                         }
 
@@ -314,7 +314,7 @@ class TelegramPoller(
             "resize_keyboard" to true,
             "is_persistent" to true,
             "one_time_keyboard" to false,
-            "input_field_placeholder" to "Choose a BharatDroid command",
+            "input_field_placeholder" to "Choose a BharatClaw command",
         )
     }
 

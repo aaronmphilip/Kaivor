@@ -219,7 +219,7 @@ class DocumentSummaryBrain(
         coverageNote: String = "",
     ): String {
         val systemPrompt = """
-You are BharatDroid's document summarizer.
+You are BharatClaw's document summarizer.
 Summarize only what is supported by the supplied material.
 Use the same language as the document or the user's request whenever possible.
 Follow the requested format exactly.
@@ -254,7 +254,7 @@ Avoid markdown tables.
         total: Int,
     ): String {
         val systemPrompt = """
-You are BharatDroid's document analyst.
+You are BharatClaw's document analyst.
 Read the supplied chunk and extract compact notes.
 Preserve headings, names, dates, amounts, deadlines, obligations, risks, and action items.
 If the chunk is mostly boilerplate, say that briefly.
@@ -280,7 +280,7 @@ $chunk
         pages: List<RenderedPage>,
     ): String {
         val systemPrompt = """
-You are BharatDroid's visual document analyst.
+You are BharatClaw's visual document analyst.
 Read the supplied page images carefully and extract compact notes.
 Preserve headings, names, dates, amounts, deadlines, action items, and decisions.
 If some text is unclear, say so briefly instead of guessing.

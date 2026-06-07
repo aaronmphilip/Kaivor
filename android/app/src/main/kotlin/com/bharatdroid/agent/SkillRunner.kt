@@ -47,7 +47,7 @@ class SkillRunner(
         if (needsAccessibility && service == null) {
             return SkillResult.Failure(
                 "Accessibility service is not running. " +
-                "Open BharatDroid app and enable it in Settings."
+                "Open BharatClaw app and enable it in Settings."
             )
         }
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.BharatDroid" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.BharatClaw" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">#FF5C00</item>
         <item name="colorPrimaryVariant">#CC4A00</item>
         <item name="colorOnPrimary">#FFFFFF</item>

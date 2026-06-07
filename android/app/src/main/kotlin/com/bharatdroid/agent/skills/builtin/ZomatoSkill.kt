@@ -1,4 +1,4 @@
-﻿package com.bharatdroid.agent.skills.builtin
+package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.Permission
 import com.bharatdroid.agent.skills.Skill
@@ -14,7 +14,7 @@ class ZomatoSkill : Skill {
         name = "Zomato Food Order",
         version = "6.1.0",
         description = "Search and order food from Zomato with filters, cart, and checkout",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
             Permission.OPEN_APP,
@@ -27,7 +27,7 @@ class ZomatoSkill : Skill {
         ),
         allowedPackages = setOf("com.application.zomato"),
         exampleParamsHint = """{"query":"pizza","maxPrice":300,"filter":"rating","action":"order"}""",
-        uiKnowledge = "Zomato home has a search bar at top labeled 'Search for restaurant, cuisine or dish'. Tapping it opens a full-screen search. Results show restaurant cards with name, rating (e.g. 4.2★), delivery time (e.g. 28 min), and price range. Tap a restaurant to open its menu. Menu has sections like 'Recommended', 'Bestsellers'. Each item has a green 'ADD' button on the right side. Tapping ADD may show a 'Customise?' bottom sheet — pick first option, tap 'Add to cart'. Common popups to dismiss: 'Allow location', 'Login', 'Rate us', 'Get 50% off' promo banners, 'Refer a friend'. Always dismiss ALL popups before doing anything else.",
+        uiKnowledge = "Zomato home has a search bar at top labeled 'Search for restaurant, cuisine or dish'. Tapping it opens a full-screen search. Results show restaurant cards with name, rating (e.g. 4.2?), delivery time (e.g. 28 min), and price range. Tap a restaurant to open its menu. Menu has sections like 'Recommended', 'Bestsellers'. Each item has a green 'ADD' button on the right side. Tapping ADD may show a 'Customise?' bottom sheet � pick first option, tap 'Add to cart'. Common popups to dismiss: 'Allow location', 'Login', 'Rate us', 'Get 50% off' promo banners, 'Refer a friend'. Always dismiss ALL popups before doing anything else.",
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {
@@ -40,18 +40,18 @@ class ZomatoSkill : Skill {
         val filter = (params["filter"] as? String)?.trim().orEmpty()
         val action = (params["action"] as? String)?.lowercase() ?: "search"
 
-        // ── Pre-execution confirmation for ordering ───────────────────────────
+        // -- Pre-execution confirmation for ordering ---------------------------
         if (action == "order" || action == "add_to_cart") {
-            val priceHint = if (maxPrice != null) "\nMax price: ₹$maxPrice" else ""
+            val priceHint = if (maxPrice != null) "\nMax price: ?$maxPrice" else ""
             val filterHint = if (filter.isNotBlank()) "\nPreference: $filter" else ""
             return SkillResult.NeedsConfirmation(
                 prompt = buildString {
-                    appendLine("🍕 *Order via Zomato*")
+                    appendLine("?? *Order via Zomato*")
                     appendLine()
                     appendLine("Item: *$query*$priceHint$filterHint")
                     appendLine()
                     appendLine("I'll find the best-rated restaurant and add *$query* to your cart.")
-                    appendLine("I'll stop before payment — you confirm on-screen.")
+                    appendLine("I'll stop before payment � you confirm on-screen.")
                     appendLine()
                     append("Reply *YES* to proceed or *NO* to cancel.")
                 }.trim(),
@@ -76,7 +76,7 @@ class ZomatoSkill : Skill {
         val runner = context.runner
         val agent = context.agent ?: return SkillResult.Failure("Agent not available.")
 
-        // ── Continuation support ──────────────────────────────────────────────
+        // -- Continuation support ----------------------------------------------
         val currentPkg = try { runner.getCurrentPackage() } catch (_: Exception) { "" }
         val alreadyInZomato = currentPkg == "com.application.zomato"
 
@@ -132,7 +132,7 @@ class ZomatoSkill : Skill {
 
         val customizeNote = buildString {
             appendLine()
-            appendLine("⚠️  ZOMATO CUSTOMIZATION POPUPS (VERY IMPORTANT):")
+            appendLine("??  ZOMATO CUSTOMIZATION POPUPS (VERY IMPORTANT):")
             appendLine("When you tap ADD on a menu item, Zomato often shows a 'Customise?' or")
             appendLine("'Choose variant' bottom sheet from the bottom of the screen.")
             appendLine("DO NOT get stuck there. Handle it like this:")
@@ -148,7 +148,7 @@ class ZomatoSkill : Skill {
 
             action == "continue" || alreadyInZomato && action != "goal" -> buildString {
                 append("TASK: Continue from the current Zomato screen. $query\n\n")
-                append("⚠️ You are ALREADY inside Zomato. Do NOT go back to the home screen.\n")
+                append("?? You are ALREADY inside Zomato. Do NOT go back to the home screen.\n")
                 append("Read what is currently visible on screen and continue from there.\n\n")
                 if (action == "order" || action == "add_to_cart") {
                     append("If you see a menu/restaurant: find \"$query\" and tap ADD.\n")
@@ -162,26 +162,26 @@ class ZomatoSkill : Skill {
 
             action == "order" || action == "add_to_cart" -> buildString {
                 append("TASK: Order \"$query\" from Zomato.\n\n")
-                append("⚠️ CRITICAL: Search results or the Zomato home screen is already visible. ")
-                append("DO NOT tap the search bar or type again — the results are already there.\n\n")
+                append("?? CRITICAL: Search results or the Zomato home screen is already visible. ")
+                append("DO NOT tap the search bar or type again � the results are already there.\n\n")
                 append("STEPS:\n")
                 append("1. READ what is currently visible on screen RIGHT NOW.\n")
-                append("   - If you see a LIST OF RESTAURANTS → go to step 2.\n")
-                append("   - If you see a MENU inside a restaurant → go to step 4.\n")
-                append("   - If you see the Zomato HOME screen with no results → then and ONLY then tap the search bar and type \"$query\".\n")
+                append("   - If you see a LIST OF RESTAURANTS ? go to step 2.\n")
+                append("   - If you see a MENU inside a restaurant ? go to step 4.\n")
+                append("   - If you see the Zomato HOME screen with no results ? then and ONLY then tap the search bar and type \"$query\".\n")
                 append("2. From the restaurant list: scroll through results.\n")
                 append(priceNote).append(filterNote).appendLine()
-                append("   🧠 SMART PICK: Choose restaurant with rating ≥ 4.0 AND delivery ≤ 35 min.\n")
+                append("   ?? SMART PICK: Choose restaurant with rating = 4.0 AND delivery = 35 min.\n")
                 append("   If multiple qualify, pick highest rating.\n")
                 append("3. TAP the restaurant CARD (not the search bar) to open its menu.\n")
                 append("4. Inside the menu: scroll to find \"$query\".\n")
                 append("5. TAP the green ADD button next to the item.\n")
                 append(customizeNote)
                 append("\n6. After adding: tap cart button or 'View Cart'.\n")
-                append("7. STOP before payment — report the cart summary.\n\n")
+                append("7. STOP before payment � report the cart summary.\n\n")
                 append("STRICT RULES:\n")
                 append("- NEVER tap the search bar if results are already visible\n")
-                append("- NEVER press back — scroll instead\n")
+                append("- NEVER press back � scroll instead\n")
                 append("- NEVER tap mic/voice icons\n")
                 append("- NEVER enter payment details")
             }
@@ -189,7 +189,7 @@ class ZomatoSkill : Skill {
             else -> buildString {
                 append("TASK: Find \"$query\" on Zomato.\n\n")
                 if (alreadyInZomato) {
-                    append("⚠️ Zomato is already open. Read current screen and continue.\n\n")
+                    append("?? Zomato is already open. Read current screen and continue.\n\n")
                 }
                 append("STEPS:\n")
                 append("1. If no results visible: search for \"$query\"\n")

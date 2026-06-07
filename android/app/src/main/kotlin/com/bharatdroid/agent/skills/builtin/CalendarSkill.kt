@@ -1,4 +1,4 @@
-﻿package com.bharatdroid.agent.skills.builtin
+package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -10,7 +10,7 @@ class CalendarSkill : Skill {
         name = "Google Calendar",
         version = "2.2.0",
         description = "View today's schedule, create events, check meetings on Google Calendar",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
             Permission.OPEN_APP, Permission.READ_SCREEN,
@@ -28,7 +28,7 @@ Google Calendar UI guide:
 - Event creation screen: Title field at the top (large text); date picker and time picker below; All-day toggle; Location field; Description/notes field; Guests (invite attendees); Notification reminders; Save button at the top right
 - Event detail screen: shows event title, date and time, location (if set), organiser, attendees list; Edit (pencil) icon top right; Delete (trash) icon top right; RSVP options if invited by someone else
 - Search: magnifying glass icon at the top right of any calendar view; type to find events by title or location
-- Navigation drawer: three-line hamburger top left → shows calendar list (My Calendar, Other people's calendars, Google contacts), Settings
+- Navigation drawer: three-line hamburger top left ? shows calendar list (My Calendar, Other people's calendars, Google contacts), Settings
 """.trimIndent(),
     )
 
@@ -83,7 +83,7 @@ Google Calendar UI guide:
                     appendLine("6. Report: event deleted or not found.")
                 }
                 return SkillResult.NeedsConfirmation(
-                    prompt = "🗑️ *Delete Calendar Event*\n\nEvent: *$title*${if (date.isNotBlank()) "\nDate: $date" else ""}${if (time.isNotBlank()) "\nTime: $time" else ""}\n\n⚠️ This will permanently delete the event.\n\nReply *YES* to confirm.",
+                    prompt = "??? *Delete Calendar Event*\n\nEvent: *$title*${if (date.isNotBlank()) "\nDate: $date" else ""}${if (time.isNotBlank()) "\nTime: $time" else ""}\n\n?? This will permanently delete the event.\n\nReply *YES* to confirm.",
                     onConfirm = {
                         val result = agent.executeGoal(runner, deleteGoal, maxSteps = 50)
                         SkillResult.Success(result)

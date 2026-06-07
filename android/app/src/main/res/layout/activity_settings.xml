@@ -33,7 +33,7 @@
                 android:id="@+id/btnBack"
                 android:layout_width="44dp"
                 android:layout_height="44dp"
-                android:text="←"
+                android:text="&#8592;"
                 android:textSize="20sp"
                 android:textColor="#FFFFFF"
                 android:backgroundTint="#1A1A1A"
@@ -170,7 +170,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Optional. Leave blank for defaults: gemini-2.5-flash · claude-haiku-4-5 · gpt-4o-mini"
+            android:text="Optional. Leave blank for defaults: gemini-2.5-flash - claude-haiku-4-5 - gpt-4o-mini"
             android:textColor="#777777"
             android:textSize="12sp"
             android:lineSpacingMultiplier="1.3"
@@ -276,7 +276,7 @@
             android:id="@+id/tvResearchKeyHint"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Optional · leave blank to reuse Agent AI key"
+            android:text="Optional - leave blank to reuse Agent AI key"
             android:textColor="#777777"
             android:textSize="12sp"
             android:layout_marginTop="2dp" />
@@ -351,7 +351,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Optional. When ON, /info and /research replies are also sent as a Telegram voice note. Uses OpenAI TTS — bring your own key."
+            android:text="Optional. When ON, /info and /research replies are also sent as a Telegram voice note. Uses OpenAI TTS with your key."
             android:textColor="#777777"
             android:textSize="12sp"
             android:lineSpacingMultiplier="1.35"
@@ -400,7 +400,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Optional · platform.openai.com/api-keys · ~$0.015 per 1k characters"
+            android:text="Optional - platform.openai.com/api-keys - ~$0.015 per 1k characters"
             android:textColor="#777777"
             android:textSize="12sp"
             android:layout_marginTop="2dp" />
@@ -496,7 +496,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Optional · Together AI or OpenAI key · Say &#34;generate an image of X&#34; and the photo arrives in this chat"
+            android:text="Optional - Together AI or OpenAI key - Say &#34;generate an image of X&#34; and the photo arrives in this chat"
             android:textColor="#777777"
             android:textSize="12sp"
             android:lineSpacingMultiplier="1.3"
@@ -645,7 +645,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="BharatDroid WhatsApp number"
+            android:text="BharatClaw WhatsApp number"
             android:textColor="#FFFFFF"
             android:textSize="15sp"
             android:textStyle="bold"
@@ -699,7 +699,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Shows a black pill with the current task. Tap × to cancel. Drag to reposition. Requires 'Display over other apps' permission."
+            android:text="Shows a black pill with the current task. Tap X to cancel. Drag to reposition. Requires Display over other apps permission."
             android:textColor="#777777"
             android:textSize="12sp"
             android:lineSpacingMultiplier="1.3"
@@ -742,7 +742,7 @@
             android:layout_width="match_parent"
             android:layout_height="44dp"
             android:layout_marginTop="10dp"
-            android:text="Grant 'Display over other apps' →"
+            android:text="Grant Display over other apps"
             android:textSize="13sp"
             android:backgroundTint="#1A1A1A"
             android:textColor="#FF5C00"
@@ -773,7 +773,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Efficient saves API credits — fast, lean, great for everyday tasks. Ultra goes all out — best model, vision on every step, full context, maximum steps. Like a superpowered pro mode."
+            android:text="Efficient saves API credits: fast, lean, great for everyday tasks. Ultra uses vision on every step, full context, and maximum steps."
             android:textColor="#777777"
             android:textSize="12sp"
             android:lineSpacingMultiplier="1.3"
@@ -791,7 +791,7 @@
                 android:layout_width="0dp"
                 android:layout_height="46dp"
                 android:layout_weight="1"
-                android:text="⚡ Efficient"
+                android:text="Efficient"
                 android:textSize="13sp"
                 android:textStyle="bold"
                 android:backgroundTint="#00CC88"
@@ -804,7 +804,7 @@
                 android:layout_width="0dp"
                 android:layout_height="46dp"
                 android:layout_weight="1"
-                android:text="🔥 Ultra"
+                android:text="Ultra"
                 android:textSize="13sp"
                 android:backgroundTint="#1A1A1A"
                 android:textColor="#AAAAAA"
@@ -827,7 +827,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="BharatDroid answers your calls in a cloned voice. Callers hear your AI. You get a full transcript in Telegram. Tap &#8220;Take Over&#8221; in the notification to switch live."
+            android:text="BharatClaw answers your calls in a cloned voice. Callers hear your AI. You get a full transcript in Telegram. Tap &#8220;Take Over&#8221; in the notification to switch live."
             android:textColor="#FFFFFF"
             android:textSize="15sp"
             android:textStyle="bold"
@@ -836,7 +836,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Requires: (1) Set BharatDroid as default Phone app below. (2) ElevenLabs account with a cloned voice. (3) OpenAI key for transcription (uses your TTS key)."
+            android:text="Requires: (1) Set BharatClaw as default Phone app below. (2) ElevenLabs account with a cloned voice. (3) OpenAI key for transcription (uses your TTS key)."
             android:textColor="#777777"
             android:textSize="12sp"
             android:lineSpacingMultiplier="1.3"
@@ -847,7 +847,7 @@
             android:layout_width="match_parent"
             android:layout_height="44dp"
             android:layout_marginTop="12dp"
-            android:text="Set as Default Phone App →"
+            android:text="Set as Default Phone App"
             android:textSize="13sp"
             android:backgroundTint="#1A1A1A"
             android:textColor="#FF5C00"
@@ -941,7 +941,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Clone your voice at elevenlabs.io/voice-lab — paste the voice ID here."
+            android:text="Clone your voice at elevenlabs.io/voice-lab, then paste the voice ID here."
             android:textColor="#555555"
             android:textSize="11sp"
             android:layout_marginTop="4dp" />

@@ -1,4 +1,4 @@
-﻿package com.bharatdroid.agent.skills.builtin
+package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.ScreenAgent
 import com.bharatdroid.agent.ScreenElement
@@ -17,7 +17,7 @@ class WhatsAppSkill : Skill {
         name = "WhatsApp Messaging",
         version = "10.0.0",
         description = "Send WhatsApp messages or documents. Opens the exact chat first, can attach files through the document picker, and avoids tapping random chats.",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
             Permission.OPEN_APP,
@@ -30,7 +30,7 @@ class WhatsAppSkill : Skill {
         ),
         allowedPackages = setOf("com.whatsapp"),
         exampleParamsHint = """{"action":"send_file","contact":"Mom","file":"invoice.pdf","caption":"Please review this"}""",
-        uiKnowledge = "WhatsApp home shows a list of recent chats. There is a search icon at top-right (magnifying glass). Tap the search icon to search for a contact by name. Tap the contact in search results to open the chat. The message input field is at the BOTTOM of the screen (below the chat bubbles). The attachment button is a paperclip or '+' icon to the LEFT of the message field. Tapping it shows: Document, Camera, Gallery, Audio, Location, Contact options. To send a file, tap attachment → Document → navigate to file → tap it. For multiple files, long-press the first file, then tap others to multi-select, then tap Send.",
+        uiKnowledge = "WhatsApp home shows a list of recent chats. There is a search icon at top-right (magnifying glass). Tap the search icon to search for a contact by name. Tap the contact in search results to open the chat. The message input field is at the BOTTOM of the screen (below the chat bubbles). The attachment button is a paperclip or '+' icon to the LEFT of the message field. Tapping it shows: Document, Camera, Gallery, Audio, Location, Contact options. To send a file, tap attachment ? Document ? navigate to file ? tap it. For multiple files, long-press the first file, then tap others to multi-select, then tap Send.",
     )
 
     override suspend fun execute(context: SkillContext, params: Map<String, Any>): SkillResult {

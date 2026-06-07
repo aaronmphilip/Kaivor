@@ -10,7 +10,7 @@ class MapsSkill : Skill {
         name = "Google Maps Navigation",
         version = "6.0.0",
         description = "Navigate, get directions, compare ETA across travel modes, search places and explore nearby on Google Maps. Supports custom pickup/origin address.",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
             Permission.OPEN_APP, Permission.READ_SCREEN,

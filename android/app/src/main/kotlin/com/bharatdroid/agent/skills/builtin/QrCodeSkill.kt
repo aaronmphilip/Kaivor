@@ -25,7 +25,7 @@ class QrCodeSkill : Skill {
         name = "QR Code Generator",
         version = "1.0.0",
         description = "Generate a QR code for any URL, text, UPI ID, phone number or contact and send it directly in Telegram chat — no app or API key needed.",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = emptySet(),
         exampleParamsHint = """{"content":"https://bharatdroid.com"} | {"content":"upi://pay?pa=you@upi","label":"My UPI QR"} | {"content":"9876543210","label":"Call me"}""",

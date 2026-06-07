@@ -12,7 +12,7 @@ import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.*
 
 /**
- * InCallService — BharatDroid's AI call answering + outbound calling engine.
+ * InCallService — BharatClaw's AI call answering + outbound calling engine.
  *
  * INBOUND flow:
  *   Call rings → VIP check → if VIP: notify owner → else: AI answers
@@ -29,7 +29,7 @@ import kotlinx.coroutines.*
  *   [ASK_OWNER: question] → blocks, owner replies via Telegram → fed back to AI →
  *   [CALL_END] → AI says goodbye → call.disconnect()
  *
- * Requires BharatDroid set as default Phone app (Settings → Set as Default Phone App).
+ * Requires BharatClaw set as default Phone app (Settings → Set as Default Phone App).
  */
 class CallAnsweringService : InCallService() {
 
@@ -405,7 +405,7 @@ class CallAnsweringService : InCallService() {
         getSystemService(NotificationManager::class.java).cancel(CALL_NOTIF_ID)
 
     private fun createChannel() {
-        val ch = NotificationChannel(CALL_CHANNEL, "BharatDroid Calls",
+        val ch = NotificationChannel(CALL_CHANNEL, "BharatClaw Calls",
             NotificationManager.IMPORTANCE_HIGH)
         getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
     }

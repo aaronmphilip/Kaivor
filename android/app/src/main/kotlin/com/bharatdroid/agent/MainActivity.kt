@@ -26,43 +26,35 @@ class MainActivity : AppCompatActivity() {
     }
     private var isAgentRunning = false
     private var agentStartElapsed: Long = 0L  // SystemClock.elapsedRealtime() when agent last started
-
-    // All skill metadata for the dashboard grid — grouped by category
+    // All skill metadata for the dashboard grid, grouped by category.
     private val allSkills = listOf(
-        // Food & Grocery
-        SkillCard("🍕 Swiggy",   "Food delivery",     "#FF6B00"),
-        SkillCard("🍽️ Zomato",   "Food delivery",     "#E23744"),
-        SkillCard("⚡ Zepto",    "10-min grocery",    "#6C2DC7"),
-        SkillCard("🥦 Blinkit",  "Grocery delivery",  "#F8CB46"),
-        // Rides
-        SkillCard("🚗 Ola",      "Cab booking",       "#1C8C3C"),
-        SkillCard("🚕 Uber",     "Cab booking",       "#555555"),
-        SkillCard("🏍️ Rapido",  "Bike taxi",         "#FF6B00"),
-        // Payments
-        SkillCard("💸 PhonePe",  "UPI / Recharge",    "#5F259F"),
-        SkillCard("💳 GPay",     "UPI Payments",      "#4285F4"),
-        SkillCard("💰 Paytm",    "Wallet / Bills",    "#00BAF2"),
-        SkillCard("🏦 CRED",     "Bill payments",     "#1A1A2E"),
-        // Shopping
-        SkillCard("📦 Amazon",   "Shopping",          "#FF9900"),
-        SkillCard("🛒 Flipkart", "Shopping",          "#2874F0"),
-        // Communication
-        SkillCard("💬 WhatsApp", "Messaging + Files", "#25D366"),
-        SkillCard("📸 Instagram","Social media",      "#E4405F"),
-        SkillCard("📧 Gmail",    "Email",             "#EA4335"),
-        // Productivity
-        SkillCard("🗺️ Maps",    "Navigation",        "#1EA362"),
-        SkillCard("🌐 Chrome",   "Web browsing",      "#4285F4"),
-        SkillCard("📅 Calendar", "Schedule",          "#4285F4"),
-        SkillCard("👤 Contacts", "Phone & Contacts",  "#1A73E8"),
-        SkillCard("📝 Notes",    "Google Keep",       "#FBBC04"),
-        SkillCard("📂 Files",    "Browse + Share",    "#5F6368"),
-        SkillCard("📺 YouTube",  "Videos",            "#FF0000"),
-        SkillCard("⚙️ Settings","Phone Settings",    "#607D8B"),
-        SkillCard("📱 Screen",   "Read + Summarize",  "#00BCD4"),
-        SkillCard("🤖 General",  "Any Task",          "#FF4500"),
+        SkillCard("Swiggy", "Food delivery", "#FF6B00"),
+        SkillCard("Zomato", "Food delivery", "#E23744"),
+        SkillCard("Zepto", "10-min grocery", "#7D66D9"),
+        SkillCard("Blinkit", "Grocery delivery", "#F8CB46"),
+        SkillCard("Ola", "Cab booking", "#1C8C3C"),
+        SkillCard("Uber", "Cab booking", "#AAAAAA"),
+        SkillCard("Rapido", "Bike taxi", "#FF6B00"),
+        SkillCard("PhonePe", "UPI / Recharge", "#8A63D2"),
+        SkillCard("GPay", "UPI Payments", "#4285F4"),
+        SkillCard("Paytm", "Wallet / Bills", "#00BAF2"),
+        SkillCard("CRED", "Bill payments", "#C8C8C8"),
+        SkillCard("Amazon", "Shopping", "#FF9900"),
+        SkillCard("Flipkart", "Shopping", "#2874F0"),
+        SkillCard("WhatsApp", "Messaging + Files", "#25D366"),
+        SkillCard("Instagram", "Social media", "#E4405F"),
+        SkillCard("Gmail", "Email", "#EA4335"),
+        SkillCard("Maps", "Navigation", "#1EA362"),
+        SkillCard("Chrome", "Web + forms", "#4285F4"),
+        SkillCard("Calendar", "Schedule", "#4285F4"),
+        SkillCard("Contacts", "Phone + Contacts", "#1A73E8"),
+        SkillCard("Notes", "Google Keep", "#FBBC04"),
+        SkillCard("Files", "Browse + Share", "#8B949E"),
+        SkillCard("YouTube", "Videos", "#FF5A5A"),
+        SkillCard("Settings", "Phone Settings", "#8B949E"),
+        SkillCard("Screen", "Read + Summarize", "#00BCD4"),
+        SkillCard("General", "Any Task", "#FF5C00"),
     )
-
     data class SkillCard(val name: String, val description: String, val color: String)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -110,9 +102,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Format elapsed milliseconds as "1h 23m" or "45m" or "—" */
+    /** Format elapsed milliseconds as "1h 23m", "45m", or "-". */
     private fun formatUptime(elapsedMs: Long): String {
-        if (elapsedMs <= 0L) return "—"
+        if (elapsedMs <= 0L) return "-"
         val totalMinutes = (elapsedMs / 60_000).toInt()
         val hours = totalMinutes / 60
         val minutes = totalMinutes % 60
@@ -185,17 +177,17 @@ class MainActivity : AppCompatActivity() {
             badge.text = "LIVE"
             badge.setTextColor(0xFF00CC88.toInt())
             badge.setBackgroundColor(0xFF0D2B1E.toInt())
-            desc.text = "Active — forwarding notifications from all apps to your Telegram. Reply to any forwarded message to reply inside that app.\n\nTip: send /muted to your bot to manage per-app muting."
+            desc.text = "Active. Notifications from all apps are forwarded to Telegram. Reply to any forwarded message to answer inside that app.\n\nTip: send /muted to manage per-app muting."
             btn.text = "Manage in Settings"
         } else {
             badge.text = "OFF"
             badge.setTextColor(0xFFFF6B6B.toInt())
             badge.setBackgroundColor(0xFF331111.toInt())
-            desc.text = "Every app notification → forwarded to your Telegram bot. Reply in Telegram → reply lands in the app."
-            btn.text = "Enable in Settings → Notification Access"
+            desc.text = "Every app notification can be forwarded to Telegram. Replies from Telegram land back in the original app."
+            btn.text = "Enable Notification Access"
         }
 
-        // Capability badges — Voice STT and Notif mini badge
+        // Capability badges: Voice STT and notification relay.
         val agentKey = prefs.getString("agent_api_key", prefs.getString("ai_api_key", ""))?.trim().orEmpty()
         val sttText  = findViewById<TextView>(R.id.tvSttStatus)
         sttText.text = if (agentKey.isNotBlank()) "Voice ON" else "Voice OFF"
@@ -293,7 +285,8 @@ class MainActivity : AppCompatActivity() {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundResource(R.drawable.card_bg)
-            setPadding(10.dp, 8.dp, 10.dp, 8.dp)
+            minimumHeight = 56.dp
+            setPadding(10.dp, 9.dp, 10.dp, 9.dp)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                 marginEnd = 6.dp
             }
@@ -307,7 +300,7 @@ class MainActivity : AppCompatActivity() {
             addView(TextView(this@MainActivity).apply {
                 text = skill.description
                 setTextColor(0xFF666666.toInt())
-                textSize = 10f
+                textSize = 10.5f
             })
         }
     }
@@ -319,7 +312,7 @@ class MainActivity : AppCompatActivity() {
         val entries = activityLog.getRecent(8)
         if (entries.isEmpty()) {
             container.addView(TextView(this).apply {
-                text = "No activity yet. Send a command via Telegram!"
+                text = "No activity yet. Send a command to your Telegram bot."
                 setTextColor(0xFF555555.toInt())
                 textSize = 13f
                 setPadding(0, 8.dp, 0, 0)

@@ -429,7 +429,7 @@ class SandboxedRunner(
     fun setClipboard(text: String) {
         requirePermission(Permission.CLIPBOARD)
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("BharatDroid", text))
+        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("bharatdroid", text))
     }
 
     fun readClipboard(): String {
@@ -546,7 +546,7 @@ class SandboxedRunner(
         return try {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
                 as android.content.ClipboardManager
-            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("BharatDroid", text))
+            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("bharatdroid", text))
             delay(120)
 
             val target = service.findFocusedInput()

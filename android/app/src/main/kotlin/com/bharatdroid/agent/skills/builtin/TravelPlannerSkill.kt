@@ -1,16 +1,16 @@
-﻿package com.bharatdroid.agent.skills.builtin
+package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
 
 /**
- * TravelPlannerSkill — the hackathon show-stopper.
+ * TravelPlannerSkill � the hackathon show-stopper.
  *
  * Flow:
- *   1. Open Google Maps → get directions from CURRENT LOCATION → destination.
+ *   1. Open Google Maps ? get directions from CURRENT LOCATION ? destination.
  *   2. Read the ETA (estimated travel time) from the route info.
  *   3. Compute departure time: eventTime - travelTime - bufferMinutes (default 15 min).
- *   4. Open Google Calendar → create an event at eventTime with a reminder to
+ *   4. Open Google Calendar ? create an event at eventTime with a reminder to
  *      leave at the computed departure time.
  *
  * Example params:
@@ -23,7 +23,7 @@ class TravelPlannerSkill : Skill {
         name = "Travel Planner (Maps + Calendar)",
         version = "1.2.0",
         description = "Plans trips: gets ETA from Google Maps, adds a calendar event with a 10-15 min buffer to leave on time.",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
             Permission.OPEN_APP, Permission.READ_SCREEN,
@@ -55,7 +55,7 @@ class TravelPlannerSkill : Skill {
             ?: 15
         val transitMode = (params["mode"] as? String)?.lowercase() ?: "driving" // driving/walking/transit
 
-        // ─── Step 1: Open Google Maps and get the ETA ───────────────────────────
+        // --- Step 1: Open Google Maps and get the ETA ---------------------------
         runner.openApp("com.google.android.apps.maps")
         runner.waitForApp("com.google.android.apps.maps", timeoutMs = 6000)
         delay(700)
@@ -77,7 +77,7 @@ class TravelPlannerSkill : Skill {
             append("5. Make sure the $transitMode tab is selected (car for driving, bus for transit, person for walking).\n")
             append("6. READ the ETA shown (e.g. '23 min', '1 hr 15 min') and the distance.\n")
             append("7. Call done with summary EXACTLY like: 'ETA: 23 min, Distance: 14 km'.\n\n")
-            append("DO NOT tap 'Start' or 'Go' — just READ the ETA and stop.")
+            append("DO NOT tap 'Start' or 'Go' � just READ the ETA and stop.")
         }
 
         val mapsResult = agent.executeGoal(runner, mapsGoal, maxSteps = 50)
@@ -95,9 +95,9 @@ class TravelPlannerSkill : Skill {
         }
 
         val totalBuffer = etaMinutes + bufferMinutes
-        val departAdvice = "Leave ${totalBuffer} min before — $etaText travel + $bufferMinutes min buffer."
+        val departAdvice = "Leave ${totalBuffer} min before � $etaText travel + $bufferMinutes min buffer."
 
-        // ─── Step 2: Open Google Calendar and create the event ─────────────────
+        // --- Step 2: Open Google Calendar and create the event -----------------
         val calendarResult = createCalendarEventViaIntent(
             runner = runner,
             agent = agent,
@@ -114,23 +114,23 @@ class TravelPlannerSkill : Skill {
         }
 
         return SkillResult.Success(
-            "🗓️ *Trip planned to $destination*\n" +
-                "• Travel time: *$etaText* (via $transitMode)\n" +
-                "• Buffer: *$bufferMinutes min*\n" +
-                "• $departAdvice\n" +
-                "• Calendar: $calResult",
+            "??? *Trip planned to $destination*\n" +
+                "� Travel time: *$etaText* (via $transitMode)\n" +
+                "� Buffer: *$bufferMinutes min*\n" +
+                "� $departAdvice\n" +
+                "� Calendar: $calResult",
         )
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────────
+    // -- Helpers ----------------------------------------------------------------
 
     /**
      * Parses a Maps result string for travel time and returns total minutes.
      * Handles formats like:
-     *   "ETA: 23 min"           → 23
-     *   "1 hr 15 min"           → 75
-     *   "2 hours 5 minutes"     → 125
-     *   "45 min"                → 45
+     *   "ETA: 23 min"           ? 23
+     *   "1 hr 15 min"           ? 75
+     *   "2 hours 5 minutes"     ? 125
+     *   "45 min"                ? 45
      */
     private fun parseEtaMinutes(text: String): Int? {
         val lower = text.lowercase()

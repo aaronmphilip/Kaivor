@@ -1,4 +1,4 @@
-﻿package com.bharatdroid.agent.skills.builtin
+package com.bharatdroid.agent.skills.builtin
 
 import android.graphics.Bitmap
 import com.bharatdroid.agent.DocumentSummaryBrain
@@ -17,7 +17,7 @@ class ReadingConciergeSkill : Skill {
         name = "Reading Concierge",
         version = "1.0.0",
         description = "Open WhatsApp documents or article pages, read through them by scrolling, summarize them, and send the final summary back through Telegram. Use for PDFs in WhatsApp, links/articles, and long reading tasks.",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
             Permission.OPEN_APP,
@@ -70,7 +70,7 @@ class ReadingConciergeSkill : Skill {
             }
 
             "current", "screen", "visible", "open_document" -> {
-                // Already on the right screen — just summarize it below.
+                // Already on the right screen � just summarize it below.
             }
 
             else -> {

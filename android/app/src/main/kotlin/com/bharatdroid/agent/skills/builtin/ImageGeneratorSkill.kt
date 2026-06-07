@@ -31,7 +31,7 @@ class ImageGeneratorSkill(
         name = "Image Generator",
         version = "1.0.0",
         description = "Generate any image from a text description and send it directly to your Telegram chat — no app needed. Powered by Flux/DALL-E AI.",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = emptySet(),
         exampleParamsHint = """{"prompt":"A majestic tiger in a jungle at sunset, photorealistic"} | {"prompt":"Eiffel Tower cartoon style","size":"square"}""",

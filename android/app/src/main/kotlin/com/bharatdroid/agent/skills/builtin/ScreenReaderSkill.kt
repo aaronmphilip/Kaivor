@@ -11,7 +11,7 @@ class ScreenReaderSkill : Skill {
         name = "Screen Reader & Analyzer",
         version = "3.1.0",
         description = "Read or summarize current screen content, scroll and read full pages, find text, and analyze visible documents, invoices, emails, or any on-screen content.",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
             Permission.READ_SCREEN,

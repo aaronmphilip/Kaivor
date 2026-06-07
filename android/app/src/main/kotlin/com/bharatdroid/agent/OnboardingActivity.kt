@@ -45,30 +45,30 @@ class OnboardingActivity : AppCompatActivity() {
         // Accessibility status
         findViewById<TextView>(R.id.tvAccessStatus)?.let { tv ->
             if (AgentAccessibilityService.isConnected) {
-                tv.text = "✓ Accessibility enabled"
+                tv.text = "Accessibility enabled"
                 tv.setTextColor(0xFF00CC88.toInt())
             } else {
-                tv.text = "✗ Not enabled yet"
+                tv.text = "Not enabled yet"
                 tv.setTextColor(0xFFFF6B6B.toInt())
             }
         }
         // Notification access status
         findViewById<TextView>(R.id.tvNotifStatus)?.let { tv ->
             if (NotificationRelay.isPermissionGranted(this)) {
-                tv.text = "✓ Notification access enabled — relay is active"
+                tv.text = "Notification access enabled. Relay is active"
                 tv.setTextColor(0xFF00CC88.toInt())
             } else {
-                tv.text = "✗ Not enabled (optional — tap button below)"
+                tv.text = "Not enabled. Optional"
                 tv.setTextColor(0xFFAAAAAA.toInt())
             }
         }
         // Overlay permission status
         findViewById<TextView>(R.id.tvOverlayStatus)?.let { tv ->
             if (Settings.canDrawOverlays(this)) {
-                tv.text = "✓ Overlay granted — notch is ready"
+                tv.text = "Overlay granted. Notch is ready"
                 tv.setTextColor(0xFF00CC88.toInt())
             } else {
-                tv.text = "✗ Not granted (optional — tap below)"
+                tv.text = "Not granted. Optional"
                 tv.setTextColor(0xFFAAAAAA.toInt())
             }
         }

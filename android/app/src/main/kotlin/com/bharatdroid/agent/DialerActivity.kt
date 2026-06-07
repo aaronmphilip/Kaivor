@@ -8,7 +8,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * Minimal dialer required when BharatDroid is set as the default Phone app.
+ * Minimal dialer required when BharatClaw is set as the default Phone app.
  * Handles ACTION_DIAL and ACTION_CALL intents so users can still make outgoing calls normally.
  * Incoming calls are handled by CallAnsweringService (InCallService), not here.
  */

@@ -1,10 +1,10 @@
-﻿package com.bharatdroid.agent.skills.builtin
+package com.bharatdroid.agent.skills.builtin
 
 import android.content.Intent
 import com.bharatdroid.agent.skills.*
 
 /**
- * GENERAL AGENT — The catch-all skill.
+ * GENERAL AGENT � The catch-all skill.
  *
  * When no specific skill matches the user's request, this skill
  * uses the AI-driven ScreenAgent to accomplish the task by:
@@ -13,7 +13,7 @@ import com.bharatdroid.agent.skills.*
  * 3. Executing the action
  * 4. Repeating until the goal is achieved
  *
- * This makes BharatDroid capable of handling ANY task on ANY app,
+ * This makes BharatClaw capable of handling ANY task on ANY app,
  * not just the hardcoded skill flows.
  */
 class GeneralSkill : Skill {
@@ -23,7 +23,7 @@ class GeneralSkill : Skill {
         name = "General Agent",
         version = "1.0.0",
         description = "Handle ANY task on the phone. Opens apps, reads screens, taps buttons, types text, scrolls, navigates. Use this when no other specific skill matches. Can work with any app.",
-        author = "bharatdroid-team",
+        author = "BharatClaw-team",
         trusted = true,
         permissions = setOf(
             Permission.OPEN_APP, Permission.READ_SCREEN,
@@ -52,12 +52,12 @@ class GeneralSkill : Skill {
                 kotlinx.coroutines.delay(1500)
                 context.runner.dismissPopups(2)
             } catch (_: Exception) {
-                // App not found — try to resolve by name via package manager
+                // App not found � try to resolve by name via package manager
                 tryOpenAppByName(context, appPackage)
             }
         } else {
-            // No explicit package — try to extract app name from goal and open it.
-            // e.g. goal = "open Obsidian" → search for "Obsidian" in installed apps
+            // No explicit package � try to extract app name from goal and open it.
+            // e.g. goal = "open Obsidian" ? search for "Obsidian" in installed apps
             val appNameMatch = APP_OPEN_REGEX.find(goal.lowercase())
             if (appNameMatch != null) {
                 val appName = appNameMatch.groupValues[1].trim()
@@ -72,7 +72,7 @@ class GeneralSkill : Skill {
     /**
      * Try to open an app by its display name (not package name).
      * Uses Android's PackageManager to search installed apps.
-     * e.g. "Obsidian" → "md.obsidian", "Spotify" → "com.spotify.music"
+     * e.g. "Obsidian" ? "md.obsidian", "Spotify" ? "com.spotify.music"
      */
     private suspend fun tryOpenAppByName(context: SkillContext, name: String) {
         try {
@@ -98,7 +98,7 @@ class GeneralSkill : Skill {
                 context.runner.dismissPopups(2)
             }
         } catch (_: Exception) {
-            // Couldn't resolve — executeGoal will work with whatever is on screen
+            // Couldn't resolve � executeGoal will work with whatever is on screen
         }
     }
 

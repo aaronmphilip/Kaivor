@@ -23,7 +23,7 @@ class PdfCreatorSkill : Skill {
         name = "PDF Creator",
         version = "1.0.0",
         description = "Create a PDF document from text content and send it directly in Telegram. Supports headings (# H1, ## H2), bullet points (- item), and plain paragraphs. No API key needed.",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = emptySet(),
         exampleParamsHint = """{"title":"My Report","content":"# Introduction\nThis is the intro.\n## Section 1\n- Point one\n- Point two\nSome body text."} | {"title":"Meeting Notes","content":"# Agenda\n- Review Q1\n- Plan Q2","author":"Roni"}""",

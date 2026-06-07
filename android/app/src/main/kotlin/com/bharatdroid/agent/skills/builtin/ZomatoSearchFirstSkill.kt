@@ -16,7 +16,7 @@ class ZomatoSearchFirstSkill : Skill {
         name = "Zomato Food Order",
         version = "6.2.0",
         description = "Search, compare, and order food from Zomato with smarter follow-up handling",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
             Permission.OPEN_APP,

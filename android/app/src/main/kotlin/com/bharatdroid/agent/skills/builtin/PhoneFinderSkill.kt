@@ -13,7 +13,7 @@ class PhoneFinderSkill : Skill {
         name = "Find My Phone",
         version = "1.0.0",
         description = "Ring this phone at maximum volume for 30 seconds to help you locate it. Say 'ring my phone', 'find my phone', or 'where is my phone'.",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = emptySet(),
         allowedPackages = emptySet(),

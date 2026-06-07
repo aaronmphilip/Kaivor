@@ -13,6 +13,6 @@
 -keep class okhttp3.** { *; }
 -keep interface okhttp3.** { *; }
 
-# Keep BharatDroid skill manifests (used in reflection/serialization)
+# Keep BharatClaw skill manifests (used in reflection/serialization)
 -keep class com.bharatdroid.agent.skills.** { *; }
 -keep class com.bharatdroid.agent.AgentConfig { *; }

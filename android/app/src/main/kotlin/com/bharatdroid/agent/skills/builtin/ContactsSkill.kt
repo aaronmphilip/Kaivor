@@ -1,4 +1,4 @@
-ï»¿package com.bharatdroid.agent.skills.builtin
+package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
@@ -10,7 +10,7 @@ class ContactsSkill : Skill {
         name = "Contacts & Phone",
         version = "3.0.0",
         description = "Search contacts, view details, add new contacts, check call history",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
             Permission.OPEN_APP, Permission.READ_SCREEN,
@@ -27,13 +27,13 @@ class ContactsSkill : Skill {
         uiKnowledge = """
 Contacts UI guide:
 - Home screen: alphabetical list of contacts; each row shows a coloured avatar/initials circle, the contact's full name, and optionally their phone number or label
-- Alphabetical index: a vertical Aâ€“Z fast-scroll bar on the right edge; drag it to jump to a letter
+- Alphabetical index: a vertical A–Z fast-scroll bar on the right edge; drag it to jump to a letter
 - Search: magnifying glass icon at the top right; tap to open a search field; type name, phone, or email to filter contacts
-- Contact detail screen: large avatar at the top; contact name; action buttons â€” "Call", "Message", "Video", "Email" â€” below the name; scroll down for all phone numbers, emails, addresses, notes
-- Edit contact: tap the pencil (Edit) icon at the top right of the contact detail screen â†’ editable fields for name, phone, email, address, company, etc.; Save button at the top right
-- Create new contact: FAB (+) button at the bottom right of the contacts list â†’ new contact form with Name, Phone, Email fields; Save at top right
+- Contact detail screen: large avatar at the top; contact name; action buttons — "Call", "Message", "Video", "Email" — below the name; scroll down for all phone numbers, emails, addresses, notes
+- Edit contact: tap the pencil (Edit) icon at the top right of the contact detail screen ? editable fields for name, phone, email, address, company, etc.; Save button at the top right
+- Create new contact: FAB (+) button at the bottom right of the contacts list ? new contact form with Name, Phone, Email fields; Save at top right
 - Favourites: "Starred" or "Favourites" section may appear at the top of the contacts list for starred contacts
-- Labels/groups: accessible via the three-dot menu or navigation drawer â€” contacts can be grouped (Family, Work, etc.)
+- Labels/groups: accessible via the three-dot menu or navigation drawer — contacts can be grouped (Family, Work, etc.)
 """.trimIndent(),
     )
 
@@ -75,7 +75,7 @@ Contacts UI guide:
 
             "history" ->
                 """You are in Contacts. Show recent call history.
-                STEPS: 1) If there is a 'Recents' or 'History' tab visible, tap it. 2) Read the recent calls list â€” who called, when."""
+                STEPS: 1) If there is a 'Recents' or 'History' tab visible, tap it. 2) Read the recent calls list — who called, when."""
 
             else ->
                 params["goal"] as? String ?: "Do this in Contacts: $action $query"

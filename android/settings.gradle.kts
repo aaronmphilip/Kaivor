@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "BharatDroid"
+rootProject.name = "BharatClaw"
 include(":app")

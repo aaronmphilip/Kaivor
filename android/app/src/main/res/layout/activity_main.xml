@@ -24,7 +24,7 @@
             android:paddingEnd="20dp"
             android:paddingBottom="40dp">
 
-            <!-- ── Header row ── -->
+            <!-- â”€â”€ Header row â”€â”€ -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -44,7 +44,7 @@
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:src="@drawable/ic_logo_mark"
-                        android:contentDescription="BharatDroid logo"/>
+                        android:contentDescription="BharatClaw logo"/>
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -55,7 +55,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="BharatDroid"
+                            android:text="BharatClaw"
                             android:textColor="#FFFFFF"
                             android:textSize="22sp"
                             android:textStyle="bold"
@@ -83,7 +83,7 @@
                     android:paddingEnd="14dp"/>
             </LinearLayout>
 
-            <!-- ── Stat strip row 1 (Commands · Skills · Uptime) ── -->
+            <!-- â”€â”€ Stat strip row 1 (Commands Â· Skills Â· Uptime) â”€â”€ -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -164,7 +164,7 @@
                         android:id="@+id/tvUptime"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="—"
+                        android:text="-"
                         android:textColor="#FF5C00"
                         android:textSize="24sp"
                         android:textStyle="bold"/>
@@ -179,7 +179,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- ── Capability badges row (Voice · Vision · Files · STT) ── -->
+            <!-- â”€â”€ Capability badges row (Voice Â· Vision Â· Files Â· STT) â”€â”€ -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -199,7 +199,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="🎙️"
+                        android:text="VOICE"
                         android:textSize="18sp"/>
 
                     <TextView
@@ -228,7 +228,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="👁️"
+                        android:text="VISION"
                         android:textSize="18sp"/>
 
                     <TextView
@@ -256,7 +256,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="📂"
+                        android:text="FILES"
                         android:textSize="18sp"/>
 
                     <TextView
@@ -284,7 +284,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="🔔"
+                        android:text="RELAY"
                         android:textSize="18sp"/>
 
                     <TextView
@@ -299,7 +299,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- ── Status Card (orange border) ── -->
+            <!-- â”€â”€ Status Card (orange border) â”€â”€ -->
             <LinearLayout
                 android:id="@+id/cardStatus"
                 android:layout_width="match_parent"
@@ -372,7 +372,7 @@
                     android:layout_marginTop="14dp"/>
             </LinearLayout>
 
-            <!-- ── Notification Relay Card ── -->
+            <!-- â”€â”€ Notification Relay Card â”€â”€ -->
             <LinearLayout
                 android:id="@+id/cardCurrentTask"
                 android:layout_width="match_parent"
@@ -431,7 +431,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="🔔  Notification Relay"
+                        android:text="Notification Relay"
                         android:textColor="#FFFFFF"
                         android:textSize="14sp"
                         android:textStyle="bold"
@@ -456,7 +456,7 @@
                     android:id="@+id/tvNotifRelayDesc"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Every app notification → your Telegram. Reply in Telegram → reply in the app."
+                    android:text="Every app notification goes to Telegram. Reply there and BharatClaw replies inside the app."
                     android:textColor="#555555"
                     android:textSize="12sp"
                     android:lineSpacingMultiplier="1.4"
@@ -473,7 +473,7 @@
                     android:layout_marginTop="10dp"/>
             </LinearLayout>
 
-            <!-- ── Quick commands hint card ── -->
+            <!-- â”€â”€ Quick commands hint card â”€â”€ -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -485,7 +485,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="💬  How to use"
+                    android:text="How to use"
                     android:textColor="#FFFFFF"
                     android:textSize="13sp"
                     android:textStyle="bold"/>
@@ -508,7 +508,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="🍕 &quot;Order pizza from Swiggy&quot;"
+                        android:text="&quot;Order pizza from Swiggy&quot;"
                         android:textColor="#888888"
                         android:textSize="11sp"
                         android:layout_marginBottom="3dp"/>
@@ -516,7 +516,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="📂 &quot;Share report.pdf to Rahul on WhatsApp&quot;"
+                        android:text="&quot;Share report.pdf to Rahul on WhatsApp&quot;"
                         android:textColor="#888888"
                         android:textSize="11sp"
                         android:layout_marginBottom="3dp"/>
@@ -524,7 +524,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="🎙️ Record a voice note — I'll transcribe and execute it"
+                        android:text="Record a voice note. BharatClaw transcribes and runs it."
                         android:textColor="#888888"
                         android:textSize="11sp"
                         android:layout_marginBottom="3dp"/>
@@ -532,13 +532,13 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="📄 &quot;Read the PDF in Downloads fully&quot;"
+                        android:text="&quot;Read the PDF in Downloads fully&quot;"
                         android:textColor="#888888"
                         android:textSize="11sp"/>
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- ── Skills section ── -->
+            <!-- â”€â”€ Skills section â”€â”€ -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -558,7 +558,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Tap Telegram to use →"
+                    android:text="Run from Telegram"
                     android:textColor="#444444"
                     android:textSize="11sp"/>
             </LinearLayout>
@@ -570,7 +570,7 @@
                 android:orientation="vertical"
                 android:layout_marginTop="10dp"/>
 
-            <!-- ── Recent Activity section ── -->
+            <!-- â”€â”€ Recent Activity section â”€â”€ -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

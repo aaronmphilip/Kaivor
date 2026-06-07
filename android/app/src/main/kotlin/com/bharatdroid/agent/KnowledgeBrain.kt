@@ -103,7 +103,7 @@ class KnowledgeBrain(
     private suspend fun resolveQuery(chatId: Long, userMessage: String, contextHint: String): QueryPlan {
         val priorTurns = history.getOrPut(chatId) { ArrayDeque() }.takeLast(6)
         val systemPrompt = """
-You are BharatDroid's knowledge router.
+You are BharatClaw's knowledge router.
 Rewrite the user's latest message into the best web-search query.
 
 Return only JSON:
@@ -164,7 +164,7 @@ Rules:
             ResearchDepth.DEEP -> "Give a deeper answer with the key points, but keep it readable and not bloated."
         }
         val systemPrompt = """
-You are BharatDroid's knowledge brain.
+You are BharatClaw's knowledge brain.
 Answer the user's question using ONLY the supplied web research.
 
 Return only JSON:

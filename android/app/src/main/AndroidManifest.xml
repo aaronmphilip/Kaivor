@@ -35,10 +35,10 @@
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="BharatDroid"
+        android:label="BharatClaw"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.BharatDroid">
+        android:theme="@style/Theme.BharatClaw">
 
         <!-- Onboarding is the entry point. Routes to Dashboard if already set up. -->
         <activity
@@ -67,7 +67,7 @@
         <service
             android:name=".AgentAccessibilityService"
             android:exported="true"
-            android:label="BharatDroid Agent"
+            android:label="BharatClaw Agent"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
@@ -87,7 +87,7 @@
         <service
             android:name=".NotificationRelay"
             android:exported="true"
-            android:label="BharatDroid Notifications"
+            android:label="BharatClaw Notifications"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
@@ -112,7 +112,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- Minimal dialer UI required when BharatDroid is the default Phone app -->
+        <!-- Minimal dialer UI required when BharatClaw is the default Phone app -->
         <activity
             android:name=".DialerActivity"
             android:exported="true"

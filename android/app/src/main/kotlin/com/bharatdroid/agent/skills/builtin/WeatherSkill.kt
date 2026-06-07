@@ -18,7 +18,7 @@ class WeatherSkill : Skill {
         name = "Weather",
         version = "1.0.0",
         description = "Get current weather and multi-day forecast for any city — works instantly via API without opening any app",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = emptySet(),
         exampleParamsHint = """{"city":"Delhi","days":3} | {"city":"Mumbai"} | {"city":"Bangalore","days":2}""",

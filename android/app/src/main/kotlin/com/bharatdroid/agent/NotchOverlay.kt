@@ -169,7 +169,7 @@ object NotchOverlay {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
             ?: return
         val notif = NotificationCompat.Builder(context, AgentForegroundService.CHANNEL_ID)
-            .setContentTitle("BharatDroid Agent")
+            .setContentTitle("BharatClaw Agent")
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setOngoing(true)

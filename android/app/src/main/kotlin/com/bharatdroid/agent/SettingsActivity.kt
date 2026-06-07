@@ -160,7 +160,7 @@ class SettingsActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnReset).setOnClickListener {
             AlertDialog.Builder(this)
-                .setTitle("Reset BharatDroid?")
+                .setTitle("Reset BharatClaw?")
                 .setMessage("This will erase all settings and take you back to setup. You will need to re-enter your bot token, agent AI key, and research AI key.")
                 .setPositiveButton("Reset") { _, _ ->
                     stopService(Intent(this, AgentForegroundService::class.java))
@@ -350,7 +350,7 @@ class SettingsActivity : AppCompatActivity() {
 
         btnOn.setOnClickListener {
             if (!Settings.canDrawOverlays(this)) {
-                Toast.makeText(this, "Grant 'Display over other apps' first →", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Grant 'Display over other apps' first.", Toast.LENGTH_SHORT).show()
             } else {
                 render(true)
             }
@@ -422,7 +422,7 @@ class SettingsActivity : AppCompatActivity() {
                 if (!rm.isRoleHeld(RoleManager.ROLE_DIALER)) {
                     startActivityForResult(rm.createRequestRoleIntent(RoleManager.ROLE_DIALER), 99)
                 } else {
-                    Toast.makeText(this, "BharatDroid is already the default Phone app.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "BharatClaw is already the default Phone app.", Toast.LENGTH_SHORT).show()
                 }
             } else {
                 val intent = Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)

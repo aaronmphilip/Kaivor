@@ -29,8 +29,9 @@ internal object FieldTextSanitizer {
         }
 
         sanitized = cleanupValue(sanitized)
+        if (sanitized.isBlank()) return ""
         if (isPlaceholderOnly(sanitized, knownLabels, fieldRole)) return ""
-        return sanitized.ifBlank { raw }
+        return sanitized
     }
 
     private fun sanitizePickupValue(text: String): String {
@@ -240,6 +241,6 @@ internal object FieldTextSanitizer {
             .replace(Regex("""^[\[\(\{<\s]+"""), "")
             .replace(Regex("""[\]\)\}>]+$"""), "")
             .replace(Regex("""\s+"""), " ")
-            .trim(' ', ':', ';', '-', ',', '"', '\'', '[', ']', '(', ')', '{', '}', '<', '>')
+            .trim(' ', ':', ';', '-', ',', '?', '"', '\'', '[', ']', '(', ')', '{', '}', '<', '>')
     }
 }

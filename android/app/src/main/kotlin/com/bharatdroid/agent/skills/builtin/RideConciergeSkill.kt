@@ -1,4 +1,4 @@
-﻿package com.bharatdroid.agent.skills.builtin
+package com.bharatdroid.agent.skills.builtin
 
 import com.bharatdroid.agent.ScreenAgent
 import com.bharatdroid.agent.skills.Permission
@@ -34,7 +34,7 @@ class RideConciergeSkill : Skill {
         name = "Ride Concierge (Uber/Ola/Rapido + ETA + WhatsApp)",
         version = "2.0.0",
         description = "Compares Uber, Ola, and Rapido or uses the chosen provider, honors an explicit pickup instead of GPS, reads road ETA, books the ride after confirmation, and messages a contact.",
-        author = "bharatdroid-team",
+        author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
             Permission.OPEN_APP,

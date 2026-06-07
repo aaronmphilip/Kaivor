@@ -117,7 +117,7 @@ class ChatIdDetector(private val botToken: String) {
 
     private suspend fun sendWelcome(chatId: Long, name: String) {
         try {
-            val msg = "Hey $name! BharatDroid is pairing with your account... ✓"
+            val msg = "Hey $name! BharatClaw is pairing with your account... ✓"
             val url = "$baseUrl/sendMessage?chat_id=$chatId&text=${java.net.URLEncoder.encode(msg, "UTF-8")}"
             withContext(Dispatchers.IO) {
                 client.newCall(Request.Builder().url(url).build()).execute().close()

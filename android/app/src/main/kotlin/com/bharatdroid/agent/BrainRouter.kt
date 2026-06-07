@@ -27,7 +27,7 @@ class BrainRouter(
         if (trimmed.isBlank()) return BrainRoute(mode = BrainMode.DIRECT_REPLY, reply = "Send me a message first.")
 
         val systemPrompt = """
-You route Telegram messages for BharatDroid, a remote Android phone agent.
+You route Telegram messages for BharatClaw, a remote Android phone agent.
 
 Return only JSON with this shape:
 {"mode":"ACTION|KNOWLEDGE|HYBRID|DIRECT_REPLY","actionPrompt":"","knowledgeQuery":"","reply":""}
