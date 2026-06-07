@@ -42,6 +42,7 @@ class AgentOrchestrator(
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val skillStore = SkillStore(context)
     private val activityLog = ActivityLog(context)
+    private val taskProgress = TaskProgressStore(context)
     private val userMemory = UserMemory(context)
     private val appKnowledge = AppKnowledgeBase(context)
     private val muteStore = MuteStore(context)
@@ -69,6 +70,7 @@ class AgentOrchestrator(
     // Thread-safe: TelegramPoller fires scope.launch per message, so multiple
     // coroutines access this map concurrently. mutableMapOf is NOT thread-safe.
     private val pendingConfirmations = java.util.concurrent.ConcurrentHashMap<Long, CompletableDeferred<Boolean>>()
+    private val pendingTextRequests = java.util.concurrent.ConcurrentHashMap<Long, CompletableDeferred<String?>>()
 
     // Serializes skill execution — only one task runs at a time.
     // When a new message arrives, requestStop() is called first so the
@@ -85,6 +87,12 @@ class AgentOrchestrator(
     private lateinit var skillRunner: SkillRunner
     private lateinit var screenAgent: ScreenAgent
 
+    private fun publishTaskProgress(message: String, skillId: String? = null) {
+        val clean = message.trim().ifBlank { "Working..." }
+        taskProgress.update(clean, skillId)
+        NotchOverlay.updateText(clean, context)
+    }
+
     fun start() {
         // Create the AI-driven screen agent — inject user memory so learned preferences
         // are automatically applied to every executeGoal call, without touching skill files
@@ -95,6 +103,9 @@ class AgentOrchestrator(
             userMemory = userMemory,
             appKnowledge = appKnowledge,
             ultraMode = config.ultraMode,
+            onProgress = { message ->
+                publishTaskProgress(message)
+            },
         )
 
         skillRunner = SkillRunner(
@@ -104,14 +115,27 @@ class AgentOrchestrator(
                 if (!config.askPermission) {
                     true
                 } else {
+                    taskProgress.waiting("Waiting for Telegram confirmation")
+                    NotchOverlay.updateText("Waiting for confirmation", context)
                     poller.sendMessage(chatId, question)
                     val deferred = CompletableDeferred<Boolean>()
                     pendingConfirmations[chatId] = deferred
                     deferred.await()
                 }
             },
+            requestInput = { chatId, question ->
+                taskProgress.waiting("Waiting for missing info")
+                NotchOverlay.updateText("Waiting for info", context)
+                poller.sendMessage(chatId, question)
+                val deferred = CompletableDeferred<String?>()
+                pendingTextRequests[chatId] = deferred
+                deferred.await()
+            },
             notifyUser = { chatId, message ->
                 poller.sendMessage(chatId, message)
+            },
+            reportProgress = { skillId, message ->
+                publishTaskProgress(message, skillId)
             },
             screenAgent = screenAgent,
         ).also { runner ->
@@ -331,6 +355,7 @@ class AgentOrchestrator(
         // How: requestStop() cancels the in-flight OkHttp call (~100ms) + sets stop flag.
         // The running task sees the flag at its next step and exits cleanly.
         val hasPendingConfirmation = pendingConfirmations.containsKey(msg.chatId)
+        val hasPendingTextRequest = pendingTextRequests.containsKey(msg.chatId)
         val isStopCommand = run {
             val stopExactInner = setOf("stop", "à¤°à¥à¤•à¥‹", "ruko", "band karo", "cancel", "bas", "à¤¬à¤¸",
                 "rok", "à¤°à¥‹à¤•", "hatao", "à¤¹à¤Ÿà¤¾à¤“", "abort", "quit", "chhod do", "à¤›à¥‹à¤¡à¤¼ à¤¦à¥‹",
@@ -338,7 +363,7 @@ class AgentOrchestrator(
             val stopContainsInner = listOf("stop", "à¤°à¥à¤•à¥‹", "cancel", "abort", "band kar", "à¤°à¥‹à¤•", "bas kar")
             lower in stopExactInner || stopContainsInner.any { lower.contains(it) }
         }
-        if (!hasPendingConfirmation && !isStopCommand) {
+        if (!hasPendingConfirmation && !hasPendingTextRequest && !isStopCommand) {
             // Kill whatever is currently running — the new message takes priority
             screenAgent.requestStop()
         }
@@ -348,13 +373,16 @@ class AgentOrchestrator(
             // 1. Kill the AI call immediately (cancels OkHttp, unblocks coroutine)
             screenAgent.requestStop()
             // 2. Release wake lock right now — don't hold it open while we wind down
+            pendingTextRequests.remove(msg.chatId)?.complete(null)
+            pendingConfirmations.remove(msg.chatId)?.complete(false)
             try { if (wakeLock.isHeld) wakeLock.release() } catch (_: Exception) {}
             // 3. Capture screenshot BEFORE going home — shows exactly where the agent was
             val stoppedAt = try {
                 AgentAccessibilityService.instance?.captureScreenshot()
             } catch (_: Exception) { null }
             // 4. Go home for a clean slate
-            NotchOverlay.hide()
+            taskProgress.stopped("Stopped by Telegram command")
+            NotchOverlay.hide(context)
             AgentAccessibilityService.instance?.goHome()
             // 5. Send screenshot asynchronously (don't block the stop reply)
             if (stoppedAt != null) {
@@ -366,7 +394,29 @@ class AgentOrchestrator(
             return "⛔ *Stopped immediately.*${if (stoppedAt != null) " Screenshot shows exactly where I was." else ""}\n\nBack on the home screen. Send a new command whenever you're ready."
         }
 
-        // ── Hang up active AI call via Telegram ──
+        // Resolve pending skill questions before normal bot commands. If the agent asked
+        // for a form value, the next Telegram message is data, not a fresh command.
+        pendingTextRequests.remove(msg.chatId)?.let { deferred ->
+            val cancelled = lower in setOf("cancel", "stop", "no", "skip", "never mind", "nevermind")
+            deferred.complete(if (cancelled) null else trimmed)
+            if (!cancelled) {
+                taskProgress.update("Received missing info")
+                NotchOverlay.updateText("Continuing...", context)
+            }
+            return if (cancelled) "Cancelled." else "Got it. Continuing..."
+        }
+
+        pendingConfirmations.remove(msg.chatId)?.let { deferred ->
+            val confirmed = trimmed.uppercase() in listOf("YES", "Y", "YEAH", "YEP", "OK", "SURE", "DO IT", "CONTINUE", "GO", "PROCEED")
+            deferred.complete(confirmed)
+            if (confirmed) {
+                taskProgress.update("Confirmation received")
+                NotchOverlay.updateText("Continuing...", context)
+            }
+            return if (confirmed) "Got it. Proceeding..." else "Cancelled."
+        }
+
+        // Hang up active AI call via Telegram.
         val isHangUpCommand = lower in setOf("hang up", "hangup", "cut the call", "disconnect call", "end call", "reject call") ||
             lower.contains("hang up") || lower.contains("cut call")
         if (isHangUpCommand && CallAnsweringService.activeInstance != null) {
@@ -668,13 +718,6 @@ class AgentOrchestrator(
             }
         }
 
-        // â"€â"€ Resolve pending confirmation â"€â"€
-        pendingConfirmations.remove(msg.chatId)?.let { deferred ->
-            val confirmed = trimmed.uppercase() in listOf("YES", "Y", "YEAH", "YEP", "OK", "SURE", "DO IT", "CONTINUE", "GO", "PROCEED")
-            deferred.complete(confirmed)
-            return if (confirmed) "Got it. Proceeding..." else "Cancelled."
-        }
-
         // â"€â"€ AI Learning: detect if user is teaching the agent â"€â"€
         // e.g. "next time search before tapping" or "remember I don't want auto-send"
         val preference = userMemory.extractPreference(trimmed)
@@ -822,9 +865,12 @@ class AgentOrchestrator(
             screenAgent.clearStop()
 
             // Show the floating notch pill so the user can see and cancel the task.
+            taskProgress.start(trimmed)
             NotchOverlay.show(context, trimmed.take(48)) {
                 screenAgent.requestStop()
+                taskProgress.stopped("Stopping task")
             }
+            publishTaskProgress("Planning task")
 
             // Wake screen so agent can interact with apps even if phone was sleeping.
             if (!wakeLock.isHeld) wakeLock.acquire(600_000L)
@@ -846,13 +892,18 @@ class AgentOrchestrator(
                 else -> ActionExecutionOutcome(reply = "?", contextSummary = "?")
             }
             conversationContext.rememberAction(msg.chatId, actionPrompt, actionOutcome.contextSummary)
+            if (actionOutcome.contextSummary.startsWith("Error:")) {
+                taskProgress.failed(actionOutcome.contextSummary.removePrefix("Error:").trim().take(180))
+            } else {
+                taskProgress.done(actionOutcome.contextSummary.take(180))
+            }
             if (hybridKnowledgeReply != null) {
                 buildHybridReply(hybridKnowledgeReply!!, actionOutcome.reply.ifBlank { actionOutcome.contextSummary })
             } else {
                 actionOutcome.reply
             }
         } finally {
-            NotchOverlay.hide()
+            NotchOverlay.hide(context)
             try { if (wakeLock.isHeld) wakeLock.release() } catch (_: Exception) {}
             if (acquired != null) taskMutex.unlock()
         }
@@ -869,6 +920,7 @@ class AgentOrchestrator(
         skillId: String,
         params: Map<String, Any>,
     ): ActionExecutionOutcome {
+        publishTaskProgress("Running $skillId", skillId)
         val result = skillRunner.execute(
             skillId = skillId,
             params = params,
@@ -921,6 +973,8 @@ class AgentOrchestrator(
 
         for ((index, step) in steps.withIndex()) {
             val stepNum = index + 1
+            taskProgress.update("Step $stepNum/$totalSteps: ${step.skillId}", step.skillId)
+            NotchOverlay.updateText("Step $stepNum/$totalSteps: ${step.skillId}", context)
             poller.sendMessage(msg.chatId, "Step $stepNum/$totalSteps: ${step.skillId}...")
 
             val result = skillRunner.execute(
@@ -1290,7 +1344,7 @@ You can also open a document on the phone and say:
         }
 
         // Set the outbound session before placing the call
-        CallAnsweringService.pendingOutbound = CallAnsweringService.OutboundSession(
+        CallAnsweringService.pendingOutbound = OutboundSession(
             targetName   = displayName,
             targetNumber = dialNumber,
             briefing     = briefing,

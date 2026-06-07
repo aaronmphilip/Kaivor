@@ -105,6 +105,7 @@ Rules:
 40. For skipping or waiting out YouTube ads (e.g. "skip the ad", "skip ads", "wait for the ad to finish", "bypass the ad"), use the "youtube" skill with action="skip_ads".
 41. If a user asks to find a contact's Instagram profile, search Instagram, or navigate there, use the "instagram" skill with action="search" and the username/name in "query".
 42. For sending an Instagram DM, always extract: action="dm", the recipient as "contact", and the message text as "message". Do not omit either.
+43. For website form filling in Chrome, use the "chrome" skill with action="fill_form". Include "url" when a site/link/domain is given. Put all user-provided form values into a "fields" object. If the user names required fields, include them as comma-separated "required". Set "submit": true only when the user explicitly says submit, save, send, or finalize; otherwise leave submit false.
 
 Do NOT return anything outside JSON.
             """.trimIndent()

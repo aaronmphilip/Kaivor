@@ -66,9 +66,9 @@ class WhatsAppSkill : Skill {
 
         runner.openApp("com.whatsapp")
         runner.waitForApp("com.whatsapp", timeoutMs = 6000)
-        delay(600)
+        delay(150)
         runner.dismissPopups(1)
-        delay(300)
+        delay(100)
 
         return when (action) {
             "read" -> {

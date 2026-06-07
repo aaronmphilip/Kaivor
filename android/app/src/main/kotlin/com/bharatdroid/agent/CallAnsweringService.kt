@@ -61,13 +61,6 @@ class CallAnsweringService : InCallService() {
             return if (!deferred.isCompleted) { deferred.complete(reply); true } else false
         }
 
-        /** One AI-initiated outbound call session. */
-        data class OutboundSession(
-            val targetName: String,    // display name e.g. "Rahul" or the number
-            val targetNumber: String,  // tel: number to dial
-            val briefing: String,      // purpose — fed to LLM system prompt
-            val chatId: Long,          // owner Telegram chat id for live transcript
-        )
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -419,3 +412,11 @@ class CallAnsweringService : InCallService() {
 
     private fun md(s: String) = s.replace("_", "\\_").replace("*", "\\*").replace("`", "\\`")
 }
+
+/** One AI-initiated outbound call session. */
+data class OutboundSession(
+    val targetName: String,    // display name e.g. "Rahul" or the number
+    val targetNumber: String,  // tel: number to dial
+    val briefing: String,      // purpose — fed to LLM system prompt
+    val chatId: Long,          // owner Telegram chat id for live transcript
+)

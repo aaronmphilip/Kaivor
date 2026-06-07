@@ -403,7 +403,7 @@ class SandboxedRunner(
                     node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                     dismissed++
                     found = true
-                    delay(300)
+                    delay(100)
                     break
                 }
             }
@@ -416,7 +416,7 @@ class SandboxedRunner(
                 if (closeNode != null) {
                     closeNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                     dismissed++
-                    delay(300)
+                    delay(100)
                 } else {
                     break
                 }
@@ -456,7 +456,7 @@ class SandboxedRunner(
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
             if (service.getCurrentPackage() == packageName) return true
-            delay(150)
+            delay(80)
         }
         return false
     }
@@ -577,7 +577,7 @@ class SandboxedRunner(
      *
      * Returns true if screen changed, false if timed out (still useful — caller knows).
      */
-    suspend fun waitForScreenChange(timeoutMs: Long = 3500, pollMs: Long = 250): Boolean {
+    suspend fun waitForScreenChange(timeoutMs: Long = 3500, pollMs: Long = 80): Boolean {
         requirePermission(Permission.READ_SCREEN)
         val before = try { service.getScreenText().take(400).hashCode() } catch (_: Exception) { return true }
         val deadline = System.currentTimeMillis() + timeoutMs

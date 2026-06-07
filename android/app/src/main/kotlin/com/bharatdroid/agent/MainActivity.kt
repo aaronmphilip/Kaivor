@@ -3,6 +3,8 @@ package com.bharatdroid.agent
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
 import android.view.Gravity
@@ -14,6 +16,14 @@ import android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS
 class MainActivity : AppCompatActivity() {
 
     private val activityLog by lazy { ActivityLog(this) }
+    private val taskProgress by lazy { TaskProgressStore(this) }
+    private val dashboardHandler = Handler(Looper.getMainLooper())
+    private val dashboardTicker = object : Runnable {
+        override fun run() {
+            refreshStatus()
+            dashboardHandler.postDelayed(this, 1000L)
+        }
+    }
     private var isAgentRunning = false
     private var agentStartElapsed: Long = 0L  // SystemClock.elapsedRealtime() when agent last started
 
@@ -85,6 +95,13 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         refreshStatus()
         populateActivityLog()
+        dashboardHandler.removeCallbacks(dashboardTicker)
+        dashboardHandler.post(dashboardTicker)
+    }
+
+    override fun onPause() {
+        dashboardHandler.removeCallbacks(dashboardTicker)
+        super.onPause()
     }
 
     private fun setupNotifRelayCard() {
@@ -112,6 +129,7 @@ class MainActivity : AppCompatActivity() {
         val skillCount = findViewById<TextView>(R.id.tvSkillCount)
         val todayCount = findViewById<TextView>(R.id.tvTodayCount)
         val toggleBtn = findViewById<Button>(R.id.btnToggleAgent)
+        val task = taskProgress.current()
 
         // Populate stat strip
         val todayCnt = activityLog.todayCount()
@@ -156,6 +174,7 @@ class MainActivity : AppCompatActivity() {
         }
         skillCount.text = "${allSkills.size} skills  |  $modeText  |  Agent: $agentProvider  |  Research: $researchProvider"
         todayCount.text = "$todayCnt commands today"
+        renderTaskProgress(task)
 
         // Notification relay card
         val notifGranted = NotificationRelay.isPermissionGranted(this)
@@ -185,6 +204,47 @@ class MainActivity : AppCompatActivity() {
         val notifMini = findViewById<TextView>(R.id.tvNotifBadgeMini)
         notifMini.text = if (notifGranted) "Notifs ON" else "Notifs OFF"
         notifMini.setTextColor(if (notifGranted) 0xFF00CC88.toInt() else 0xFF888888.toInt())
+    }
+
+    private fun renderTaskProgress(task: TaskProgressSnapshot) {
+        val title = findViewById<TextView>(R.id.tvTaskStatusTitle)
+        val progress = findViewById<TextView>(R.id.tvTaskProgress)
+        val meta = findViewById<TextView>(R.id.tvTaskMeta)
+
+        val label = when (task.status) {
+            TaskProgressStore.STATUS_RUNNING -> "Running"
+            TaskProgressStore.STATUS_WAITING -> "Waiting for you"
+            TaskProgressStore.STATUS_DONE -> "Last task complete"
+            TaskProgressStore.STATUS_FAILED -> "Last task failed"
+            TaskProgressStore.STATUS_STOPPED -> "Stopped"
+            else -> "Current task"
+        }
+        title.text = label
+        progress.text = task.stage.ifBlank { "Idle" }
+        progress.setTextColor(when (task.status) {
+            TaskProgressStore.STATUS_RUNNING -> 0xFFFF5C00.toInt()
+            TaskProgressStore.STATUS_WAITING -> 0xFFFFCC00.toInt()
+            TaskProgressStore.STATUS_DONE -> 0xFF00CC88.toInt()
+            TaskProgressStore.STATUS_FAILED -> 0xFFFF6B6B.toInt()
+            TaskProgressStore.STATUS_STOPPED -> 0xFFAAAAAA.toInt()
+            else -> 0xFF666666.toInt()
+        })
+
+        val parts = buildList {
+            if (task.command.isNotBlank()) add("Command: ${task.command.take(90)}")
+            if (task.skill.isNotBlank()) add("Skill: ${task.skill}")
+            if (task.updatedAt > 0) add("Updated: ${formatAge(task.updatedAt)} ago")
+        }
+        meta.text = parts.joinToString("\n").ifBlank { "No task running" }
+    }
+
+    private fun formatAge(timestamp: Long): String {
+        val delta = (System.currentTimeMillis() - timestamp).coerceAtLeast(0L)
+        val seconds = delta / 1000L
+        if (seconds < 60) return "${seconds}s"
+        val minutes = seconds / 60L
+        if (minutes < 60) return "${minutes}m"
+        return "${minutes / 60L}h"
     }
 
     private fun setupToggleButton() {

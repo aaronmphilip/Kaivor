@@ -37,6 +37,7 @@ class ScreenAgent(
     private val userMemory: UserMemory? = null,
     private val appKnowledge: AppKnowledgeBase? = null,
     private val ultraMode: Boolean = false,
+    private val onProgress: (String) -> Unit = {},
 ) {
     // Stop flag — set by AgentOrchestrator when user sends "stop"
     // Checked at every step of the execution loop
@@ -163,10 +164,15 @@ class ScreenAgent(
             }
         }
 
-        // Generate a plan
+        // Generate a plan — skip for short goals (< 7 words) to save 2-5s AI call overhead.
+        // Short goals like "open WhatsApp" or "send hi to Rahul" are self-explanatory;
+        // the plan would just restate the goal. Long/complex tasks still benefit from planning.
         val initialScreen = try { runner.readScreen().take(2500) } catch (_: Exception) { "" }
         val initialElements = runner.getClickableElements()
-        val plan = generatePlan(contextualGoal, initialScreen, describeElements(initialElements))
+        val wordCount = contextualGoal.trim().split(Regex("\\s+")).size
+        val plan = if (wordCount <= 7) contextualGoal
+                   else generatePlan(contextualGoal, initialScreen, describeElements(initialElements))
+        onProgress("Plan ready")
 
         val actionLog = mutableListOf<String>()
         var consecutiveBlockedOrMiss = 0
@@ -188,6 +194,7 @@ class ScreenAgent(
         clearStop() // clear any previous stop request before starting
 
         for (step in 1..maxSteps) {
+            onProgress("Step $step/$maxSteps: reading screen")
             // Check stop flag — user sent "stop" while task was running
             // NOTE: do NOT clear stopRequested here — only clearStop() in AgentOrchestrator
             // clears it (when the user sends a new deliberate command). This ensures any
@@ -196,11 +203,14 @@ class ScreenAgent(
                 return "⛔ Stopped. Left the app where it was."
             }
 
-            delay(110)
-            dismissVoiceOverlay(runner)
-            // Dismiss popups at every step — Zomato/Swiggy etc. throw popups mid-task
-            // (notifications, location, rate-us dialogs). Without this, the agent gets stuck.
-            dismissObstructingPopups(runner)
+            // Dismiss checks: steps 1-2 always, then every 3rd step — avoids two readScreen()
+            // calls on every single step which added 40-60ms of pure overhead per cycle.
+            val shouldDismiss = step <= 2 || step % 3 == 0
+            if (shouldDismiss) {
+                dismissVoiceOverlay(runner)
+                // Zomato/Swiggy etc. throw popups mid-task — dismiss when we check
+                dismissObstructingPopups(runner)
+            }
 
             val elements = runner.getClickableElements()
             val screenText = try { runner.readScreen().take(3000) } catch (_: Exception) { "" }
@@ -266,6 +276,8 @@ class ScreenAgent(
             }
 
             // Track tap repetition — if AI keeps tapping same element, flag it next step
+            onProgress("Step $step/$maxSteps: ${describeActionForProgress(action)}")
+
             if (action.action == "tap") {
                 if (action.index == lastTappedIdx) repeatTapCount++
                 else { lastTappedIdx = action.index; repeatTapCount = 1 }
@@ -546,6 +558,22 @@ class ScreenAgent(
 
     // ─── Action Execution ─────────────────────────────────────────────────────
 
+    private fun describeActionForProgress(action: ScreenAction): String {
+        return when (action.action) {
+            "tap" -> "tapping item ${action.index}"
+            "type" -> "typing ${action.text.take(24).ifBlank { "text" }}"
+            "next_field" -> "moving to next field"
+            "scroll_down" -> "scrolling down"
+            "scroll_up" -> "scrolling up"
+            "enter" -> "submitting input"
+            "wait" -> "waiting"
+            "dismiss" -> "dismissing popup"
+            "done" -> action.summary.ifBlank { "done" }
+            "fail" -> action.summary.ifBlank { "blocked" }
+            else -> action.action.ifBlank { "working" }
+        }
+    }
+
     private suspend fun executeAction(
         runner: SandboxedRunner,
         action: ScreenAction,
@@ -575,9 +603,7 @@ class ScreenAgent(
                 }
 
                 val ok = runner.tapAtPoint(el.centerX.toFloat(), el.centerY.toFloat())
-                // Adaptive wait: polls until screen changes — handles slow Indian 4G gracefully
-                // Faster on fast networks, never fires early on slow ones (replaces fixed delay)
-                runner.waitForScreenChange(timeoutMs = 3000)
+                runner.waitForScreenChange(timeoutMs = 2500)
                 val label = bestLabel(el).take(30).ifBlank { role }
                 val idxLabel = if (idx == action.index) "$idx" else "${action.index}→$idx"
                 "tap[$idxLabel] '$label' → ${if (ok) "OK" else "MISS"}"
@@ -627,9 +653,8 @@ class ScreenAgent(
                             return "type[$typeIdx] '${sanitizedText.take(30)}' → OK (hint${if (shouldAppend) "+append" else ""})"
                         }
                     }
-                    // Tap the specific field the AI chose — establishes focus before typing
                     runner.tapAtPoint(el.centerX.toFloat(), el.centerY.toFloat())
-                    delay(300) // give focus time to settle on Indian phones
+                    delay(120) // give focus time to settle
                 }
 
                 val ok = if (shouldReplace) {
@@ -641,7 +666,7 @@ class ScreenAgent(
                     // This preserves existing paragraphs/lines in message or note editors
                     runner.typeAppending(sanitizedText)
                 }
-                delay(150)
+                delay(80)
                 val idxLabel = if (typeIdx in elements.indices) "$typeIdx" else "auto"
                 val modeTag = if (shouldReplace) "replace" else "append"
                 "type[$idxLabel/$modeTag] '${sanitizedText.take(30)}' → ${if (ok) "OK" else "MISS"}"
@@ -657,49 +682,48 @@ class ScreenAgent(
                 if (nextIdx != null) {
                     val next = elements[nextIdx]
                     runner.tapAtPoint(next.centerX.toFloat(), next.centerY.toFloat())
-                    delay(250)
+                    delay(120)
                     "next_field → tapped field[$nextIdx] '${next.hint.ifBlank { next.text }.take(20)}'"
                 } else {
-                    // No next field — press enter to submit or move to next line
                     val ok = runner.pressEnter()
-                    delay(200)
+                    delay(100)
                     "next_field → enter ${if (ok) "OK" else "MISS"}"
                 }
             }
 
             "scroll_down" -> {
                 val ok = runner.scrollDown() || runner.swipeUp()
-                delay(250)
+                delay(120)
                 if (ok) "scroll_down" else "scroll_down MISS"
             }
 
             "scroll_up" -> {
                 val ok = runner.scrollUp() || runner.swipeDown()
-                delay(250)
+                delay(120)
                 if (ok) "scroll_up" else "scroll_up MISS"
             }
 
             "swipe_left" -> {
                 runner.swipeLeft()
-                delay(250)
+                delay(120)
                 "swipe_left"
             }
 
             "swipe_right" -> {
                 runner.swipeRight()
-                delay(250)
+                delay(120)
                 "swipe_right"
             }
 
             "long_press" -> {
                 val ok = if (action.index in elements.indices) runner.longPress(action.index) else false
-                delay(350)
+                delay(200)
                 "long_press[${action.index}] → ${if (ok) "OK" else "MISS"}"
             }
 
             "toggle" -> {
                 val ok = if (action.index in elements.indices) runner.toggle(action.index) else false
-                delay(200)
+                delay(100)
                 "toggle[${action.index}] → ${if (ok) "OK" else "MISS"}"
             }
 
@@ -717,7 +741,7 @@ class ScreenAgent(
                 // Check package BEFORE pressing back — if back exits the app, re-open it
                 val pkgBefore = runner.getCurrentPackage()
                 runner.pressBack()
-                delay(300)
+                delay(150)
                 val pkgAfter = runner.getCurrentPackage()
                 // If we left the target app, re-open it immediately
                 if (pkgBefore.isNotBlank() && pkgAfter != pkgBefore) {
@@ -742,18 +766,18 @@ class ScreenAgent(
 
             "enter" -> {
                 val ok = runner.pressEnter()
-                delay(300)
+                delay(150)
                 "enter → ${if (ok) "OK" else "MISS"}"
             }
 
             "dismiss" -> {
                 runner.dismissPopups(1)
-                delay(200)
+                delay(100)
                 "dismiss"
             }
 
             "wait" -> {
-                delay(700)
+                delay(400)
                 "wait"
             }
 

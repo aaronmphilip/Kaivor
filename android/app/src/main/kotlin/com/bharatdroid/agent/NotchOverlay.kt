@@ -4,6 +4,7 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
+import android.app.NotificationManager
 import android.content.Context
 import android.graphics.PixelFormat
 import android.os.Handler
@@ -15,6 +16,7 @@ import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.core.app.NotificationCompat
 
 /**
  * NotchOverlay — premium black floating pill with spring animations.
@@ -48,7 +50,12 @@ object NotchOverlay {
     // ── Public ────────────────────────────────────────────────────────────────
 
     fun show(context: Context, taskText: String, onCancel: () -> Unit) {
-        if (!isEnabled(context) || !hasPermission(context)) return
+        if (!isEnabled(context)) return
+        if (!hasPermission(context)) {
+            // Fallback: update the foreground service notification to show the running task
+            updateServiceNotification(context, "⚡ $taskText")
+            return
+        }
         main.post {
             dismissImmediate()                           // clear any stale overlay
             val appCtx = context.applicationContext
@@ -80,7 +87,7 @@ object NotchOverlay {
                 PixelFormat.TRANSLUCENT,
             ).apply {
                 gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                y = -300     // start off-screen above status bar
+                y = -200     // start off-screen above status bar
             }
             lp = params
 
@@ -89,7 +96,7 @@ object NotchOverlay {
 
             // ── SLIDE IN ─────────────────────────────────────────────────────
             slideAnim?.cancel()
-            slideAnim = ValueAnimator.ofInt(-300, 60).apply {
+            slideAnim = ValueAnimator.ofInt(-200, 72).apply {
                 duration = 420
                 interpolator = OvershootInterpolator(0.8f)
                 addUpdateListener { anim ->
@@ -109,13 +116,16 @@ object NotchOverlay {
         }
     }
 
-    fun updateText(text: String) {
+    fun updateText(text: String, context: Context? = null) {
+        context?.let { updateServiceNotification(it, text.take(80)) }
         main.post {
             root?.findViewById<TextView>(R.id.tvNotchTask)?.text = text.take(46)
         }
     }
 
-    fun hide() {
+    fun hide(context: Context? = null) {
+        // Restore the foreground notification to idle text when task finishes
+        context?.let { updateServiceNotification(it, "Listening for your Telegram commands…") }
         main.post {
             val view = root ?: return@post
             val manager = wm ?: return@post
@@ -154,6 +164,18 @@ object NotchOverlay {
             .getBoolean("notch_overlay_enabled", true)
 
     fun hasPermission(context: Context): Boolean = Settings.canDrawOverlays(context)
+
+    private fun updateServiceNotification(context: Context, text: String) {
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            ?: return
+        val notif = NotificationCompat.Builder(context, AgentForegroundService.CHANNEL_ID)
+            .setContentTitle("BharatDroid Agent")
+            .setContentText(text)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setOngoing(true)
+            .build()
+        nm.notify(AgentForegroundService.NOTIFICATION_ID, notif)
+    }
 
     // ── Internal ─────────────────────────────────────────────────────────────
 

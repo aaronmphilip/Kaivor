@@ -47,13 +47,13 @@ class ZomatoSearchFirstSkill : Skill {
         if (!alreadyInZomato) {
             runner.openApp("com.application.zomato")
             runner.waitForApp("com.application.zomato", timeoutMs = 6000)
-            delay(500)
+            delay(150)
         }
 
         runner.dismissPopups(2)
-        delay(200)
+        delay(100)
         dismissZomatoSpecificPopups(runner)
-        delay(200)
+        delay(100)
 
         val shouldContinueFromCurrentScreen =
             action == "continue" || (alreadyInZomato && looksLikeSelectionFollowUp(query))

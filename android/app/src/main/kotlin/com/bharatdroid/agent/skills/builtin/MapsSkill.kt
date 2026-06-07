@@ -45,9 +45,9 @@ Google Maps UI guide:
 
         runner.openApp("com.google.android.apps.maps")
         runner.waitForApp("com.google.android.apps.maps", timeoutMs = 7000)
-        delay(700)
+        delay(200)
         runner.dismissPopups(2)
-        delay(300)
+        delay(100)
 
         // For destination-based actions, type directly into the search bar first
         if (destination != null && action in setOf("navigate", "search", "directions", "explore")) {

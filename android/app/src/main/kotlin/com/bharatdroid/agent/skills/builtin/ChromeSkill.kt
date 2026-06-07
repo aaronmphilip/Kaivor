@@ -18,7 +18,7 @@ class ChromeSkill : Skill {
             Permission.NAVIGATE_BACK,
         ),
         allowedPackages = setOf("com.android.chrome"),
-        exampleParamsHint = """{"action": "search", "query": "weather in Mumbai today"}""",
+        exampleParamsHint = """{"action":"search","query":"weather in Mumbai today"} | {"action":"fill_form","url":"https://example.com/form","fields":{"name":"Rahul","email":"rahul@example.com"},"required":"name,email,phone","submit":false}""",
         uiKnowledge = """
 Google Chrome UI guide:
 - Address bar: at the very top of the screen; tap it to type a URL or search query; shows current domain when on a page
@@ -48,7 +48,7 @@ Google Chrome UI guide:
 
         // For search/open: type directly into the address bar before AI takes over
         val inputText = url.ifBlank { query }
-        if (inputText.isNotBlank() && action in setOf("search", "open", "navigate")) {
+        if (inputText.isNotBlank() && action in setOf("search", "open", "navigate", "fill_form", "submit_form")) {
             // Chrome address bar is at the top ~7% of the screen
             val (w, h) = runner.getScreenSize()
             val typed = runner.typeInFieldWithHint("Search or type URL", inputText)
@@ -124,11 +124,96 @@ STEPS:
 1. Tap the tab count button (shows number like "1" or "2") at the top right
 2. Tap the + button to open a new tab${if (query.isNotBlank()) "\n3. Type \"$query\" in the address bar\n4. Press Enter" else ""}"""
 
+            "fill_form", "submit_form" -> {
+                return fillWebsiteForm(context, params, action)
+            }
+
             else ->
                 params["goal"] as? String ?: "Do this in Chrome: $action $query $url".trim()
         }
 
         val result = agent.executeGoal(runner, goal, maxSteps = 60)
         return SkillResult.Success(result)
+    }
+
+    private suspend fun fillWebsiteForm(
+        context: SkillContext,
+        params: Map<String, Any>,
+        action: String,
+    ): SkillResult {
+        val runner = context.runner
+        val agent = context.agent ?: return SkillResult.Failure("Agent not available.")
+        val fields = WebFormInfo.extractFields(params)
+        val required = WebFormInfo.extractRequiredFields(params)
+        val shouldSubmit = params["submit"]?.toString()?.equals("true", ignoreCase = true) == true ||
+            action == "submit_form"
+
+        val missingBeforeScreen = WebFormInfo.missingRequired(fields, required)
+        for (field in missingBeforeScreen) {
+            context.reportProgress("Waiting for $field")
+            val answer = context.requestInput(
+                "I need *$field* to fill this website form.\n\nReply with the value, or reply *CANCEL* to stop."
+            )?.trim()
+            if (answer.isNullOrBlank()) {
+                return SkillResult.Failure("Missing required form info: $field")
+            }
+            fields[field] = answer
+        }
+
+        context.reportProgress("Filling website form")
+        var result = agent.executeGoal(
+            runner,
+            buildFormGoal(fields, required, shouldSubmit),
+            maxSteps = 80,
+        )
+
+        val missingFromScreen = WebFormInfo.parseMissingInfo(result)
+        if (!missingFromScreen.isNullOrBlank()) {
+            context.reportProgress("Waiting for $missingFromScreen")
+            val answer = context.requestInput(
+                "The website form needs *$missingFromScreen*.\n\nReply with the value, or reply *CANCEL* to stop."
+            )?.trim()
+            if (answer.isNullOrBlank()) {
+                return SkillResult.Failure("Missing required form info: $missingFromScreen")
+            }
+            fields[missingFromScreen] = answer
+            context.reportProgress("Continuing website form")
+            result = agent.executeGoal(
+                runner,
+                buildFormGoal(fields, required + missingFromScreen, shouldSubmit),
+                maxSteps = 80,
+            )
+        }
+
+        return SkillResult.Success(result)
+    }
+
+    private fun buildFormGoal(
+        fields: Map<String, String>,
+        required: List<String>,
+        shouldSubmit: Boolean,
+    ): String = buildString {
+        appendLine("You are in Chrome on a website form.")
+        appendLine("Fill the form using ONLY the provided information. Do not invent values.")
+        appendLine()
+        appendLine("PROVIDED INFORMATION:")
+        appendLine(WebFormInfo.formatFields(fields))
+        if (required.isNotEmpty()) {
+            appendLine()
+            appendLine("REQUIRED FIELDS THAT MUST BE FILLED:")
+            required.distinct().forEach { appendLine("- $it") }
+        }
+        appendLine()
+        appendLine("RULES:")
+        appendLine("1. Match each field by label, placeholder, nearby text, or field role.")
+        appendLine("2. If a visible required field needs info not listed above, use fail with summary exactly: MISSING_INFO: <field label>")
+        appendLine("3. Do not type placeholder labels as values.")
+        appendLine("4. Do not overwrite fields that are already correctly filled.")
+        if (shouldSubmit) {
+            appendLine("5. After all required fields are filled, submit/save the form only if a clear submit/save button is visible.")
+        } else {
+            appendLine("5. Stop after filling the fields. Do NOT submit, save, pay, or finalize the form.")
+        }
+        appendLine("6. When finished, use done with a concise summary of what was filled.")
     }
 }

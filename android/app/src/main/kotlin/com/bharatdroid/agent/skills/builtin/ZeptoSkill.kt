@@ -44,9 +44,9 @@ Zepto UI guide:
 
         runner.openApp("com.zepto.app")
         runner.waitForApp("com.zepto.app", timeoutMs = 7000)
-        delay(800)
+        delay(200)
         runner.dismissPopups(3)
-        delay(300)
+        delay(100)
 
         // Direct type into search bar
         val searchDone = if (item.isNotBlank() && action in setOf("search", "order", "add", "find")) {

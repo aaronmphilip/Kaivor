@@ -41,6 +41,10 @@ data class SkillContext(
     val userId: String,
     /** AI-driven screen agent for smart action decisions. Null for community skills. */
     val agent: ScreenAgent? = null,
+    /** Updates the dashboard/notch with what this skill is doing right now. */
+    val reportProgress: (String) -> Unit = {},
+    /** Ask the user for missing info in Telegram and resume with their reply. */
+    val requestInput: suspend (String) -> String? = { null },
 )
 
 enum class DeliveryMode {

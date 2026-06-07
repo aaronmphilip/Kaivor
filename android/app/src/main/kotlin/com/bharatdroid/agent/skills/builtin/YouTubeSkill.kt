@@ -41,9 +41,9 @@ SHARE LINK: The Share button is in the action row BELOW the video player (same r
 
         runner.openApp("com.google.android.youtube")
         runner.waitForApp("com.google.android.youtube", timeoutMs = 6000)
-        delay(1000)
+        delay(200)
         dismissYouTubePopups(runner)
-        delay(300)
+        delay(100)
 
         return when (action) {
 

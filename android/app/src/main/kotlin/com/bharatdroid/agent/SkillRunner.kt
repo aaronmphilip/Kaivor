@@ -7,7 +7,9 @@ class SkillRunner(
     private val context: Context,
     private val permissionsStore: PermissionsStore,
     private val requestConfirmation: suspend (chatId: Long, question: String) -> Boolean,
+    private val requestInput: suspend (chatId: Long, question: String) -> String?,
     private val notifyUser: suspend (chatId: Long, message: String) -> Unit,
+    private val reportProgress: (skillId: String?, message: String) -> Unit = { _, _ -> },
     private val screenAgent: ScreenAgent? = null,
 ) {
     private val registry = mutableMapOf<String, Skill>()
@@ -51,6 +53,7 @@ class SkillRunner(
 
         // ── Safety Gate 1: Community skill warning ──
         if (!skill.manifest.trusted && permissionsStore.shouldAsk("community")) {
+            reportProgress(skill.manifest.id, "Waiting for community skill approval")
             val allowed = requestConfirmation(
                 chatId,
                 "*Community Skill — Not Officially Verified*\n\n" +
@@ -64,6 +67,7 @@ class SkillRunner(
 
         // ── Safety Gate 2: SENSITIVE_READ confirmation (ASK mode only) ──
         if (Permission.SENSITIVE_READ in skill.manifest.permissions && permissionsStore.mode == PermissionsStore.Mode.ASK) {
+            reportProgress(skill.manifest.id, "Waiting for sensitive-read approval")
             val allowed = requestConfirmation(
                 chatId,
                 "⚠️ This skill will read sensitive screen content.\nSkill: *${skill.manifest.name}*\n\nReply *YES* to allow."
@@ -78,9 +82,12 @@ class SkillRunner(
             chatId = chatId,
             userId = userId,
             agent = if (skill.manifest.trusted) screenAgent else null, // Only trusted skills get AI agent
+            reportProgress = { message -> reportProgress(skill.manifest.id, message) },
+            requestInput = { question -> requestInput(chatId, question) },
         )
 
         return try {
+            reportProgress(skill.manifest.id, "Running ${skill.manifest.name}")
             val result = skill.execute(skillContext, params)
 
             // Check for password screen after UI skills only. API-only skills may not have Accessibility running.
@@ -88,6 +95,7 @@ class SkillRunner(
                 val passwordScreen = sandboxedRunner.detectPasswordScreen()
                 if (passwordScreen != null) {
                     val screen = sandboxedRunner.readScreen()
+                    reportProgress(skill.manifest.id, "Waiting for phone PIN/password")
                     notifyUser(chatId,
                         "A *password/PIN screen* appeared: *$passwordScreen*\n\n" +
                         "Screen:\n```\n${screen.take(300)}\n```\n\n" +
@@ -101,8 +109,10 @@ class SkillRunner(
             // Handle NeedsConfirmation
             if (result is SkillResult.NeedsConfirmation) {
                 if (permissionsStore.mode == PermissionsStore.Mode.AUTO) {
+                    reportProgress(skill.manifest.id, "Auto-confirming ${skill.manifest.name}")
                     result.onConfirm()
                 } else {
+                    reportProgress(skill.manifest.id, "Waiting for confirmation")
                     val confirmed = requestConfirmation(chatId, result.prompt)
                     if (confirmed) result.onConfirm() else result.onCancel
                 }

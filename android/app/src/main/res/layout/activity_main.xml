@@ -374,6 +374,45 @@
 
             <!-- ── Notification Relay Card ── -->
             <LinearLayout
+                android:id="@+id/cardCurrentTask"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/card_bg"
+                android:padding="16dp"
+                android:layout_marginTop="12dp">
+
+                <TextView
+                    android:id="@+id/tvTaskStatusTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Current task"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:id="@+id/tvTaskProgress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Idle"
+                    android:textColor="#FF5C00"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="8dp"/>
+
+                <TextView
+                    android:id="@+id/tvTaskMeta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No task running"
+                    android:textColor="#666666"
+                    android:textSize="11sp"
+                    android:lineSpacingMultiplier="1.35"
+                    android:layout_marginTop="5dp"/>
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/cardNotifRelay"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -469,7 +508,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="🍕 "Order pizza from Swiggy""
+                        android:text="🍕 &quot;Order pizza from Swiggy&quot;"
                         android:textColor="#888888"
                         android:textSize="11sp"
                         android:layout_marginBottom="3dp"/>
@@ -477,7 +516,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="📂 "Share report.pdf to Rahul on WhatsApp""
+                        android:text="📂 &quot;Share report.pdf to Rahul on WhatsApp&quot;"
                         android:textColor="#888888"
                         android:textSize="11sp"
                         android:layout_marginBottom="3dp"/>
@@ -493,7 +532,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="📄 "Read the PDF in Downloads fully""
+                        android:text="📄 &quot;Read the PDF in Downloads fully&quot;"
                         android:textColor="#888888"
                         android:textSize="11sp"/>
                 </LinearLayout>

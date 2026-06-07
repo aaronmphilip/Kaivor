@@ -41,9 +41,9 @@ Blinkit UI guide:
 
         runner.openApp("com.grofers.customerapp")
         runner.waitForApp("com.grofers.customerapp", timeoutMs = 7000)
-        delay(800)
+        delay(200)
         runner.dismissPopups(3)
-        delay(300)
+        delay(100)
 
         // Direct type into search bar before AI takes over
         val searchDone = if (item.isNotBlank() && action in setOf("search", "order", "add", "find")) {
