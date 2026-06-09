@@ -5,11 +5,11 @@ import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
 
 /**
- * EmergencySOSSkill — the dramatic demo.
+ * EmergencySOSSkill - the dramatic demo.
  * Sends a WhatsApp message with live location to an emergency contact,
  * optionally places a call to them right after.
  *
- * Hackathon one-liner: "SOS — alert Mom."
+ * Hackathon one-liner: "SOS - alert Mom."
  *
  * Example params:
  *   {"contact":"Mom","message":"I need help, sending my location","call":true}
@@ -44,7 +44,7 @@ class EmergencySOSSkill : Skill {
         val contact = params["contact"] as? String
             ?: return SkillResult.Failure("Who should I alert? (provide 'contact')")
         val message = params["message"] as? String
-            ?: "?? SOS — I need help. Sharing my live location now."
+            ?: "SOS - I need help. Sharing my live location now."
         val shouldCall = (params["call"] as? Boolean) ?: true
         val shareLocation = (params["shareLocation"] as? Boolean) ?: true
 
@@ -52,7 +52,7 @@ class EmergencySOSSkill : Skill {
         val locNote = if (shareLocation) " + share live location" else ""
 
         return SkillResult.NeedsConfirmation(
-            prompt = "?? *EMERGENCY SOS*\n\nSend WhatsApp SOS message$locNote$callNote to *$contact*?\n\nMessage: \"$message\"\n\n?? This will immediately send a message and${if (shareLocation) " share your live location" else ""}${if (shouldCall) " and call $contact" else ""}.\n\nReply *YES* to confirm.",
+            prompt = "*EMERGENCY SOS*\n\nSend WhatsApp SOS message$locNote$callNote to *$contact*?\n\nMessage: \"$message\"\n\nThis will immediately send a message and${if (shareLocation) " share your live location" else ""}${if (shouldCall) " and call $contact" else ""}.\n\nReply *YES* to confirm.",
             onConfirm = { executeSOS(runner, agent, contact, message, shouldCall, shareLocation) }
         )
     }
@@ -79,21 +79,21 @@ class EmergencySOSSkill : Skill {
             append("2. Tap the search icon (magnifying glass, top-right).\n")
             append("3. Type \"$contact\" and tap their chat row from results. ")
             append("   Tap the NAME/center of the row, NOT the profile avatar on the far left.\n")
-            append("4. Wait for the chat to open — you should see 'Type a message' at the BOTTOM.\n")
+            append("4. Wait for the chat to open - you should see 'Type a message' at the BOTTOM.\n")
             append("5. Tap the message input at the BOTTOM of the screen (not the search bar at top).\n")
             append("6. Type EXACTLY this message: $message\n")
             append("7. Tap the Send button (paper-plane icon to the right of the input).\n")
             if (shareLocation) {
-                append("8. AFTER sending — tap the PAPERCLIP / PLUS / attachment icon near the input.\n")
+                append("8. AFTER sending - tap the PAPERCLIP / PLUS / attachment icon near the input.\n")
                 append("9. Choose 'Location' from the attachment menu.\n")
-                append("10. Tap 'Share live location' — pick '15 minutes' duration.\n")
+                append("10. Tap 'Share live location' - pick '15 minutes' duration.\n")
                 append("11. Tap 'Send' on the live-location preview.\n")
                 append("12. Call done once live location message is sent.\n")
             } else {
                 append("8. Call done once the SOS message is sent.\n")
             }
-            append("\n?? If any permission dialog appears (location, camera), tap 'Allow' or 'While using app'.\n")
-            append("?? DO NOT go back to the chat list before completing all steps.")
+            append("\nIf any permission dialog appears (location, camera), tap 'Allow' or 'While using app'.\n")
+            append("DO NOT go back to the chat list before completing all steps.")
         }
         val waResult = agent.executeGoal(runner, waGoal, maxSteps = 60)
 
@@ -129,12 +129,12 @@ class EmergencySOSSkill : Skill {
         } else "(call disabled)"
 
         val summary = buildString {
-            appendLine("?? *SOS triggered for $contact*")
+            appendLine("*SOS triggered for $contact*")
             appendLine()
-            appendLine("?? *WhatsApp*: $waResult")
+            appendLine("*WhatsApp*: $waResult")
             if (shouldCall) {
                 appendLine()
-                appendLine("?? *Call*: $callResult")
+                appendLine("*Call*: $callResult")
             }
             appendLine()
             appendLine("Stay safe. Help is on the way.")

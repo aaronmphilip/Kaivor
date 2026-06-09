@@ -70,7 +70,7 @@ class ReadingConciergeSkill : Skill {
             }
 
             "current", "screen", "visible", "open_document" -> {
-                // Already on the right screen — just summarize it below.
+                // Already on the right screen - just summarize it below.
             }
 
             else -> {

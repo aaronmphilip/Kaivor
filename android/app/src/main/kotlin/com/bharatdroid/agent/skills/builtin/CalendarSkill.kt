@@ -83,7 +83,7 @@ Google Calendar UI guide:
                     appendLine("6. Report: event deleted or not found.")
                 }
                 return SkillResult.NeedsConfirmation(
-                    prompt = "??? *Delete Calendar Event*\n\nEvent: *$title*${if (date.isNotBlank()) "\nDate: $date" else ""}${if (time.isNotBlank()) "\nTime: $time" else ""}\n\n?? This will permanently delete the event.\n\nReply *YES* to confirm.",
+                    prompt = "*Delete Calendar Event*\n\nEvent: *$title*${if (date.isNotBlank()) "\nDate: $date" else ""}${if (time.isNotBlank()) "\nTime: $time" else ""}\n\nThis will permanently delete the event.\n\nReply *YES* to confirm.",
                     onConfirm = {
                         val result = agent.executeGoal(runner, deleteGoal, maxSteps = 50)
                         SkillResult.Success(result)

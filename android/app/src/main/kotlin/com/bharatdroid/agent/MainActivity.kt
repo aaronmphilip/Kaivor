@@ -133,14 +133,14 @@ class MainActivity : AppCompatActivity() {
 
         if (isAgentRunning) {
             dot.setBackgroundResource(R.drawable.dot_green)
-            statusText.text = "Agent Running"
+            statusText.text = "BharatClaw Online"
             statusText.setTextColor(Color.WHITE)
             toggleBtn.text = "Stop Agent"
             toggleBtn.setBackgroundColor(0xFF331111.toInt())
             toggleBtn.setTextColor(0xFFFF6B6B.toInt())
         } else {
             dot.setBackgroundResource(R.drawable.dot_red)
-            statusText.text = "Agent Stopped"
+            statusText.text = "BharatClaw Paused"
             statusText.setTextColor(0xFFFF6B6B.toInt())
             toggleBtn.text = "Start Agent"
             toggleBtn.setBackgroundColor(0xFF113311.toInt())
@@ -177,13 +177,13 @@ class MainActivity : AppCompatActivity() {
             badge.text = "LIVE"
             badge.setTextColor(0xFF00CC88.toInt())
             badge.setBackgroundColor(0xFF0D2B1E.toInt())
-            desc.text = "Active. Notifications from all apps are forwarded to Telegram. Reply to any forwarded message to answer inside that app.\n\nTip: send /muted to manage per-app muting."
+            desc.text = "Active. App notifications are forwarded to Telegram. Reply to a forwarded message to answer inside that app when quick reply is available.\n\nSend /muted to manage per-app muting."
             btn.text = "Manage in Settings"
         } else {
             badge.text = "OFF"
             badge.setTextColor(0xFFFF6B6B.toInt())
             badge.setBackgroundColor(0xFF331111.toInt())
-            desc.text = "Every app notification can be forwarded to Telegram. Replies from Telegram land back in the original app."
+            desc.text = "Forward app notifications to Telegram and answer supported notifications without opening the app."
             btn.text = "Enable Notification Access"
         }
 
@@ -312,7 +312,7 @@ class MainActivity : AppCompatActivity() {
         val entries = activityLog.getRecent(8)
         if (entries.isEmpty()) {
             container.addView(TextView(this).apply {
-                text = "No activity yet. Send a command to your Telegram bot."
+                text = "No activity yet. Send a Telegram command to start."
                 setTextColor(0xFF555555.toInt())
                 textSize = 13f
                 setPadding(0, 8.dp, 0, 0)

@@ -23,8 +23,8 @@ class SettingsSkill : Skill {
         exampleParamsHint = """{"action": "wifi", "state": "off"}""",
         uiKnowledge = """
 Android Settings UI guide:
-- Home screen: vertical list of setting categories — Network & internet, Connected devices, Apps, Battery, Display, Sound, Storage, Privacy, Location, Security, Accessibility, About phone.
-- Search: magnifying glass icon at the top right — tap and type any setting name to jump directly to it. Use this for settings not in the main list.
+- Home screen: vertical list of setting categories - Network & internet, Connected devices, Apps, Battery, Display, Sound, Storage, Privacy, Location, Security, Accessibility, About phone.
+- Search: magnifying glass icon at the top right - tap and type any setting name to jump directly to it. Use this for settings not in the main list.
 - Toggles: blue/green toggle switch to the right of a setting means ON; grey means OFF. Tap to flip.
 - Wi-Fi: Network & internet ? Wi-Fi ? toggle at the top. Wi-Fi network list appears below.
 - Bluetooth: Connected devices ? Connection preferences ? Bluetooth, OR directly "Bluetooth" if shown.
@@ -38,7 +38,7 @@ Android Settings UI guide:
 - Storage: Storage ? shows used/available space with category breakdown.
 - Accessibility: Accessibility ? Downloaded apps section ? BharatClaw Agent.
 - About phone: last item in main list ? shows Android version, device model, software info.
-- Samsung devices: top-level may differ — "Connections" instead of "Network & internet", "Display" directly accessible, "Device care" for battery + storage.
+- Samsung devices: top-level may differ - "Connections" instead of "Network & internet", "Display" directly accessible, "Device care" for battery + storage.
 """.trimIndent(),
     )
 
@@ -57,7 +57,7 @@ Android Settings UI guide:
 
         // -- Direct-intent shortcuts ----------------------------------------------
         // Jump straight to the correct settings page so the AI never has to
-        // navigate from Settings home — eliminates back-loop bugs entirely.
+        // navigate from Settings home - eliminates back-loop bugs entirely.
         val directIntent: Intent? = when {
             action == "accessibility" || setting.contains("accessibility", ignoreCase = true) ->
                 Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
@@ -97,10 +97,10 @@ Android Settings UI guide:
         }
 
         val strictRules = """
-STRICT RULES — obey exactly:
+STRICT RULES - obey exactly:
 - You are ALREADY on the correct settings page. DO NOT press Back. DO NOT go anywhere else.
 - Look only at the CURRENT screen. Identify the toggle or control described and act on it.
-- If already in the desired state, report that and STOP — do not tap anything.
+- If already in the desired state, report that and STOP - do not tap anything.
 - Tap the toggle ONCE, then read the new state and report. You are done.
 - NEVER navigate backwards. NEVER open a different section.""".trimIndent()
 
@@ -146,7 +146,7 @@ Report the result.""".trimIndent()
             "sound", "volume", "ringer" -> """
 $strictRules
 
-TASK: Adjust sound/volume${if (state.isNotBlank()) " — $state" else ""}.
+TASK: Adjust sound/volume${if (state.isNotBlank()) " - $state" else ""}.
 You are on the Sound settings screen.
 Find the relevant volume slider or toggle and adjust it. Report the result.""".trimIndent()
 

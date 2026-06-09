@@ -4,10 +4,10 @@ import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
 
 /**
- * PriceComparatorSkill — opens Amazon AND Flipkart, searches the same product on both,
+ * PriceComparatorSkill opens Amazon and Flipkart, searches the same product on both,
  * reads the first result's price from each, and tells the user which is cheaper.
  *
- * Hackathon one-liner: "Which is cheaper — Amazon or Flipkart for iPhone 15?"
+ * Hackathon one-liner: "Which is cheaper, Amazon or Flipkart for iPhone 15?"
  *
  * Example params:
  *   {"query":"iPhone 15 128GB","maxPrice":80000}
@@ -67,8 +67,8 @@ class PriceComparatorSkill : Skill {
             append("Your ONLY job: READ the price of the FIRST (top) product result.\n\n")
             append("STEPS:\n")
             append("1. Look at the first product card in the list (just below the search bar / filter chips).\n")
-            append("2. Find its price — it starts with ? or 'Rs'. Example: '?74,900' or 'Rs 79,999'.\n")
-            append("3. Call done with summary EXACTLY like: 'Amazon price: ?74,900 for <product-name>'.\n\n")
+            append("2. Find its price. It starts with Rs, INR, or the rupee symbol. Example: 'Rs 74,900' or 'INR 79,999'.\n")
+            append("3. Call done with summary EXACTLY like: 'Amazon price: Rs 74,900 for <product-name>'.\n\n")
             append("DO NOT tap the product. DO NOT scroll beyond the first result. Just READ.")
         }
         val amazonResult = agent.executeGoal(runner, amazonGoal, maxSteps = 65)
@@ -97,8 +97,8 @@ class PriceComparatorSkill : Skill {
             append("Your ONLY job: READ the price of the FIRST (top) product result.\n\n")
             append("STEPS:\n")
             append("1. Look at the first product card in the list.\n")
-            append("2. Find its price — starts with ? or 'Rs'. Example: '?69,900'.\n")
-            append("3. Call done with summary EXACTLY like: 'Flipkart price: ?69,900 for <product-name>'.\n\n")
+            append("2. Find its price. It starts with Rs, INR, or the rupee symbol. Example: 'Rs 69,900'.\n")
+            append("3. Call done with summary EXACTLY like: 'Flipkart price: Rs 69,900 for <product-name>'.\n\n")
             append("DO NOT tap the product. DO NOT scroll beyond the first result. Just READ.")
         }
         val flipkartResult = agent.executeGoal(runner, flipkartGoal, maxSteps = 65)
@@ -106,28 +106,28 @@ class PriceComparatorSkill : Skill {
 
         // --- Compare & report ---------------------------------------------------
         val summary = buildString {
-            appendLine("?? *Price Comparison for \"$query\"*")
+            appendLine("*Price Comparison for \"$query\"*")
             appendLine()
-            appendLine("• *Amazon*: ${amazonPrice?.let { "?%,d".format(it) } ?: "could not read"} ")
-            appendLine("• *Flipkart*: ${flipkartPrice?.let { "?%,d".format(it) } ?: "could not read"} ")
+            appendLine("*Amazon*: ${amazonPrice?.let { "Rs %,d".format(it) } ?: "could not read"}")
+            appendLine("*Flipkart*: ${flipkartPrice?.let { "Rs %,d".format(it) } ?: "could not read"}")
             appendLine()
             when {
                 amazonPrice != null && flipkartPrice != null -> {
                     val diff = kotlin.math.abs(amazonPrice - flipkartPrice)
                     val cheaper = if (amazonPrice < flipkartPrice) "Amazon" else "Flipkart"
-                    appendLine("? *$cheaper is cheaper by ?%,d*".format(diff))
+                    appendLine("*$cheaper is cheaper by Rs %,d*".format(diff))
                 }
-                amazonPrice != null -> appendLine("?? Only Amazon price was readable.")
-                flipkartPrice != null -> appendLine("?? Only Flipkart price was readable.")
-                else -> appendLine("?? Could not read either price automatically.")
+                amazonPrice != null -> appendLine("Only Amazon price was readable.")
+                flipkartPrice != null -> appendLine("Only Flipkart price was readable.")
+                else -> appendLine("Could not read either price automatically.")
             }
         }
         return SkillResult.Success(summary)
     }
 
-    /** Extract first ?/Rs price from a string and return as integer rupees. */
-    private fun parsePrice(text: String): Int? {
-        val match = Regex("""(?:?|Rs\.?|INR)\s*([\d,]+)""", RegexOption.IGNORE_CASE).find(text)
+    /** Extract first rupee/Rs price from a string and return as integer rupees. */
+    internal fun parsePrice(text: String): Int? {
+        val match = Regex("""(?:\u20B9|Rs\.?|INR)\s*([\d,]+)""", RegexOption.IGNORE_CASE).find(text)
         return match?.groupValues?.getOrNull(1)?.replace(",", "")?.toIntOrNull()
     }
 }

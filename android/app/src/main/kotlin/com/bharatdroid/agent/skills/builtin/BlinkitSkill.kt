@@ -9,7 +9,7 @@ class BlinkitSkill : Skill {
         id = "blinkit",
         name = "Blinkit Grocery",
         version = "6.0.0",
-        description = "Search and order groceries on Blinkit (10-minute delivery) — any grocery task",
+        description = "Search and order groceries on Blinkit (10-minute delivery) - any grocery task",
         author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
@@ -27,7 +27,7 @@ Blinkit UI guide:
 - Cart: floating green cart bar at the bottom shows item count and total; tap it to open the full cart panel; or tap Cart tab in bottom nav
 - Checkout: "Proceed to pay" green button at the bottom of cart ? payment options (UPI, card, COD) ? order confirmation
 - Category filter: horizontal scroll row of category chips below the search bar
-- Out of stock: some products show "OUT OF STOCK" badge — skip and choose the next available variant
+- Out of stock: some products show "OUT OF STOCK" badge - skip and choose the next available variant
 """.trimIndent(),
     )
 
@@ -75,18 +75,18 @@ Blinkit UI guide:
                         appendLine("You are in Blinkit. Search results for \"$item\" are now showing.")
                         appendLine("STEPS:")
                         appendLine("1. Look at the results on screen.")
-                        appendLine("2. Read the top results — product names, weights/sizes, prices, and availability.")
-                        appendLine("3. Report what you found — compare similar options if multiple variants exist.")
+                        appendLine("2. Read the top results - product names, weights/sizes, prices, and availability.")
+                        appendLine("3. Report what you found - compare similar options if multiple variants exist.")
                     } else {
                         appendLine("You are in Blinkit. Search for \"$item\".")
                         appendLine("STEPS:")
                         appendLine("1. Tap the Search bar at the top.")
                         appendLine("2. Type \"$item\".")
                         appendLine("3. Wait for search results to load.")
-                        appendLine("4. Read the top results — product names, weights/sizes, prices, and availability.")
-                        appendLine("5. Report what you found — compare similar options if multiple variants exist.")
+                        appendLine("4. Read the top results - product names, weights/sizes, prices, and availability.")
+                        appendLine("5. Report what you found - compare similar options if multiple variants exist.")
                     }
-                    append("?? Do NOT add to cart yet.")
+                    append("Do NOT add to cart yet.")
                 }
             }
 
@@ -96,10 +96,10 @@ Blinkit UI guide:
                     if (searchDone) {
                         appendLine("You are in Blinkit. Search results for \"$item\" are on screen.")
                         appendLine("STEPS:")
-                        appendLine("1. Find the best matching product for \"$item\" — skip any OUT OF STOCK items.")
+                        appendLine("1. Find the best matching product for \"$item\" - skip any OUT OF STOCK items.")
                         appendLine("2. Tap the green ADD button next to the correct product.")
                         appendLine("3. If quantity is more than 1, tap + again until quantity = $quantity.")
-                        appendLine("4. Check the green cart bar at the bottom — confirm item was added.")
+                        appendLine("4. Check the green cart bar at the bottom - confirm item was added.")
                         appendLine("5. Report: what was added, exact price from screen, quantity, and cart total.")
                     } else {
                         appendLine("You are in Blinkit. Find and add \"$item\" to cart.")
@@ -107,17 +107,17 @@ Blinkit UI guide:
                         appendLine("1. Tap the search bar at the top.")
                         appendLine("2. Type \"$item\".")
                         appendLine("3. Wait for results to load.")
-                        appendLine("4. Find the best matching product — skip any OUT OF STOCK items.")
+                        appendLine("4. Find the best matching product - skip any OUT OF STOCK items.")
                         appendLine("5. Tap the green ADD button next to the correct product.")
                         appendLine("6. If quantity is more than 1, tap + again until quantity = $quantity.")
-                        appendLine("7. Check the green cart bar at the bottom — confirm item was added.")
+                        appendLine("7. Check the green cart bar at the bottom - confirm item was added.")
                         appendLine("8. Report: what was added, exact price from screen, quantity, and cart total.")
                     }
-                    appendLine("?? STOP before checkout — do NOT tap 'Proceed to pay'.")
-                    append("?? If you see a weight/size variant pop-up, choose the first available option.")
+                    appendLine("STOP before checkout - do NOT tap 'Proceed to pay'.")
+                    append("If you see a weight/size variant pop-up, choose the first available option.")
                 }
                 return SkillResult.NeedsConfirmation(
-                    prompt = "?? *Order via Blinkit*\n\nItem: *$item*\nQuantity: $quantity\n\nReply *YES* to search and add to cart.",
+                    prompt = "*Order via Blinkit*\n\nItem: *$item*\nQuantity: $quantity\n\nReply *YES* to search and add to cart.",
                     onConfirm = {
                         val result = agent.executeGoal(runner, goal, maxSteps = 60)
                         SkillResult.Success(result)
@@ -129,16 +129,16 @@ Blinkit UI guide:
                 """You are in Blinkit. Proceed to checkout with the current cart.
 STEPS:
 1. Tap the green cart bar at the bottom to open the cart
-2. Review the items — read them out (name, quantity, price)
+2. Review the items - read them out (name, quantity, price)
 3. Tap "Proceed to pay"
-4. STOP before payment selection — do NOT enter UPI PIN or card details
+4. STOP before payment selection - do NOT enter UPI PIN or card details
 5. Report: list of items and the total amount"""
 
             "cart" ->
                 """You are in Blinkit. Show what is in the cart.
 STEPS:
 1. Tap the cart icon or the green cart bar at the bottom
-2. Read all items in the cart — name, quantity, price
+2. Read all items in the cart - name, quantity, price
 3. Report the cart total"""
 
             else ->

@@ -9,7 +9,7 @@ class InstagramSkill : Skill {
         id = "instagram",
         name = "Instagram",
         version = "7.0.0",
-        description = "Search profiles, browse reels, send DMs, follow, like, comment, view stories — any Instagram task",
+        description = "Search profiles, browse reels, send DMs, follow, like, comment, view stories - any Instagram task",
         author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
@@ -55,14 +55,14 @@ Instagram UI guide:
                 if (query.isBlank()) return SkillResult.Failure("Who or what should I search for on Instagram?")
                 """You are in Instagram. Search for "$query" and report the profile.
 STEPS:
-1. Tap the Search icon (magnifying glass — second icon in the bottom navigation bar).
+1. Tap the Search icon (magnifying glass - second icon in the bottom navigation bar).
 2. Tap the search text field at the top of the Search screen.
 3. Type "$query".
 4. Wait for results to appear.
 5. Tap the most relevant profile result (match the exact username if given).
 6. Report: username, full name, follower count, following count, bio.
 STRICT RULES:
-- Tap the Search ICON in the bottom nav first — do NOT tap the Home or DM icons.
+- Tap the Search ICON in the bottom nav first - do NOT tap the Home or DM icons.
 - Do NOT type in the message input or any other field."""
             }
 
@@ -74,7 +74,7 @@ STEPS:
 2. Type "$query"
 3. Tap the most relevant profile result
 4. On the profile page, tap the blue "Follow" button
-5. Confirm — the button should now say "Following"
+5. Confirm - the button should now say "Following"
 6. Report: followed @$query successfully"""
             }
 
@@ -83,8 +83,8 @@ STEPS:
                 """You are in Instagram. Like $target.
 STEPS:
 1. ${if (query.isNotBlank()) "Go to the profile of \"$query\" via Search, then open their most recent post" else "Look at the home feed and find the first post"}
-2. Tap the heart ?? icon below the post (or double-tap the photo)
-3. The heart should turn red — confirm the post is liked
+2. Tap the heart icon below the post (or double-tap the photo)
+3. The heart should turn red - confirm the post is liked
 4. Report: liked the post by [username]"""
             }
 
@@ -94,16 +94,16 @@ STEPS:
                 val commentGoal = """You are in Instagram. Comment "$message" on $target.
 STEPS:
 1. ${if (query.isNotBlank()) "Search for \"$query\" and open their profile, then tap their most recent post." else "Tap the first post in the home feed to open it."}
-2. Tap the comment (speech bubble ??) icon below the post.
-3. The comments section opens — tap the text field at the bottom that says "Add a comment...".
+2. Tap the comment (speech bubble icon) icon below the post.
+3. The comments section opens - tap the text field at the bottom that says "Add a comment...".
 4. Type "$message".
 5. Tap "Post" or the send button to submit the comment.
 6. Confirm the comment is visible in the comments list.
 STRICT RULES:
-- Do NOT type in the search bar — only in the comment input at the bottom.
+- Do NOT type in the search bar - only in the comment input at the bottom.
 - Do NOT post on the wrong account's post."""
                 return SkillResult.NeedsConfirmation(
-                    prompt = "?? *Instagram Comment*\n\nOn: *${query.ifBlank { "first post in feed" }}*\nComment: \"$message\"\n\nReply *YES* to post.",
+                    prompt = "*Instagram Comment*\n\nOn: *${query.ifBlank { "first post in feed" }}*\nComment: \"$message\"\n\nReply *YES* to post.",
                     onConfirm = {
                         val result = agent.executeGoal(runner, commentGoal, maxSteps = 60)
                         SkillResult.Success(result)
@@ -116,7 +116,7 @@ STRICT RULES:
                 if (message.isBlank()) return SkillResult.Failure("What should the DM say?")
                 val dmGoal = """You are in Instagram. Send a DM to "$query" saying "$message".
 STEPS:
-1. Tap the paper airplane (Direct Messages ??) icon at the TOP RIGHT of the home screen.
+1. Tap the paper airplane (Direct Messages icon) icon at the TOP RIGHT of the home screen.
 2. Tap the COMPOSE / PENCIL icon (top right of the DM list) to start a new message.
    ? A "New message" search screen opens.
 3. Type "$query" in the "Search" field to find the contact.
@@ -126,12 +126,12 @@ STEPS:
 7. Tap the SEND button (arrow ? on the right side of the input).
 8. Confirm the message bubble appears in the chat as sent.
 STRICT RULES:
-- Tap the PENCIL/COMPOSE icon — do NOT tap an existing conversation row in step 2.
+- Tap the PENCIL/COMPOSE icon - do NOT tap an existing conversation row in step 2.
 - The message input is at the BOTTOM. Do NOT type in the search field at the top.
-- Do NOT send to the wrong person — verify the name in step 4 before tapping.
+- Do NOT send to the wrong person - verify the name in step 4 before tapping.
 - Do NOT tap the Post/Caption field on any media."""
                 return SkillResult.NeedsConfirmation(
-                    prompt = "?? *Instagram DM*\n\nTo: *$query*\nMessage: \"$message\"\n\nReply *YES* to send.",
+                    prompt = "*Instagram DM*\n\nTo: *$query*\nMessage: \"$message\"\n\nReply *YES* to send.",
                     onConfirm = {
                         val result = agent.executeGoal(runner, dmGoal, maxSteps = 60)
                         SkillResult.Success(result)
@@ -153,10 +153,10 @@ STEPS:
             "reels" ->
                 """You are in Instagram. Open Reels.
 STEPS:
-1. Tap the Reels icon (clapperboard/play ? icon) in the bottom navigation bar — it's the third icon
+1. Tap the Reels icon (clapperboard/play ? icon) in the bottom navigation bar - it's the third icon
 2. The full-screen vertical Reels feed opens
 3. Scroll up to see the next reel
-4. Report the first reel you see — description, username, audio/song name"""
+4. Report the first reel you see - description, username, audio/song name"""
 
             "profile" ->
                 """You are in Instagram. Open ${if (query.isNotBlank()) "the profile of \"$query\"" else "your own profile"}.
@@ -167,12 +167,12 @@ STEPS:
             "notifications" ->
                 """You are in Instagram. Check notifications.
 STEPS:
-1. Tap the bell ?? icon at the top right of the home screen
-2. Read the recent notifications — who liked, commented, followed, or mentioned you
+1. Tap the bell icon at the top right of the home screen
+2. Read the recent notifications - who liked, commented, followed, or mentioned you
 3. Report the last 5-7 notifications"""
 
             "home" ->
-                "You are in Instagram. Go to the home feed. Tap the home (house ??) icon at the far left of the bottom navigation bar."
+                "You are in Instagram. Go to the home feed. Tap the home (house icon) icon at the far left of the bottom navigation bar."
 
             else ->
                 params["goal"] as? String

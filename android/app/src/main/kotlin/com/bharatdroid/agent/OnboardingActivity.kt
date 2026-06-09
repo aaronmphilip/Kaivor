@@ -79,7 +79,7 @@ class OnboardingActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    // ── Step 1: Welcome ──────────────────────
+    // -- Step 1: Welcome ----------------------
 
     private fun setupStep1() {
         findViewById<Button>(R.id.btnGetStarted).setOnClickListener {
@@ -87,7 +87,7 @@ class OnboardingActivity : AppCompatActivity() {
         }
     }
 
-    // ── Step 2: Telegram Bot Token ───────────
+    // -- Step 2: Telegram Bot Token -----------
 
     private fun setupStep2() {
         findViewById<Button>(R.id.btnOpenBotFather).setOnClickListener {
@@ -140,7 +140,7 @@ class OnboardingActivity : AppCompatActivity() {
         tv.setTextColor(if (success) 0xFF00CC88.toInt() else 0xFFFF6B6B.toInt())
     }
 
-    // ── Step 3: Auto-detect Chat ID ──────────
+    // -- Step 3: Auto-detect Chat ID ----------
 
     private fun setupStep3() {
         findViewById<Button>(R.id.btnOpenBot).setOnClickListener {
@@ -197,7 +197,7 @@ class OnboardingActivity : AppCompatActivity() {
         }
     }
 
-    // ── Step 4: AI Provider + API Key + Permission Mode ──
+    // -- Step 4: AI Provider + API Key + Permission Mode --
 
     private var selectedProvider = AIProvider.GEMINI
     private var askPermission = true  // Default: ask before actions
@@ -311,7 +311,7 @@ class OnboardingActivity : AppCompatActivity() {
         }
     }
 
-    // ── Step 5: Accessibility + Notification Access + Overlay ────────
+    // -- Step 5: Accessibility + Notification Access + Overlay --------
 
     private fun setupStep5() {
         findViewById<Button>(R.id.btnEnableAccess).setOnClickListener {
@@ -339,10 +339,10 @@ class OnboardingActivity : AppCompatActivity() {
         }
     }
 
-    // ── Step 6: Power Features + Launch ─────────────────────────────
+    // -- Step 6: Power Features + Launch -----------------------------
 
     private fun setupStep6() {
-        // ── Phone type selection ─────────────────────────────────────────
+        // -- Phone type selection -----------------------------------------
         val btnDedicated = findViewById<Button>(R.id.btnPhoneTypeDedicated)
         val btnMainPhone = findViewById<Button>(R.id.btnPhoneTypeMain)
         val layoutDedicated = findViewById<android.view.View>(R.id.layoutDedicatedPhoneGuide)
@@ -387,7 +387,7 @@ class OnboardingActivity : AppCompatActivity() {
         btnSimYes.setOnClickListener { selectSim(true) }
         btnSimNo.setOnClickListener { selectSim(false) }
 
-        // ── Agent mode ───────────────────────────────────────────────────
+        // -- Agent mode ---------------------------------------------------
         val btnEfficient = findViewById<Button>(R.id.btnOnboardEfficient)
         val btnUltra = findViewById<Button>(R.id.btnOnboardUltra)
 
@@ -426,7 +426,7 @@ class OnboardingActivity : AppCompatActivity() {
         }
     }
 
-    // ── Step Navigation ──────────────────────
+    // -- Step Navigation ----------------------
 
     private fun showStep(step: Int) {
         val steps = listOf(R.id.step1, R.id.step2, R.id.step3, R.id.step4, R.id.step5, R.id.step6)

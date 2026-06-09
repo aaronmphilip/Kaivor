@@ -1,28 +1,28 @@
-# BharatDroid — The Complete Guide
+# BharatClaw — The Complete Guide
 
 ---
 
-## What Is BharatDroid?
+## What Is BharatClaw?
 
-BharatDroid is an AI agent that lives on your Android phone and does things for you. Not just answers questions — actually does them. It opens apps, taps buttons, fills in forms, reads the screen, and confirms when it's done. You send a message on Telegram (or WhatsApp), it executes on the phone, and you get a report back. Order food, book a cab, pay a bill, add a calendar event, search the web, play music, read a PDF — all by typing or speaking a sentence. No app-switching, no remembering which button to tap, no friction. Just describe what you want and BharatDroid handles the rest.
+BharatClaw is an AI agent that lives on your Android phone and does things for you. Not just answers questions — actually does them. It opens apps, taps buttons, fills in forms, reads the screen, and confirms when it's done. You send a message on Telegram (or WhatsApp), it executes on the phone, and you get a report back. Order food, book a cab, pay a bill, add a calendar event, search the web, play music, read a PDF — all by typing or speaking a sentence. No app-switching, no remembering which button to tap, no friction. Just describe what you want and BharatClaw handles the rest.
 
 ---
 
 ## The Superpower — What Makes This Different
 
-Every other AI assistant gives you answers. BharatDroid gives you *actions*.
+Every other AI assistant gives you answers. BharatClaw gives you *actions*.
 
-When you ask Siri or Google Assistant to "order biryani from Swiggy," it opens the Swiggy app and stops there. You still have to search, pick, add to cart, apply coupon, and pay. BharatDroid actually completes the task — it reads the screen at each step, makes decisions, handles edge cases, and reports back when your order is placed.
+When you ask Siri or Google Assistant to "order biryani from Swiggy," it opens the Swiggy app and stops there. You still have to search, pick, add to cart, apply coupon, and pay. BharatClaw actually completes the task — it reads the screen at each step, makes decisions, handles edge cases, and reports back when your order is placed.
 
-It also runs 24/7 in the background without you having to unlock your phone. Someone sends you a WhatsApp message that needs a reply? Forward it to Telegram and say "reply with I'll be there by 8." BharatDroid replies in WhatsApp for you. You're in a meeting and need to book a Rapido to pick up your kid? Text your Telegram bot. Done.
+It also runs 24/7 in the background without you having to unlock your phone. Someone sends you a WhatsApp message that needs a reply? Forward it to Telegram and say "reply with I'll be there by 8." BharatClaw replies in WhatsApp for you. You're in a meeting and need to book a Rapido to pick up your kid? Text your Telegram bot. Done.
 
-The key difference: BharatDroid uses accessibility APIs to see and control every app on your phone — even apps with no API, no integration, no official automation support. If a human can tap it, BharatDroid can tap it.
+The key difference: BharatClaw uses accessibility APIs to see and control every app on your phone — even apps with no API, no integration, no official automation support. If a human can tap it, BharatClaw can tap it.
 
 ---
 
 ## Quick Start — First 5 Commands to Try After Setup
 
-After completing setup and seeing the BharatDroid dashboard, open Telegram and send these to your bot:
+After completing setup and seeing the BharatClaw dashboard, open Telegram and send these to your bot:
 
 1. **`order a coffee from Swiggy, cheapest option under ₹150`**
    Watch it open Swiggy, search, pick the item, and get to checkout.
@@ -45,7 +45,7 @@ After completing setup and seeing the BharatDroid dashboard, open Telegram and s
 
 ### Telegram — The Main Interface
 
-Telegram is how you talk to BharatDroid. Your bot is private — only your account (the one you paired during setup) can control it. Nobody else can send commands.
+Telegram is how you talk to BharatClaw. Your bot is private — only your account (the one you paired during setup) can control it. Nobody else can send commands.
 
 **How to send commands:**
 - Open Telegram → tap your bot → type your command → send.
@@ -70,22 +70,22 @@ Telegram is how you talk to BharatDroid. Your bot is private — only your accou
 | `/place list` | Lists saved locations |
 | `/place add <name> = <full address>` | Saves a location for later use |
 | `/schedule` | Manage scheduled tasks |
-| `/memory` | Review what BharatDroid has learned about you |
+| `/memory` | Review what BharatClaw has learned about you |
 
 ---
 
 ### Voice Notes — Talk Instead of Type
 
-Send a voice note to your Telegram bot and BharatDroid will transcribe it and execute it as a command. No extra setup required.
+Send a voice note to your Telegram bot and BharatClaw will transcribe it and execute it as a command. No extra setup required.
 
-This works the same as a text command — BharatDroid listens, understands, acts.
+This works the same as a text command — BharatClaw listens, understands, acts.
 
 **Good for:**
 - Hands-free commands while driving
 - Fast commands when typing is inconvenient
 - Long, detailed instructions that are faster to speak than type
 
-**Example:** Hold the microphone in Telegram, say "Book a Rapido from home to office for now," send. BharatDroid opens Rapido, sets the pickup and drop, and gets to the booking screen.
+**Example:** Hold the microphone in Telegram, say "Book a Rapido from home to office for now," send. BharatClaw opens Rapido, sets the pickup and drop, and gets to the booking screen.
 
 ---
 
@@ -94,27 +94,27 @@ This works the same as a text command — BharatDroid listens, understands, acts
 If you granted Notification Access during setup, every notification on your phone gets forwarded to Telegram. WhatsApp messages, emails, OTPs, order updates, payment alerts, app pings — all appear in your Telegram as they arrive.
 
 **Replying to notifications via Telegram:**
-Quote a relayed notification in Telegram and say "reply: I'll call you back." BharatDroid opens the originating app and sends the reply.
+Quote a relayed notification in Telegram and say "reply: I'll call you back." BharatClaw opens the originating app and sends the reply.
 
 **Why this is useful:**
 - Leave your phone in another room and stay in the loop via Telegram on another device.
 - Never miss an OTP while using your laptop.
 - Screen all notifications without touching your phone.
 
-**To enable after setup:** Go to BharatDroid app → Settings → Grant Notification Access.
+**To enable after setup:** Go to BharatClaw app → Settings → Grant Notification Access.
 
 ---
 
 ### WhatsApp Channel — Dual-SIM Control
 
-If you have a second SIM (or WhatsApp Business), you can control BharatDroid from WhatsApp instead of (or in addition to) Telegram.
+If you have a second SIM (or WhatsApp Business), you can control BharatClaw from WhatsApp instead of (or in addition to) Telegram.
 
 **Setup:**
 1. Install WhatsApp or WhatsApp Business on the agent phone with a second number.
-2. Enter that number in BharatDroid settings under "WhatsApp Channel."
+2. Enter that number in BharatClaw settings under "WhatsApp Channel."
 3. From your main WhatsApp, send commands to that second number.
 
-BharatDroid watches for messages arriving on that WhatsApp number and treats them as commands — exactly like Telegram messages.
+BharatClaw watches for messages arriving on that WhatsApp number and treats them as commands — exactly like Telegram messages.
 
 **When to use this:** You're already living in WhatsApp and don't want to switch to Telegram. Or you want to give a trusted family member the ability to send commands without Telegram access.
 
@@ -122,7 +122,7 @@ BharatDroid watches for messages arriving on that WhatsApp number and treats the
 
 ### Floating Notch Overlay — Visual Task Status
 
-When BharatDroid is running a task, a small black pill appears on the screen — the "notch." It shows:
+When BharatClaw is running a task, a small black pill appears on the screen — the "notch." It shows:
 - What task is currently running
 - Progress indication
 - An × button to cancel instantly
@@ -131,7 +131,7 @@ You can drag the notch anywhere on the screen. It disappears automatically when 
 
 **To cancel a running task:** Tap the × on the notch. This is faster than sending `/stop` in Telegram.
 
-**To enable:** Grant "Display Over Other Apps" permission in Settings (shown during onboarding, or in BharatDroid Settings).
+**To enable:** Grant "Display Over Other Apps" permission in Settings (shown during onboarding, or in BharatClaw Settings).
 
 **The notch never appears over your camera or fingerprint sensor.** It respects safe zone boundaries.
 
@@ -139,7 +139,7 @@ You can drag the notch anywhere on the screen. It disappears automatically when 
 
 ### Efficient vs Ultra Mode
 
-BharatDroid has two operating modes, selectable in Settings → Agent Mode.
+BharatClaw has two operating modes, selectable in Settings → Agent Mode.
 
 **Efficient Mode (default)**
 - Uses fewer AI tokens per action
@@ -155,7 +155,7 @@ BharatDroid has two operating modes, selectable in Settings → Agent Mode.
 - Higher API cost
 - Best for: new tasks you haven't run before, tasks that involve reading content (contracts, menus, receipts), situations where previous attempts in Efficient mode failed
 
-**Switching modes:** BharatDroid Settings → Agent Mode → toggle between Efficient and Ultra. Change takes effect on the next command.
+**Switching modes:** BharatClaw Settings → Agent Mode → toggle between Efficient and Ultra. Change takes effect on the next command.
 
 **Tip:** Use Efficient for 90% of tasks. Switch to Ultra when something isn't working right or when the task is genuinely complex.
 
@@ -163,11 +163,11 @@ BharatDroid has two operating modes, selectable in Settings → Agent Mode.
 
 ### AI Call Answering — Your Phone Never Goes Unanswered
 
-When you enable AI Call Answering (Settings → AI Call Answering) and set BharatDroid as your default Phone app, every incoming call becomes managed automatically.
+When you enable AI Call Answering (Settings → AI Call Answering) and set BharatClaw as your default Phone app, every incoming call becomes managed automatically.
 
 **Inbound flow:**
 1. A call comes in while you're busy.
-2. BharatDroid answers after 2 rings using your ElevenLabs cloned voice.
+2. BharatClaw answers after 2 rings using your ElevenLabs cloned voice.
 3. You get an instant Telegram alert: "📞 Incoming call from Rahul — AI answering."
 4. The AI conducts the conversation: takes messages, answers basic questions, handles queries.
 5. You see the live transcript in Telegram as it happens.
@@ -186,7 +186,7 @@ Send `hang up` in Telegram to end any active call remotely.
 
 ### Outbound AI Calls — "Go Talk to Them" Superpower
 
-This is the most powerful call feature. Instead of you calling someone, BharatDroid calls them on your behalf and handles the entire conversation.
+This is the most powerful call feature. Instead of you calling someone, BharatClaw calls them on your behalf and handles the entire conversation.
 
 **How to trigger it:**
 ```
@@ -197,7 +197,7 @@ call Shyam Electricals and ask for a revised quote by tomorrow
 ```
 
 **What happens:**
-1. BharatDroid looks up the contact in your phone (or dials the number directly).
+1. BharatClaw looks up the contact in your phone (or dials the number directly).
 2. Places the call and starts the AI bridge as soon as it connects.
 3. AI introduces itself: "Hi, I'm calling on behalf of [your name] regarding [your briefing]."
 4. You receive live transcript in Telegram as the conversation progresses.
@@ -228,7 +228,7 @@ The notch also shows during AI calls. While an inbound call is being answered, y
 
 ---
 
-### App Skills — What BharatDroid Can Do in Each App
+### App Skills — What BharatClaw Can Do in Each App
 
 #### Food & Groceries
 
@@ -338,7 +338,7 @@ The notch also shows during AI calls. While an inbound call is being answered, y
 
 ### Knowledge & Research
 
-BharatDroid has two knowledge modes:
+BharatClaw has two knowledge modes:
 
 **Quick Info (`/info`)**
 Uses the AI brain directly — no web search, instant answer. Good for factual questions, definitions, calculations.
@@ -415,7 +415,7 @@ Macros let you type a short alias instead of a long command.
 ```
 
 **Using a macro:**
-Just send `bd` or `lunch` in Telegram — BharatDroid expands it and executes the full command.
+Just send `bd` or `lunch` in Telegram — BharatClaw expands it and executes the full command.
 
 **Listing macros:**
 ```
@@ -447,7 +447,7 @@ navigate to gym
 book an Uber from home to airport
 ```
 
-BharatDroid automatically substitutes the full address when it sees a saved place name.
+BharatClaw automatically substitutes the full address when it sees a saved place name.
 
 **Listing places:**
 ```
@@ -492,13 +492,13 @@ Run any command at a future time or on a recurring schedule.
 /history
 ```
 
-Shows your last 20 actions with timestamps, what was attempted, and whether it succeeded or failed. Use this to verify a task completed, debug something that went wrong, or just review what BharatDroid did while you were away.
+Shows your last 20 actions with timestamps, what was attempted, and whether it succeeded or failed. Use this to verify a task completed, debug something that went wrong, or just review what BharatClaw did while you were away.
 
 ---
 
 ### Memory & Learning
 
-BharatDroid learns your preferences over time. When you consistently pick the same restaurant, route, or payment method — it remembers and applies those defaults automatically.
+BharatClaw learns your preferences over time. When you consistently pick the same restaurant, route, or payment method — it remembers and applies those defaults automatically.
 
 **Viewing what it remembers:**
 ```
@@ -523,7 +523,7 @@ Memory is stored locally on your phone. Nothing is sent to external servers.
 
 ### Document Reading & Summarizing
 
-Send a PDF, image, or document file directly to the Telegram bot and ask BharatDroid to work with it.
+Send a PDF, image, or document file directly to the Telegram bot and ask BharatClaw to work with it.
 
 **Summarizing a PDF:**
 Send the file, then: `summarize this`
@@ -544,7 +544,7 @@ Send an image, then: `what does this error message mean` or `extract the text fr
 
 ### Image Generation
 
-BharatDroid can generate images using AI when connected to an image generation API.
+BharatClaw can generate images using AI when connected to an image generation API.
 
 **Generating an image:**
 ```
@@ -555,32 +555,32 @@ create a banner for a Diwali sale, dark background with gold text
 
 The image is sent back to you in Telegram. You can save it or share it directly.
 
-*Note: Image generation requires a separate API key (e.g., OpenAI DALL-E or Stability AI). Configure it in BharatDroid Settings → Image Generation.*
+*Note: Image generation requires a separate API key (e.g., OpenAI DALL-E or Stability AI). Configure it in BharatClaw Settings → Image Generation.*
 
 ---
 
 ## Power Tips — 10 Non-Obvious Tricks
 
 **1. Chain commands in one message**
-"Pay the electricity bill and then navigate to the gym" works. BharatDroid executes them sequentially without you having to wait and send again.
+"Pay the electricity bill and then navigate to the gym" works. BharatClaw executes them sequentially without you having to wait and send again.
 
 **2. Reference previous context**
-After ordering food: "How long will it take?" BharatDroid knows you're asking about the order it just placed.
+After ordering food: "How long will it take?" BharatClaw knows you're asking about the order it just placed.
 
 **3. Use conversational corrections**
-If BharatDroid picks the wrong restaurant: "No, not that one — I meant the one in Koramangala." It adjusts without you repeating the whole command.
+If BharatClaw picks the wrong restaurant: "No, not that one — I meant the one in Koramangala." It adjusts without you repeating the whole command.
 
 **4. Ask for confirmation before paying**
-In Ask Permission mode, BharatDroid shows you the total before any payment action and waits for your `yes`. Useful when ordering from a new place.
+In Ask Permission mode, BharatClaw shows you the total before any payment action and waits for your `yes`. Useful when ordering from a new place.
 
 **5. Send commands while the screen is off**
-BharatDroid runs in the background. Send the Telegram message from your laptop, it executes on the phone, and you get a report back — all without touching the phone.
+BharatClaw runs in the background. Send the Telegram message from your laptop, it executes on the phone, and you get a report back — all without touching the phone.
 
 **6. Use voice notes for complex instructions**
 "Book a Rapido from home to office, if Rapido isn't available then book an Uber, and send the ETA to Priya on WhatsApp" — it's much faster to speak this than type it.
 
 **7. Stop a task that's stuck**
-Tap the × on the floating notch, or send `/stop` in Telegram. BharatDroid will halt within 2–3 seconds and report what it had done so far.
+Tap the × on the floating notch, or send `/stop` in Telegram. BharatClaw will halt within 2–3 seconds and report what it had done so far.
 
 **8. Test a routine before saving it**
 Run each command individually first to make sure it works, then save them as a routine.
@@ -595,19 +595,19 @@ The first time you use a new skill or app, run it in Ultra mode. Once it's worki
 
 ## For Business — Use Cases for Founders and Teams
 
-Most Indian founders run their business from a single Android phone. Every vendor call, every client follow-up, every payment, every order, every calendar entry — it all happens on that one device, across a dozen apps, throughout a 14-hour day. BharatDroid turns that phone into a leverage machine. One command to your Telegram does what would otherwise take five minutes of app-switching, scrolling, and typing.
+Most Indian founders run their business from a single Android phone. Every vendor call, every client follow-up, every payment, every order, every calendar entry — it all happens on that one device, across a dozen apps, throughout a 14-hour day. BharatClaw turns that phone into a leverage machine. One command to your Telegram does what would otherwise take five minutes of app-switching, scrolling, and typing.
 
 This section is written for founders, freelancers, consultants, clinic owners, lawyers, and anyone running a business where the phone is the office.
 
 ---
 
-### 1. Why BharatDroid Is a Founder's Unfair Advantage
+### 1. Why BharatClaw Is a Founder's Unfair Advantage
 
-Every business action on an Android phone — sending a payment, booking a cab, placing a supplier order, reading an email, checking a calendar — is something BharatDroid can do on your behalf, triggered by a single Telegram message.
+Every business action on an Android phone — sending a payment, booking a cab, placing a supplier order, reading an email, checking a calendar — is something BharatClaw can do on your behalf, triggered by a single Telegram message.
 
 The leverage comes from three compounding factors:
 
-**Elimination of app-switching tax.** The average knowledge worker switches apps 300+ times per day. Every switch costs 20–60 seconds of reorientation. BharatDroid collapses this to a single chat interface. You type one instruction, the phone executes it, you get a confirmation. You never leave Telegram.
+**Elimination of app-switching tax.** The average knowledge worker switches apps 300+ times per day. Every switch costs 20–60 seconds of reorientation. BharatClaw collapses this to a single chat interface. You type one instruction, the phone executes it, you get a confirmation. You never leave Telegram.
 
 **Parallel and sequential automation.** Routines let you chain actions that would ordinarily take 10 separate steps into a single trigger. Your morning briefing, your vendor payment run, your weekly report — each becomes a one-word command.
 
@@ -622,7 +622,7 @@ For a solo founder, this means fewer dropped balls. For a small team, it means t
 This is the most immediately valuable feature for any Indian business that receives calls: clinics, law firms, CA offices, freelancers, real estate agents, service businesses, and e-commerce sellers who field COD queries.
 
 **How it works.**
-When a call comes in that you cannot answer, BharatDroid answers it automatically using a cloned ElevenLabs voice — your voice, your name, your business. The caller hears a professional greeting. The AI listens, responds to basic queries, and takes a message. Within seconds of the call ending, you receive on Telegram:
+When a call comes in that you cannot answer, BharatClaw answers it automatically using a cloned ElevenLabs voice — your voice, your name, your business. The caller hears a professional greeting. The AI listens, responds to basic queries, and takes a message. Within seconds of the call ending, you receive on Telegram:
 
 - Full call transcript
 - 2-line AI summary ("Caller: Rahul Sharma. Reason: wants to know if you do home visits for dental checkups. Preferred callback time: after 6 PM.")
@@ -663,7 +663,7 @@ call the Koramangala clinic number and ask if Dr. Rao has availability on Friday
 go talk to Vikram about the revised scope document — tell him we can approve up to 30% increase but need the timeline updated
 ```
 
-BharatDroid places the call, conducts the conversation in your voice, live-transcripts it to your Telegram, and if the other person asks something you need to answer personally — pauses the AI and asks you directly via Telegram. You type your answer, it relays it and continues. You get a full call summary the moment it ends.
+BharatClaw places the call, conducts the conversation in your voice, live-transcripts it to your Telegram, and if the other person asks something you need to answer personally — pauses the AI and asks you directly via Telegram. You type your answer, it relays it and continues. You get a full call summary the moment it ends.
 
 One founder using this has replaced the entire "call vendor, get put on hold, chase three times, finally get answer" cycle with a single Telegram message sent from their dining table. The AI makes the call, gets the answer, and reports back in under 3 minutes.
 
@@ -678,10 +678,10 @@ On payment day — whether it is GST filing week, month-end, or a project milest
 Pay Raju Electricals ₹4200 via GPay, then Shivam Plumbing ₹1800, then Mehta Tiles ₹6500, then Poonam Couriers ₹900
 ```
 
-BharatDroid executes each payment sequentially, confirms each one in Telegram, and stops if a payment fails — giving you time to intervene before it cascades.
+BharatClaw executes each payment sequentially, confirms each one in Telegram, and stops if a payment fails — giving you time to intervene before it cascades.
 
 **WhatsApp vendor coordination.**
-Most Indian suppliers, contractors, and delivery partners use WhatsApp. BharatDroid can send structured messages to any of them without you composing anything manually:
+Most Indian suppliers, contractors, and delivery partners use WhatsApp. BharatClaw can send structured messages to any of them without you composing anything manually:
 
 ```
 Send to Ramesh Wholesale on WhatsApp: "Please dispatch 50 units of SKU-A42 and 30 units of SKU-B17 to our warehouse. Payment done via NEFT, UTR attached."
@@ -701,7 +701,7 @@ Send a WhatsApp broadcast to my staff group: "Tomorrow is a half-day. Office clo
 Open my expense sheet and add a new row: Date today, Category Client Entertainment, Description lunch with Anand Kumar, Amount 1840, Paid by HDFC card
 ```
 
-BharatDroid opens Sheets, navigates to the last row, and fills in each column. Use this after every business lunch, cab ride, or miscellaneous spend. By month-end, your expense sheet is complete without any reconciliation effort.
+BharatClaw opens Sheets, navigates to the last row, and fills in each column. Use this after every business lunch, cab ride, or miscellaneous spend. By month-end, your expense sheet is complete without any reconciliation effort.
 
 **Quick bank balance check before a payment run.**
 ```
@@ -713,7 +713,7 @@ Open PhonePe and tell me my current wallet balance and the last three transactio
 ### 4. Sales and Client Management
 
 **Follow-up messages — the most neglected part of any sales process.**
-Most deals die because nobody followed up. BharatDroid removes the friction:
+Most deals die because nobody followed up. BharatClaw removes the friction:
 
 ```
 Send WhatsApp to Sunita Agarwal: "Hi Sunita, just checking in on the proposal I sent last Tuesday. Happy to jump on a quick call if you have questions."
@@ -793,14 +793,14 @@ Schedule a meeting with Ananya Sharma for Friday at 3 PM, title Project Kickoff,
 
 ### 6. The Dedicated AI Phone Setup — Your Business's Digital Front Desk
 
-The most powerful configuration for a small business is a dedicated Android phone running BharatDroid full-time, separate from the owner's personal phone.
+The most powerful configuration for a small business is a dedicated Android phone running BharatClaw full-time, separate from the owner's personal phone.
 
 **The setup:**
 - One low-cost Android phone (₹6,000–₹12,000 range works fine — a Redmi or Realme with decent RAM)
 - A dedicated business SIM in that phone
 - WhatsApp Business registered on that number
-- BharatDroid running 24/7 on that phone, always plugged in
-- The owner's Telegram account connected to that BharatDroid instance
+- BharatClaw running 24/7 on that phone, always plugged in
+- The owner's Telegram account connected to that BharatClaw instance
 
 **What this gives you:**
 - All business calls to the business number are answered by the AI receptionist, with full transcripts to your Telegram
@@ -818,7 +818,7 @@ The most powerful configuration for a small business is a dedicated Android phon
 
 *Freelancers and consultants:* You look like a proper operation, not a one-person hustle. Clients hear a professional voice, leave a message, and get a timely callback — because you saw the Telegram summary the moment it was generated.
 
-**Cost of this setup:** The Android phone is a one-time cost. The SIM is ₹150–300/month. BharatDroid subscription. ElevenLabs voice cloning for the greeting is a one-time setup. Total ongoing cost for the entire AI receptionist + automation layer: less than the salary of a part-time assistant for one day.
+**Cost of this setup:** The Android phone is a one-time cost. The SIM is ₹150–300/month. BharatClaw subscription. ElevenLabs voice cloning for the greeting is a one-time setup. Total ongoing cost for the entire AI receptionist + automation layer: less than the salary of a part-time assistant for one day.
 
 ---
 
@@ -834,7 +834,7 @@ Open Chrome and go to the MCA website, search for company registration details o
 ```
 
 **Gmail for professional correspondence.**
-BharatDroid reads, drafts, and sends Gmail without you opening the app.
+BharatClaw reads, drafts, and sends Gmail without you opening the app.
 
 ```
 Open Gmail and find any emails with the subject containing "invoice" received in the last 7 days. List them with sender name and date.
@@ -944,17 +944,17 @@ go talk to Ramesh Electricals and ask for a quote on installing 10 LED lights in
 
 ## Troubleshooting
 
-**BharatDroid stops responding after a few hours**
+**BharatClaw stops responding after a few hours**
 This is almost always Android killing the background service. Your phone manufacturer adds battery-saving features that terminate background apps. Follow the setup guide for your specific phone brand.
 
 **Commands run but nothing happens in the app**
-Make sure Accessibility Service is still enabled: BharatDroid Settings → Accessibility → verify it's ON. Some phone updates reset this permission.
+Make sure Accessibility Service is still enabled: BharatClaw Settings → Accessibility → verify it's ON. Some phone updates reset this permission.
 
 **Notification relay stopped working**
-Check: BharatDroid Settings → Notification Access → must be ON. Also ensure the app wasn't removed from the Notification Listener whitelist by a system update.
+Check: BharatClaw Settings → Notification Access → must be ON. Also ensure the app wasn't removed from the Notification Listener whitelist by a system update.
 
 **"Overlay not granted" message in the notch**
-Go to Settings → Apps → BharatDroid → Display over other apps → Allow.
+Go to Settings → Apps → BharatClaw → Display over other apps → Allow.
 
 **Task finishes too quickly without completing**
 The app UI may have changed. Try switching to Ultra mode for that task — it uses vision to adapt to layout changes automatically.
@@ -962,4 +962,4 @@ The app UI may have changed. Try switching to Ultra mode for that task — it us
 **Can't book a ride / food order fails at payment**
 UPI apps sometimes require biometric confirmation. Set up an SMS or MPIN fallback in your UPI app settings.
 
-→ If BharatDroid stops responding, see [Don't Kill BharatDroid](DONT_KILL_BHARATDROID.md) for phone-specific setup.
+→ If BharatClaw stops responding, see [Don't Kill BharatClaw](DONT_KILL_BHARATCLAW.md) for phone-specific setup.

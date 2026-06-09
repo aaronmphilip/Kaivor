@@ -13,7 +13,7 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <!-- Floating notch overlay — requires user to grant "Display over other apps" -->
+    <!-- Floating notch overlay - requires user to grant "Display over other apps" -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- AI call answering + outbound calls -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -21,7 +21,7 @@
     <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
     <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
-    <!-- Resolve contact names → phone numbers for outbound AI calls -->
+    <!-- Resolve contact names to phone numbers for outbound AI calls -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <!-- Needed so we can detect and launch any installed app -->
@@ -51,13 +51,13 @@
             </intent-filter>
         </activity>
 
-        <!-- Dashboard — shown after onboarding is complete -->
+        <!-- Dashboard - shown after onboarding is complete -->
         <activity
             android:name=".MainActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- Settings — change API key, model, permission mode -->
+        <!-- Settings - change API key, model, permission mode -->
         <activity
             android:name=".SettingsActivity"
             android:exported="false"
@@ -83,7 +83,7 @@
             android:exported="false"
             android:foregroundServiceType="specialUse" />
 
-        <!-- 24x7 Notification relay — forwards every app notification to Telegram -->
+        <!-- 24x7 Notification relay - forwards every app notification to Telegram -->
         <service
             android:name=".NotificationRelay"
             android:exported="true"
@@ -128,7 +128,7 @@
             </intent-filter>
         </activity>
 
-        <!-- AI call answering — requires being set as default Phone app -->
+        <!-- AI call answering - requires being set as default Phone app -->
         <service
             android:name=".CallAnsweringService"
             android:permission="android.permission.BIND_INCALL_SERVICE"

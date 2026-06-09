@@ -51,7 +51,7 @@ class PdfCreatorSkill : Skill {
                     .replace(' ', '_').take(40).ifBlank { "document" } + ".pdf"
                 SkillResult.Media(
                     bytes = bytes,
-                    caption = "📄 $title",
+                    caption = "-- $title",
                     mimeType = "application/pdf",
                     filename = safeFilename,
                 )
@@ -166,7 +166,7 @@ class PdfCreatorSkill : Skill {
                     y += 2f
                 }
                 LineType.BULLET -> {
-                    drawStaticLayout("• ${line.text}", paintBody, 0f)
+                    drawStaticLayout("- ${line.text}", paintBody, 0f)
                 }
                 LineType.BODY -> {
                     if (line.text.isBlank()) { y += 6f } else drawStaticLayout(line.text, paintBody)
@@ -191,7 +191,7 @@ class PdfCreatorSkill : Skill {
         val result = mutableListOf<DocLine>()
         result += DocLine(LineType.TITLE, title)
         val metaParts = listOfNotNull(subtitle, author?.let { "By $it" })
-        if (metaParts.isNotEmpty()) result += DocLine(LineType.SUBTITLE, metaParts.joinToString("  •  "))
+        if (metaParts.isNotEmpty()) result += DocLine(LineType.SUBTITLE, metaParts.joinToString("  -  "))
         result += DocLine(LineType.RULE, "")
 
         for (raw in content.lines()) {

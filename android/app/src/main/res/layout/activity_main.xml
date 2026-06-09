@@ -24,7 +24,7 @@
             android:paddingEnd="20dp"
             android:paddingBottom="40dp">
 
-            <!-- â”€â”€ Header row â”€â”€ -->
+            <!-- Header row -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -64,7 +64,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="AI Phone Agent"
+                            android:text="Personal Android Agent"
                             android:textColor="#FF5C00"
                             android:textSize="11sp"
                             android:layout_marginTop="1dp"/>
@@ -83,7 +83,7 @@
                     android:paddingEnd="14dp"/>
             </LinearLayout>
 
-            <!-- â”€â”€ Stat strip row 1 (Commands Â· Skills Â· Uptime) â”€â”€ -->
+            <!-- Stat strip row -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -179,7 +179,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- â”€â”€ Capability badges row (Voice Â· Vision Â· Files Â· STT) â”€â”€ -->
+            <!-- Capability badges row -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -299,7 +299,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- â”€â”€ Status Card (orange border) â”€â”€ -->
+            <!-- Status card -->
             <LinearLayout
                 android:id="@+id/cardStatus"
                 android:layout_width="match_parent"
@@ -372,7 +372,7 @@
                     android:layout_marginTop="14dp"/>
             </LinearLayout>
 
-            <!-- â”€â”€ Notification Relay Card â”€â”€ -->
+            <!-- Notification relay card -->
             <LinearLayout
                 android:id="@+id/cardCurrentTask"
                 android:layout_width="match_parent"
@@ -386,7 +386,7 @@
                     android:id="@+id/tvTaskStatusTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Current task"
+                    android:text="Live task"
                     android:textColor="#FFFFFF"
                     android:textSize="14sp"
                     android:textStyle="bold"/>
@@ -456,7 +456,7 @@
                     android:id="@+id/tvNotifRelayDesc"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Every app notification goes to Telegram. Reply there and BharatClaw replies inside the app."
+                    android:text="Telegram relay is the command channel. Replies land back in the original app when Android exposes a reply action."
                     android:textColor="#555555"
                     android:textSize="12sp"
                     android:lineSpacingMultiplier="1.4"
@@ -473,7 +473,7 @@
                     android:layout_marginTop="10dp"/>
             </LinearLayout>
 
-            <!-- â”€â”€ Quick commands hint card â”€â”€ -->
+            <!-- Quick commands hint card -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -485,7 +485,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="How to use"
+                    android:text="Command queue"
                     android:textColor="#FFFFFF"
                     android:textSize="13sp"
                     android:textStyle="bold"/>
@@ -493,7 +493,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Send any message to your Telegram bot. Type or record a voice note."
+                    android:text="Text commands, voice notes, app notifications, and missing-info questions all flow through the same Telegram thread."
                     android:textColor="#666666"
                     android:textSize="11sp"
                     android:lineSpacingMultiplier="1.4"
@@ -538,7 +538,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- â”€â”€ Skills section â”€â”€ -->
+            <!-- Skills section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -558,7 +558,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Run from Telegram"
+                    android:text="Ready"
                     android:textColor="#444444"
                     android:textSize="11sp"/>
             </LinearLayout>
@@ -570,7 +570,7 @@
                 android:orientation="vertical"
                 android:layout_marginTop="10dp"/>
 
-            <!-- â”€â”€ Recent Activity section â”€â”€ -->
+            <!-- Recent activity section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

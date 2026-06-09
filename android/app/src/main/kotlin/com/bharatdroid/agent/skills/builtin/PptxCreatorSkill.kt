@@ -45,7 +45,7 @@ class PptxCreatorSkill : Skill {
                     .replace(' ', '_').take(40).ifBlank { "presentation" } + ".pptx"
                 SkillResult.Media(
                     bytes = bytes,
-                    caption = "📊 $title (${slides.size} slides)",
+                    caption = "$title (${slides.size} slides)",
                     mimeType = "application/vnd.openxmlformats-officedocument.presentationml.presentation",
                     filename = safeFilename,
                 )
@@ -254,7 +254,7 @@ class PptxCreatorSkill : Skill {
         val escapedPTitle = xmlEscape(presentationTitle)
 
         val subtitleOrBody = if (isTitleSlide) {
-            // subtitle = presentation title on title slide — shapeId=3 avoids duplicate with title box (id=2)
+            // subtitle = presentation title on title slide - shapeId=3 avoids duplicate with title box (id=2)
             buildTextBox(
                 x = "457200", y = bodyY, cx = "8229600", cy = "800000",
                 text = escapedPTitle, size = 1800, bold = false, color = "A0C4FF", shapeId = 3
@@ -310,7 +310,7 @@ class PptxCreatorSkill : Skill {
         val paras = points.joinToString("\n") { point ->
             val escaped = xmlEscape(point)
             """          <a:p>
-            <a:pPr marL="342900" indent="-342900"><a:buChar char="•"/></a:pPr>
+            <a:pPr marL="342900" indent="-342900"><a:buChar char="-"/></a:pPr>
             <a:r><a:rPr lang="en-US" sz="1800" dirty="0"><a:solidFill><a:srgbClr val="$color"/></a:solidFill></a:rPr><a:t>$escaped</a:t></a:r>
           </a:p>"""
         }

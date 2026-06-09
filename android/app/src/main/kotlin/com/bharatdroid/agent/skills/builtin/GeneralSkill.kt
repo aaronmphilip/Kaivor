@@ -4,7 +4,7 @@ import android.content.Intent
 import com.bharatdroid.agent.skills.*
 
 /**
- * GENERAL AGENT — The catch-all skill.
+ * GENERAL AGENT - The catch-all skill.
  *
  * When no specific skill matches the user's request, this skill
  * uses the AI-driven ScreenAgent to accomplish the task by:
@@ -52,11 +52,11 @@ class GeneralSkill : Skill {
                 kotlinx.coroutines.delay(1500)
                 context.runner.dismissPopups(2)
             } catch (_: Exception) {
-                // App not found — try to resolve by name via package manager
+                // App not found - try to resolve by name via package manager
                 tryOpenAppByName(context, appPackage)
             }
         } else {
-            // No explicit package — try to extract app name from goal and open it.
+            // No explicit package - try to extract app name from goal and open it.
             // e.g. goal = "open Obsidian" ? search for "Obsidian" in installed apps
             val appNameMatch = APP_OPEN_REGEX.find(goal.lowercase())
             if (appNameMatch != null) {
@@ -98,7 +98,7 @@ class GeneralSkill : Skill {
                 context.runner.dismissPopups(2)
             }
         } catch (_: Exception) {
-            // Couldn't resolve — executeGoal will work with whatever is on screen
+            // Couldn't resolve - executeGoal will work with whatever is on screen
         }
     }
 

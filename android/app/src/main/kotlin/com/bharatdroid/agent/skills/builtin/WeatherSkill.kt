@@ -17,7 +17,7 @@ class WeatherSkill : Skill {
         id = "weather",
         name = "Weather",
         version = "1.0.0",
-        description = "Get current weather and multi-day forecast for any city — works instantly via API without opening any app",
+        description = "Get current weather and multi-day forecast for any city - works instantly via API without opening any app",
         author = "bharatclaw-team",
         trusted = true,
         permissions = emptySet(),
@@ -74,7 +74,7 @@ class WeatherSkill : Skill {
                     appendLine("*Weather: $areaName, $country*")
                     appendLine()
                     appendLine("*$desc*")
-                    appendLine("*Temperature:* ${tempC}°C  (feels like ${feelsLike}°C)")
+                    appendLine("*Temperature:* ${tempC} deg C  (feels like ${feelsLike} deg C)")
                     appendLine("*Humidity:* $humidity%")
                     appendLine("*Wind:* $windKmph km/h $windDir")
                     appendLine("*Visibility:* $visibility km")
@@ -96,7 +96,7 @@ class WeatherSkill : Skill {
                             val midday = hourly.getJSONObject(minOf(4, hourly.length() - 1))
                             val dayDesc = midday.getJSONArray("weatherDesc").getJSONObject(0).getString("value")
                             val rain = midday.getString("chanceofrain")
-                            appendLine("*$date*: $dayDesc | $minC–${maxC}°C | Rain chance: $rain%")
+                            appendLine("*$date*: $dayDesc | $minC-${maxC} deg C | Rain chance: $rain%")
                         }
                     }
                 }

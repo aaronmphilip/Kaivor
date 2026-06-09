@@ -4,7 +4,7 @@ import com.bharatdroid.agent.skills.*
 import kotlinx.coroutines.delay
 
 /**
- * TravelPlannerSkill — the hackathon show-stopper.
+ * TravelPlannerSkill - the hackathon show-stopper.
  *
  * Flow:
  *   1. Open Google Maps ? get directions from CURRENT LOCATION ? destination.
@@ -77,7 +77,7 @@ class TravelPlannerSkill : Skill {
             append("5. Make sure the $transitMode tab is selected (car for driving, bus for transit, person for walking).\n")
             append("6. READ the ETA shown (e.g. '23 min', '1 hr 15 min') and the distance.\n")
             append("7. Call done with summary EXACTLY like: 'ETA: 23 min, Distance: 14 km'.\n\n")
-            append("DO NOT tap 'Start' or 'Go' — just READ the ETA and stop.")
+            append("DO NOT tap 'Start' or 'Go' - just READ the ETA and stop.")
         }
 
         val mapsResult = agent.executeGoal(runner, mapsGoal, maxSteps = 50)
@@ -95,7 +95,7 @@ class TravelPlannerSkill : Skill {
         }
 
         val totalBuffer = etaMinutes + bufferMinutes
-        val departAdvice = "Leave ${totalBuffer} min before — $etaText travel + $bufferMinutes min buffer."
+        val departAdvice = "Leave ${totalBuffer} min before - $etaText travel + $bufferMinutes min buffer."
 
         // --- Step 2: Open Google Calendar and create the event -----------------
         val calendarResult = createCalendarEventViaIntent(
@@ -114,11 +114,11 @@ class TravelPlannerSkill : Skill {
         }
 
         return SkillResult.Success(
-            "??? *Trip planned to $destination*\n" +
-                "• Travel time: *$etaText* (via $transitMode)\n" +
-                "• Buffer: *$bufferMinutes min*\n" +
-                "• $departAdvice\n" +
-                "• Calendar: $calResult",
+            "*Trip planned to $destination*\n" +
+                "- Travel time: *$etaText* (via $transitMode)\n" +
+                "- Buffer: *$bufferMinutes min*\n" +
+                "- $departAdvice\n" +
+                "- Calendar: $calResult",
         )
     }
 

@@ -151,10 +151,10 @@ class ZomatoSearchFirstSkill : Skill {
                 appendLine("- Do NOT tap mic or voice icons.")
                 appendLine("- Do NOT go to payment.")
                 appendLine()
-                appendLine("FINAL REPLY — read EXACT values from the screen, do NOT use placeholders or invent prices:")
-                appendLine("List 3–5 options, one per line, using this format:")
-                appendLine("1. [item name] from [restaurant name] — Rs [exact price from screen]")
-                appendLine("2. [item name] from [restaurant name] — Rs [exact price from screen]")
+                appendLine("FINAL REPLY - read EXACT values from the screen, do NOT use placeholders or invent prices:")
+                appendLine("List 3-5 options, one per line, using this format:")
+                appendLine("1. [item name] from [restaurant name] - Rs [exact price from screen]")
+                appendLine("2. [item name] from [restaurant name] - Rs [exact price from screen]")
                 appendLine("End with: 'Tell me which one to order.'")
                 appendLine("Only include items and prices you actually SEE on screen. Never guess.")
             }
@@ -317,12 +317,12 @@ Zomato UI knowledge:
 - Main search bar is near the top, labelled "Search for restaurant, cuisine or a dish".
 - If a bottom sheet appears with "Turn on notifications" or "Update", tap "Later" or "Not now".
 - If an address confirmation sheet appears ("Is your address correct?"), tap "Yes" or "Confirm".
-- If a location permission dialog appears, dismiss it with "Not now" — do not grant.
+- If a location permission dialog appears, dismiss it with "Not now" - do not grant.
 - Delivery time shows as "X mins" next to each restaurant card.
 - Restaurant rating shows as a green/yellow badge (e.g. "4.2").
 - To add an item tap the green "ADD" button; if a customisation sheet appears, pick the first option and tap "Add Item".
 - The cart icon is at the bottom-right; tap it to open View Cart.
-- Do NOT tap the microphone icon — use text search only.
+- Do NOT tap the microphone icon - use text search only.
     """.trimIndent()
 
     private fun looksLikeSelectionFollowUp(query: String): Boolean {

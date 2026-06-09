@@ -72,7 +72,7 @@ class AgentOrchestrator(
     private val pendingConfirmations = java.util.concurrent.ConcurrentHashMap<Long, CompletableDeferred<Boolean>>()
     private val pendingTextRequests = java.util.concurrent.ConcurrentHashMap<Long, CompletableDeferred<String?>>()
 
-    // Serializes skill execution — only one task runs at a time.
+    // Serializes skill execution - only one task runs at a time.
     // When a new message arrives, requestStop() is called first so the
     // running task exits quickly, then this lock is acquired for the new task.
     private val taskMutex = Mutex()
@@ -94,7 +94,7 @@ class AgentOrchestrator(
     }
 
     fun start() {
-        // Create the AI-driven screen agent — inject user memory so learned preferences
+        // Create the AI-driven screen agent - inject user memory so learned preferences
         // are automatically applied to every executeGoal call, without touching skill files
         screenAgent = ScreenAgent(
             apiKey = config.agentApiKey,
@@ -139,7 +139,7 @@ class AgentOrchestrator(
             },
             screenAgent = screenAgent,
         ).also { runner ->
-            // â"€â"€ Official Skills â"€â"€
+            // Official skills
             runner.register(SwigySkill())
             runner.register(ZomatoSearchFirstSkill())
             runner.register(ZeptoSkill())
@@ -158,7 +158,7 @@ class AgentOrchestrator(
             runner.register(AmazonSkill())
             runner.register(WhatsAppSkill())
             runner.register(ChromeSkill())
-            // â"€â"€ Business & Productivity Skills â"€â"€
+            // Business and productivity skills
             runner.register(ScreenReaderSkill())
             runner.register(ReadingConciergeSkill())
             runner.register(GmailSkill())
@@ -167,7 +167,7 @@ class AgentOrchestrator(
             runner.register(NotesSkill())
             runner.register(SettingsSkill())
             runner.register(ContactsSkill())
-            // â"€â"€ Composite / Multi-App Skills â"€â"€
+            // Composite and multi-app skills
             runner.register(TravelPlannerSkill())
             runner.register(RideConciergeSkill())
             runner.register(PriceComparatorSkill())
@@ -176,9 +176,9 @@ class AgentOrchestrator(
             runner.register(MorningBriefSkill())
             runner.register(EmergencySOSSkill())
             runner.register(PhoneFinderSkill())
-            // â"€â"€ General Agent (catch-all) â"€â"€
+            // General agent catch-all
             runner.register(GeneralSkill())
-            // â"€â"€ API-powered Skills (no phone UI needed) â"€â"€
+            // API-powered skills with no phone UI needed
             runner.register(WeatherSkill())
             runner.register(CurrencySkill())
             runner.register(QrCodeSkill())
@@ -240,7 +240,7 @@ class AgentOrchestrator(
             NotificationRelay.rebind(context)
         }
 
-        // Wire AI call answering — injects config so CallAnsweringService can answer calls.
+        // Wire AI call answering - injects config so CallAnsweringService can answer calls.
         CallAnsweringService.config = config
         CallAnsweringService.orchestrator = this
     }
@@ -251,7 +251,7 @@ class AgentOrchestrator(
         poller.stop()
     }
 
-    /** Entry point for WhatsApp channel commands — routed from NotificationRelay. */
+    /** Entry point for WhatsApp channel commands - routed from NotificationRelay. */
     suspend fun handleWhatsAppCommand(chatId: Long, text: String): String {
         val fakeMsg = IncomingMessage(
             updateId = System.currentTimeMillis(),
@@ -288,16 +288,16 @@ class AgentOrchestrator(
             "research" -> return handleInfoCommand(msg.chatId, command.args, ResearchDepth.DEEP)
         }
 
-        // â"€â"€ Notification reply relay â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+        // Notification reply relay
         // User replied (using Telegram's Reply button) to a forwarded notification.
-        // Try RemoteInput first (fastest — fires directly into the source app).
+        // Try RemoteInput first; it replies directly into the source app.
         // If that fails (no quick-reply action on the notification), fall back to
         // opening the app and sending via the accessibility skill.
         if (msg.replyToMessageId != null) {
             val delivered = NotificationRelay.sendReply(msg.replyToMessageId, trimmed)
-            if (delivered) return "âœ‰ï¸ Reply sent."
+            if (delivered) return "Reply sent."
 
-            // RemoteInput unavailable — try skill-based fallback
+            // RemoteInput unavailable - try skill-based fallback.
             val rec = NotificationRelay.getRecord(msg.replyToMessageId)
             if (rec != null) {
                 val contact = rec.lastTitle.takeIf { it.isNotBlank() } ?: "them"
@@ -321,7 +321,7 @@ class AgentOrchestrator(
                             msg.username ?: msg.chatId.toString())
                         when (result) {
                             is SkillResult.Success -> result.message
-                            is SkillResult.Failure -> "âŒ Could not reply: ${result.reason}"
+                            is SkillResult.Failure -> "Could not reply: ${result.reason}"
                             else -> result.toString()
                         }
                     } finally {
@@ -329,7 +329,7 @@ class AgentOrchestrator(
                     }
                 }
             }
-            // No record or unknown app — fall through to normal AI routing
+            // No record or unknown app - fall through to normal AI routing
         }
 
         if (msg.attachment != null && msg.attachment.mimeType?.startsWith("audio") == true) {
@@ -343,10 +343,10 @@ class AgentOrchestrator(
             return buildDocumentSummaryUsage()
         }
 
-        // â"€â"€ AUTO-STOP: every new message kills the currently running task â"€â"€â"€â"€â"€
+        // AUTO-STOP: every new message kills the currently running task
         // Exceptions:
-        //   â€¢ Confirmation answers (YES/NO) — they continue a pending task, not start a new one
-        //   â€¢ Explicit stop commands — handled below, requestStop() called there
+        //   - Confirmation answers (YES/NO) continue a pending task
+        //   - Explicit stop commands are handled below
         //
         // Why: TelegramPoller fires scope.launch per message, so multiple messages run in
         // parallel. Without this, "open Obsidian" while YouTube is running would fight with
@@ -357,26 +357,27 @@ class AgentOrchestrator(
         val hasPendingConfirmation = pendingConfirmations.containsKey(msg.chatId)
         val hasPendingTextRequest = pendingTextRequests.containsKey(msg.chatId)
         val isStopCommand = run {
-            val stopExactInner = setOf("stop", "à¤°à¥à¤•à¥‹", "ruko", "band karo", "cancel", "bas", "à¤¬à¤¸",
-                "rok", "à¤°à¥‹à¤•", "hatao", "à¤¹à¤Ÿà¤¾à¤“", "abort", "quit", "chhod do", "à¤›à¥‹à¤¡à¤¼ à¤¦à¥‹",
-                "mat karo", "à¤®à¤¤ à¤•à¤°à¥‹", "nahi", "à¤¨à¤¹à¥€à¤‚", "enough", "done stop")
-            val stopContainsInner = listOf("stop", "à¤°à¥à¤•à¥‹", "cancel", "abort", "band kar", "à¤°à¥‹à¤•", "bas kar")
+            val stopExactInner = setOf(
+                "stop", "ruko", "band karo", "cancel", "bas", "rok", "hatao",
+                "abort", "quit", "chhod do", "mat karo", "nahi", "enough", "done stop",
+            )
+            val stopContainsInner = listOf("stop", "ruko", "cancel", "abort", "band kar", "rok", "bas kar")
             lower in stopExactInner || stopContainsInner.any { lower.contains(it) }
         }
         if (!hasPendingConfirmation && !hasPendingTextRequest && !isStopCommand) {
-            // Kill whatever is currently running — the new message takes priority
+            // Kill whatever is currently running - the new message takes priority
             screenAgent.requestStop()
         }
 
-        // â"€â"€ STOP — explicit stop command â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+        // STOP: explicit stop command
         if (isStopCommand) {
             // 1. Kill the AI call immediately (cancels OkHttp, unblocks coroutine)
             screenAgent.requestStop()
-            // 2. Release wake lock right now — don't hold it open while we wind down
+            // 2. Release wake lock right now - don't hold it open while we wind down
             pendingTextRequests.remove(msg.chatId)?.complete(null)
             pendingConfirmations.remove(msg.chatId)?.complete(false)
             try { if (wakeLock.isHeld) wakeLock.release() } catch (_: Exception) {}
-            // 3. Capture screenshot BEFORE going home — shows exactly where the agent was
+            // 3. Capture screenshot BEFORE going home - shows exactly where the agent was
             val stoppedAt = try {
                 AgentAccessibilityService.instance?.captureScreenshot()
             } catch (_: Exception) { null }
@@ -387,11 +388,11 @@ class AgentOrchestrator(
             // 5. Send screenshot asynchronously (don't block the stop reply)
             if (stoppedAt != null) {
                 scope.launch {
-                    try { poller.sendPhoto(msg.chatId, stoppedAt, "📍 Stopped here — this is where I was when you said stop.") }
+                    try { poller.sendPhoto(msg.chatId, stoppedAt, "Stopped here - this is where I was when you said stop.") }
                     catch (_: Exception) {}
                 }
             }
-            return "⛔ *Stopped immediately.*${if (stoppedAt != null) " Screenshot shows exactly where I was." else ""}\n\nBack on the home screen. Send a new command whenever you're ready."
+            return "*Stopped immediately.*${if (stoppedAt != null) " Screenshot shows exactly where I was." else ""}\n\nBack on the home screen. Send a new command whenever you are ready."
         }
 
         // Resolve pending skill questions before normal bot commands. If the agent asked
@@ -421,18 +422,18 @@ class AgentOrchestrator(
             lower.contains("hang up") || lower.contains("cut call")
         if (isHangUpCommand && CallAnsweringService.activeInstance != null) {
             CallAnsweringService.hangUpCurrentCall()
-            return "📵 Call ended."
+            return "Call ended."
         }
 
-        // ── Owner relay: if AI is waiting on owner's answer, feed this reply in ──
+        // Owner relay: if AI is waiting on owner answer, feed this reply in
         // When AI says [ASK_OWNER: question], it suspends waiting for the owner's
         // Telegram reply. Any non-command text while a call is active routes here first.
         if (CallAnsweringService.activeInstance != null &&
             CallAnsweringService.provideOwnerReply(trimmed)) {
-            return "✅ Reply relayed to the AI — it will continue the call now."
+            return "Reply relayed to the AI - it will continue the call now."
         }
 
-        // ── Outbound AI call — "go talk to them" superpower ──────────────────────
+        // Outbound AI call: talk to a contact with briefing
         // Patterns: "call Rahul about the invoice"
         //           "call +919876543210 and tell them to reschedule"
         //           "go talk to Priya about the payment"
@@ -441,7 +442,7 @@ class AgentOrchestrator(
             return placeOutboundAICall(msg.chatId, target, briefing)
         }
 
-        // â"€â"€ Built-in commands â"€â"€
+        // Built-in commands
         command?.let { parsed ->
             when (parsed.name) {
                 "start", "help" -> return buildWelcomeMessage()
@@ -453,18 +454,18 @@ class AgentOrchestrator(
                     if (parsed.args.isBlank()) {
                         val count = userMemory.getAll().size
                         userMemory.forgetAll()
-                        return "ðŸ§¹ All $count rules cleared. Starting fresh."
+                        return "All $count rules cleared. Starting fresh."
                     }
                     val indices = userMemory.parseIndexString(parsed.args)
                     return when {
                         indices.isEmpty() -> "Usage: `/forget 3` or `/forget 1,3,5` or `/forget 2-5`\nSee /memory for the numbered list."
                         indices.size == 1 -> {
-                            if (userMemory.forget(indices[0])) "âœ… Rule #${indices[0]} removed."
+                            if (userMemory.forget(indices[0])) "Rule #${indices[0]} removed."
                             else "Rule #${indices[0]} not found. Use /memory to see the list."
                         }
                         else -> {
                             val removed = userMemory.forgetMultiple(indices)
-                            "âœ… Removed $removed rule${if (removed != 1) "s" else ""} (${indices.joinToString(", ")}).\nUse /memory to see what's left."
+                            "Removed $removed rule${if (removed != 1) "s" else ""} (${indices.joinToString(", ")}).\nUse /memory to see what is left."
                         }
                     }
                 }
@@ -474,7 +475,7 @@ class AgentOrchestrator(
                     }
                     if (parsed.args.equals("clear", ignoreCase = true)) {
                         appKnowledge.clearAll()
-                        return "ðŸ§¹ App knowledge cleared. I'll re-learn as you use me."
+                        return "App knowledge cleared. I will re-learn as you use me."
                     }
                     if (parsed.args.startsWith("clear ", ignoreCase = true)) {
                         val pkg = parsed.args.substringAfter("clear ").trim()
@@ -488,7 +489,7 @@ class AgentOrchestrator(
                 "knowledge_clear" -> {
                     if (parsed.args.isBlank()) {
                         appKnowledge.clearAll()
-                        return "ðŸ§¹ App knowledge cleared. I'll re-learn as you use me."
+                        return "App knowledge cleared. I will re-learn as you use me."
                     }
                     appKnowledge.clearApp(parsed.args)
                     return "Cleared knowledge for ${parsed.args}."
@@ -498,10 +499,10 @@ class AgentOrchestrator(
                         return "Usage: `/remember <your rule>`\nExample: `/remember Always confirm before sending WhatsApp messages`"
                     }
                     return if (!userMemory.learningEnabled) {
-                        "âš ï¸ Learning is OFF. Turn it on in Settings first."
+                        "Learning is OFF. Turn it on in Settings first."
                     } else {
                         val saved = userMemory.addRule(parsed.args)
-                        if (saved) "📌 Rule saved: _\"${parsed.args}\"_\n\nUse /memory to see all rules."
+                        if (saved) "Rule saved: _\"${parsed.args}\"_\n\nUse /memory to see all rules."
                         else "Already have that rule saved."
                     }
                 }
@@ -511,17 +512,17 @@ class AgentOrchestrator(
                         return "Usage: `/mute <app>`"
                     }
                     val pkg = resolvePackage(parsed.args)
-                        ?: return "Can't find app \"${parsed.args}\". Try the package name (e.g. `com.whatsapp`) or the exact app label."
+                        ?: return "Can not find \"${parsed.args}\". Try the exact app name or package (e.g. `com.swiggy.android`)."
                     muteStore.mute(pkg)
-                    return "🔕 Muted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`). Use `/unmute ${parsed.args}` to re-enable."
+                    return "Muted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`). Use `/unmute ${parsed.args}` to re-enable."
                 }
                 "unmute" -> {
                     if (parsed.args.isBlank()) {
                         return "Usage: `/unmute <app>`"
                     }
-                    val pkg = resolvePackage(parsed.args) ?: return "Can't find app \"${parsed.args}\"."
+                    val pkg = resolvePackage(parsed.args) ?: return "Can not find \"${parsed.args}\"."
                     muteStore.unmute(pkg)
-                    return "🔔 Unmuted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`)."
+                    return "Unmuted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`)."
                 }
                 "clear" -> {
                     actionBrain.clearHistory(msg.chatId)
@@ -548,15 +549,15 @@ class AgentOrchestrator(
                 "open" -> {
                     if (parsed.args.isBlank()) return "Usage: `/open <app name>`\nExamples: `/open Swiggy`, `/open Chrome`, `/open Settings`"
                     val pkg = resolvePackage(parsed.args)
-                        ?: return "❌ Can't find \"${parsed.args}\". Try the exact app name or package (e.g. `com.swiggy.android`)."
+                        ?: return "Can not find \"${parsed.args}\". Try the exact app name or package (e.g. `com.swiggy.android`)."
                     return try {
                         val intent = context.packageManager.getLaunchIntentForPackage(pkg)
-                            ?: return "❌ \"${parsed.args}\" is installed but can't be launched."
+                            ?: return "\"${parsed.args}\" is installed but can not be launched."
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         context.startActivity(intent)
-                        "📱 Opened *${parsed.args}*."
+                        "Opened *${parsed.args}*."
                     } catch (e: Exception) {
-                        "❌ Could not open \"${parsed.args}\": ${e.message}"
+                        "Could not open \"${parsed.args}\": ${e.message}"
                     }
                 }
             }
@@ -571,12 +572,12 @@ class AgentOrchestrator(
             trimmed.lowercase() == "/forget" -> {
                 val count = userMemory.getAll().size
                 userMemory.forgetAll()
-                return "ðŸ§¹ All $count rules cleared. Starting fresh."
+                return "All $count rules cleared. Starting fresh."
             }
             trimmed.lowercase() == "/knowledge" -> return appKnowledge.buildSummaryMessage()
             trimmed.lowercase() == "/knowledge clear" -> {
                 appKnowledge.clearAll()
-                return "ðŸ§¹ App knowledge cleared. I'll re-learn as you use me."
+                return "App knowledge cleared. I will re-learn as you use me."
             }
             trimmed.lowercase() == "/info" || trimmed.lowercase() == "/research" -> {
                 return "Use `/info <topic>` for a quick web answer.\nUse `/research <topic>` for a deeper web search.\n\nExamples:\n`/info Who is Nikhil Kamath?`\n`/research Nvidia latest business update`"
@@ -594,17 +595,16 @@ class AgentOrchestrator(
             }
             trimmed.lowercase().startsWith("/forget ") -> {
                 val arg = trimmed.substringAfter("/forget ").trim()
-                // Support: /forget 3  OR  /forget 1,3,5  OR  /forget 2-5  OR  /forget 1,3-5,7
                 val indices = userMemory.parseIndexString(arg)
                 return when {
                     indices.isEmpty() -> "Usage: `/forget 3` or `/forget 1,3,5` or `/forget 2-5`\nSee /memory for the numbered list."
                     indices.size == 1 -> {
-                        if (userMemory.forget(indices[0])) "âœ… Rule #${indices[0]} removed."
+                        if (userMemory.forget(indices[0])) "Rule #${indices[0]} removed."
                         else "Rule #${indices[0]} not found. Use /memory to see the list."
                     }
                     else -> {
                         val removed = userMemory.forgetMultiple(indices)
-                        "âœ… Removed $removed rule${if (removed != 1) "s" else ""} (${indices.joinToString(", ")}).\nUse /memory to see what's left."
+                        "Removed $removed rule${if (removed != 1) "s" else ""} (${indices.joinToString(", ")}).\nUse /memory to see what is left."
                     }
                 }
             }
@@ -616,25 +616,25 @@ class AgentOrchestrator(
                 return if (rule.isBlank()) {
                     "Usage: `/remember <your rule>`\nExample: `/remember Always confirm before sending WhatsApp messages`"
                 } else if (!userMemory.learningEnabled) {
-                    "âš ï¸ Learning is OFF. Turn it on in Settings first."
+                        "Learning is OFF. Turn it on in Settings first."
                 } else {
                     val saved = userMemory.addRule(rule)
-                    if (saved) "📌 Rule saved: _\"$rule\"_\n\nUse /memory to see all rules."
+                    if (saved) "Rule saved: _\"$rule\"_\n\nUse /memory to see all rules."
                     else "Already have that rule saved."
                 }
             }
             trimmed.lowercase() == "/muted" -> return buildMutedListMessage()
             trimmed.lowercase().startsWith("/mute ") -> {
                 val arg = trimmed.substringAfter("/mute ").trim()
-                val pkg = resolvePackage(arg) ?: return "Can't find app \"$arg\". Try the package name (e.g. `com.whatsapp`) or the exact app label."
+                val pkg = resolvePackage(arg) ?: return "Can not find app \"$arg\". Try the package name (e.g. `com.whatsapp`) or the exact app label."
                 muteStore.mute(pkg)
-                return "🔕 Muted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`). Use `/unmute $arg` to re-enable."
+                return "Muted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`). Use `/unmute $arg` to re-enable."
             }
             trimmed.lowercase().startsWith("/unmute ") -> {
                 val arg = trimmed.substringAfter("/unmute ").trim()
-                val pkg = resolvePackage(arg) ?: return "Can't find app \"$arg\"."
+                val pkg = resolvePackage(arg) ?: return "Can not find app \"$arg\"."
                 muteStore.unmute(pkg)
-                return "🔔 Unmuted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`)."
+                return "Unmuted ${NotificationRelay.labelFor(context, pkg)} (`$pkg`)."
             }
             trimmed.lowercase() == "/clear" -> {
                 actionBrain.clearHistory(msg.chatId)
@@ -686,7 +686,7 @@ class AgentOrchestrator(
                         android.net.Uri.parse("market://search?q=${android.net.Uri.encode(appName)}&c=apps")
                     ).apply { addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK) }
                     context.startActivity(storeIntent)
-                    "🔍 Searching Play Store for *$appName*...\n\nTap Install on the result."
+                    "Searching Play Store for *$appName*...\n\nTap Install on the result."
                 } catch (_: Exception) {
                     // Fallback: open Play Store via web URL
                     try {
@@ -695,9 +695,9 @@ class AgentOrchestrator(
                             android.net.Uri.parse("https://play.google.com/store/search?q=${android.net.Uri.encode(appName)}&c=apps")
                         ).apply { addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK) }
                         context.startActivity(webIntent)
-                        "🔍 Opened Play Store for *$appName*."
+                        "Opened Play Store for *$appName*."
                     } catch (e: Exception) {
-                        "❌ Could not open Play Store: ${e.message}"
+                        "Could not open Play Store: ${e.message}"
                     }
                 }
             }
@@ -705,67 +705,67 @@ class AgentOrchestrator(
                 val arg = trimmed.substringAfter("/open ").trim()
                 if (arg.isBlank()) return "Usage: `/open <app name>`\nExamples: `/open Swiggy`, `/open Chrome`, `/open Settings`"
                 val pkg = resolvePackage(arg)
-                    ?: return "❌ Can't find \"$arg\". Try the exact app name or package (e.g. `com.swiggy.android`)."
+                    ?: return "Can not find \"$arg\". Try the exact app name or package (e.g. `com.swiggy.android`)."
                 return try {
                     val intent = context.packageManager.getLaunchIntentForPackage(pkg)
-                        ?: return "❌ \"$arg\" is installed but can't be launched."
+                        ?: return "\"$arg\" is installed but can not be launched."
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(intent)
-                    "📱 Opened *$arg*."
+                    "Opened *$arg*."
                 } catch (e: Exception) {
-                    "❌ Could not open \"$arg\": ${e.message}"
+                    "Could not open \"$arg\": ${e.message}"
                 }
             }
         }
 
-        // â"€â"€ AI Learning: detect if user is teaching the agent â"€â"€
+        // AI learning: detect if user is teaching the agent
         // e.g. "next time search before tapping" or "remember I don't want auto-send"
         val preference = userMemory.extractPreference(trimmed)
         if (preference != null && userMemory.learningEnabled) {
             val saved = userMemory.remember(preference)
             if (saved) {
-                return "📌 Got it! I'll remember:\n_\"$preference\"_\n\nThis will apply to future tasks. Use /memory to see all preferences, /forget to remove any."
+                return "Got it. I will remember:\n_\"$preference\"_\n\nThis will apply to future tasks. Use /memory to see all preferences, /forget to remove any."
             }
         }
 
-        // ── "Again" / "Repeat" — re-run the last command ────────────────────
+        // Again/repeat: rerun the last command
         val isAgainCommand = lower in setOf(
             "again", "repeat", "do it again", "redo", "same", "once more",
-            "फिर से", "dobara", "phir se", "wahi karo", "ek baar aur",
+            "dobara", "phir se", "wahi karo", "ek baar aur",
         )
         if (isAgainCommand) {
             val lastCmd = lastRawCommand
-            if (lastCmd.isBlank()) return "Nothing to repeat — I haven't run any command yet this session."
-            poller.sendMessage(msg.chatId, "🔁 Repeating: _" + lastCmd.take(80) + "_")
+            if (lastCmd.isBlank()) return "Nothing to repeat - I have not run any command yet this session."
+            poller.sendMessage(msg.chatId, "Repeating: _" + lastCmd.take(80) + "_")
             return handleMessage(msg.copy(text = lastCmd))
         }
 
-        // ── Quick Macro resolution — check user-defined shortcuts first ────────
+        // -- Quick Macro resolution - check user-defined shortcuts first --------
         val macroResolved = quickMacros.resolve(lower)
         if (macroResolved != null) {
-            poller.sendMessage(msg.chatId, "⚡ Running shortcut: _" + macroResolved.take(80) + "_")
+            poller.sendMessage(msg.chatId, "- Running shortcut: _" + macroResolved.take(80) + "_")
             return handleMessage(msg.copy(text = macroResolved))
         }
 
-        // ── Natural Command Detection — slash-free intent recognition ────────────
+        // -- Natural Command Detection - slash-free intent recognition ------------
         // Spots phrases like "remind me at 7pm to order pizza", "run my morning routine",
         // "take a screenshot", "open Swiggy", "turn off payment confirmations" etc.
         // and internally re-dispatches them as the equivalent slash command.
-        // The user never needs to type "/" — the system understands plain language.
+        // The user never needs to type "/" - the system understands plain language.
         if (!trimmed.startsWith("/")) {
             NaturalCommandDetector.detect(trimmed)?.let { resolved ->
                 return handleMessage(msg.copy(text = resolved))
             }
         }
 
-        // ── Saved Places expansion — resolve "home", "work" etc. in command ────
+        // -- Saved Places expansion - resolve "home", "work" etc. in command ----
         val expandedCommand = savedPlaces.expandInCommand(trimmed)
 
-        // ── Compound command: "X and Y" → run both sequentially ───────────────
+        // -- Compound command: "X and Y" - run both sequentially ---------------
         val andParts = splitCompoundCommand(expandedCommand)
         if (andParts != null) {
             lastRawCommand = trimmed
-            poller.sendMessage(msg.chatId, "🔄 Running compound command in two steps...")
+            poller.sendMessage(msg.chatId, "-- Running compound command in two steps...")
             val result1 = handleMessage(msg.copy(text = andParts.first))
             val result2 = handleMessage(msg.copy(text = andParts.second))
             return "1\u20e3 *" + andParts.first.take(55) + "*\n" + result1 + "\n\n2\u20e3 *" + andParts.second.take(55) + "*\n" + result2
@@ -774,9 +774,9 @@ class AgentOrchestrator(
         // Save raw command for "again" feature (never save meta-commands)
         lastRawCommand = trimmed
 
-        // ── Normal flow: AI -> Skill ──
+        // -- Normal flow: AI -> Skill --
         // Brain routing is fast (just an API call), so do it outside the lock.
-        // Only the actual on-device skill execution is locked — one task at a time.
+        // Only the actual on-device skill execution is locked - one task at a time.
         poller.sendTyping(msg.chatId)
         val route = BrainRoute(mode = BrainMode.ACTION, actionPrompt = expandedCommand)
 
@@ -831,7 +831,7 @@ class AgentOrchestrator(
             contextHint = actionContext,
         )
 
-        // Direct replies and unknowns don't touch the phone — no lock needed.
+        // Direct replies and unknowns don't touch the phone - no lock needed.
         if (plan.type == PlanType.DIRECT_REPLY) {
             val directReply = plan.directReply ?: "?"
             conversationContext.rememberAction(msg.chatId, actionPrompt, directReply)
@@ -843,7 +843,7 @@ class AgentOrchestrator(
             return plan.directReply ?: "I didn't understand that. Try again."
         }
 
-        // Skill execution touches the phone — serialize with mutex.
+        // Skill execution touches the phone - serialize with mutex.
         // requestStop() was already called at the top of handleMessage, so the
         // previous task is stopping. We wait here until the lock is released,
         // then start the new task with a clean slate.
@@ -859,7 +859,7 @@ class AgentOrchestrator(
             // Clear any leftover stop flag so the NEW task doesn't immediately self-stop.
             // Root cause of the "Stopped." spam: requestStop() is called for every message
             // to kill old tasks, but with no old task running the flag stays true and the
-            // new task sees it in executeGoal's first check and returns "⛔ Stopped." before
+            // new task sees it in executeGoal's first check and returns "- Stopped." before
             // doing anything. Clearing here (after acquiring the mutex = old task is done)
             // fixes this without losing the ability to stop a genuinely running task.
             screenAgent.clearStop()
@@ -875,7 +875,7 @@ class AgentOrchestrator(
             // Wake screen so agent can interact with apps even if phone was sleeping.
             if (!wakeLock.isHeld) wakeLock.acquire(600_000L)
 
-            // Dismiss lock screen — swipe up from bottom (swipe-only lock) or navigate home
+            // Dismiss lock screen - swipe up from bottom (swipe-only lock) or navigate home
             // to land on the actual app. No-op if screen is already unlocked.
             AgentAccessibilityService.instance?.let { svc ->
                 val km = context.getSystemService(android.app.KeyguardManager::class.java)
@@ -938,7 +938,7 @@ class AgentOrchestrator(
             is SkillResult.Failure -> {
                 activityLog.log(userText, skillId, "failure", result.reason)
                 ActionExecutionOutcome(
-                    reply = "❌ ${result.reason}",
+                    reply = "- ${result.reason}",
                     contextSummary = "Error: ${result.reason}",
                 )
             }
@@ -1051,35 +1051,35 @@ class AgentOrchestrator(
                 val bitmap = service.captureScreenshot()
                 if (bitmap != null) {
                     poller.sendPhoto(chatId, bitmap, message)
-                    return "" // already sent as photo — caller sends nothing
+                    return "" // already sent as photo - caller sends nothing
                 }
             } catch (_: Exception) { /* fall through to text */ }
         }
-        return message // no screenshot — return as plain text
+        return message // no screenshot - return as plain text
     }
 
     private suspend fun takeAndSendScreenshot(chatId: Long): String {
         val service = AgentAccessibilityService.instance
         if (service == null) {
             return if (AgentAccessibilityService.isConnected) {
-                "📸 Accessibility service is connected but not responding — try restarting the agent."
+                "-- Accessibility service is connected but not responding - try restarting the agent."
             } else {
-                "📸 Accessibility Service not connected.\n\nGo to Settings → Accessibility → Installed Services → *BharatClaw Agent* → Enable."
+                "-- Accessibility Service not connected.\n\nGo to Settings - Accessibility - Installed Services - *BharatClaw Agent* - Enable."
             }
         }
         if (android.os.Build.VERSION.SDK_INT < 30) {
-            return "📸 Screenshots need Android 11 (API 30+). Your device is on API ${android.os.Build.VERSION.SDK_INT}."
+            return "-- Screenshots need Android 11 (API 30+). Your device is on API ${android.os.Build.VERSION.SDK_INT}."
         }
         return try {
             val bitmap = service.captureScreenshot()
             if (bitmap != null) {
-                poller.sendPhoto(chatId, bitmap, "📸 Screenshot")
+                poller.sendPhoto(chatId, bitmap, "-- Screenshot")
                 ""
             } else {
-                "📸 Screen capture returned empty — screen may be locked or in a secure app."
+                "-- Screen capture returned empty - screen may be locked or in a secure app."
             }
         } catch (e: Exception) {
-            "📸 Screenshot failed: ${e.message}"
+            "-- Screenshot failed: ${e.message}"
         }
     }
 
@@ -1205,7 +1205,7 @@ You can also open a document on the phone and say:
         return if (cleanedInstruction.isBlank()) {
             "summarize $fileName"
         } else {
-            "summarize $fileName — ${cleanedInstruction.take(80)}"
+            "summarize $fileName - ${cleanedInstruction.take(80)}"
         }
     }
 
@@ -1233,21 +1233,21 @@ You can also open a document on the phone and say:
             .replace("_", "")
 
     private suspend fun runRoutine(routine: RoutineStore.Routine, msg: IncomingMessage): String {
-        poller.sendMessage(msg.chatId, "🔗 *Running routine: ${routine.name}* (${routine.steps.size} steps)")
+        poller.sendMessage(msg.chatId, "-- *Running routine: ${routine.name}* (${routine.steps.size} steps)")
         routine.steps.forEachIndexed { i, step ->
-            poller.sendMessage(msg.chatId, "▶️ Step ${i + 1}/${routine.steps.size}: _${step.take(60)}_")
+            poller.sendMessage(msg.chatId, "-- Step ${i + 1}/${routine.steps.size}: _${step.take(60)}_")
             try {
                 val result = handleMessage(msg.copy(text = step))
                 if (result.isNotBlank()) poller.sendMessage(msg.chatId, result)
             } catch (e: Exception) {
-                poller.sendMessage(msg.chatId, "❌ Step ${i + 1} failed: ${e.message}")
+                poller.sendMessage(msg.chatId, "- Step ${i + 1} failed: ${e.message}")
             }
         }
-        return "✅ *Routine complete: ${routine.name}*"
+        return "- *Routine complete: ${routine.name}*"
     }
 
     suspend fun dispatchScheduledCommand(chatId: Long, command: String) {
-        poller.sendMessage(chatId, "⏰ _Scheduled:_ $command")
+        poller.sendMessage(chatId, "- _Scheduled:_ $command")
         val fakeMsg = IncomingMessage(
             updateId = -1L,
             chatId = chatId,
@@ -1264,7 +1264,7 @@ You can also open a document on the phone and say:
         poller.sendMessage(chatId, message)
     }
 
-    // ── Outbound AI call ────────────────────────────────────────────────────────
+        // Outbound AI call: talk to a contact with briefing
 
     /**
      * Parses natural-language outbound call requests.
@@ -1309,7 +1309,7 @@ You can also open a document on the phone and say:
             target   = body.substring(0, match.range.first).trim()
             briefing = body.substring(match.range.last + 1).trim()
         } else {
-            // No connector found — might just be "call Rahul" with no briefing
+            // No connector found - might just be "call Rahul" with no briefing
             target   = body.trim()
             briefing = "General inquiry / catch-up"
         }
@@ -1324,10 +1324,10 @@ You can also open a document on the phone and say:
      */
     private fun placeOutboundAICall(chatId: Long, target: String, briefing: String): String {
         if (!config.callAnsweringEnabled) {
-            return "❌ AI Call Answering is not enabled. Enable it in Settings → AI Call Answering."
+            return "- AI Call Answering is not enabled. Enable it in Settings - AI Call Answering."
         }
 
-        // Resolve target → phone number
+        // Resolve target - phone number
         // If target looks like a number already, use it directly
         val rawNumber = target.filter { it.isDigit() || it == '+' }
         val (displayName, dialNumber) = if (rawNumber.length >= 7) {
@@ -1338,7 +1338,7 @@ You can also open a document on the phone and say:
             if (resolved != null) {
                 Pair(target, resolved)
             } else {
-                return "❌ Couldn't find a phone number for \"$target\".\n" +
+                return "- Couldn't find a phone number for \"$target\".\n" +
                     "Try: `call +919876543210 about the invoice` with the number directly."
             }
         }
@@ -1356,14 +1356,14 @@ You can also open a document on the phone and say:
                 android.net.Uri.parse("tel:${android.net.Uri.encode(dialNumber)}")
             ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
             context.startActivity(callIntent)
-            "📲 *Placing outbound AI call to ${md(displayName)}\\.*\n\n" +
-            "🎯 *Briefing:* ${md(briefing)}\n\n" +
+            "-- *Placing outbound AI call to ${md(displayName)}\\.*\n\n" +
+            "-- *Briefing:* ${md(briefing)}\n\n" +
             "I'll send you the live transcript as the call progresses\\.\n" +
-            "When I need your input, I'll ask you directly — just type your reply\\.\n" +
+            "When I need your input, I'll ask you directly - just type your reply\\.\n" +
             "_Reply *hang up* anytime to end the call\\._"
         } catch (e: Exception) {
             CallAnsweringService.pendingOutbound = null
-            "❌ Could not place call: ${e.message}"
+            "- Could not place call: ${e.message}"
         }
     }
 
@@ -1397,18 +1397,18 @@ You can also open a document on the phone and say:
     private fun buildMutedListMessage(): String {
         val muted = muteStore.list()
         val granted = NotificationRelay.isPermissionGranted(context)
-        val header = if (granted) "âœ… Notification relay: ON" else "âš ï¸ Notification relay needs permission. Settings â†' Notifications â†' Device & app notifications â†' BharatClaw â†' Allow."
+        val header = if (granted) "Notification relay: ON" else "Notification relay needs permission. Settings > Notifications > Device and app notifications > BharatClaw > Allow."
         if (muted.isEmpty()) {
-            return "$header\n\n🔔 No apps muted. All notifications are forwarded.\n\n*Commands:*\n`/mute WhatsApp` or `/mute com.whatsapp`\n`/unmute WhatsApp`"
+            return "$header\n\nNo apps muted. All notifications are forwarded.\n\n*Commands:*\n`/mute WhatsApp` or `/mute com.whatsapp`\n`/unmute WhatsApp`"
         }
         val list = muted.mapIndexed { i, pkg ->
             "${i + 1}. ${NotificationRelay.labelFor(context, pkg)} (`$pkg`)"
         }.joinToString("\n")
-        return "$header\n\n🔕 *Muted apps (${muted.size}):*\n$list\n\nUse `/unmute <name>` to re-enable."
+        return "$header\n\n*Muted apps (${muted.size}):*\n$list\n\nUse `/unmute <name>` to re-enable."
     }
 
     private fun toggleMode(chatId: Long): String {
-        // Cycle through SMART → AUTO → ASK → SMART
+        // Cycle through SMART - AUTO - ASK - SMART
         val next = when (permissionsStore.mode) {
             PermissionsStore.Mode.SMART -> PermissionsStore.Mode.AUTO
             PermissionsStore.Mode.AUTO -> PermissionsStore.Mode.ASK
@@ -1420,20 +1420,20 @@ You can also open a document on the phone and say:
 
     private fun buildMemoryMessage(): String {
         val memories = userMemory.getAll()
-        val status = if (userMemory.learningEnabled) "âœ… Learning: ON" else "âŒ Learning: OFF (toggle in Settings)"
+        val status = if (userMemory.learningEnabled) "Learning: ON" else "Learning: OFF (toggle in Settings)"
 
         if (memories.isEmpty()) {
             return buildString {
-                appendLine("🔭 No rules saved yet.")
+                appendLine("No rules saved yet.")
                 appendLine()
                 appendLine("*Two ways to add rules:*")
                 appendLine()
-                appendLine("1ï¸âƒ£ *Just tell me naturally:*")
+                appendLine("1. *Just tell me naturally:*")
                 appendLine("_\"Next time always confirm before sending\"_")
                 appendLine("_\"Remember I want messages typed, not auto-sent\"_")
                 appendLine("_\"Always sort Amazon by rating\"_")
                 appendLine()
-                appendLine("2ï¸âƒ£ *Direct command:*")
+                appendLine("2. *Direct command:*")
                 appendLine("`/remember Always confirm before WhatsApp send`")
                 appendLine()
                 append(status)
@@ -1442,18 +1442,18 @@ You can also open a document on the phone and say:
 
         val list = memories.mapIndexed { i, m -> "${i + 1}. $m" }.joinToString("\n")
         return buildString {
-            appendLine("📌 *Your Rules* (${memories.size}/30):")
+            appendLine("*Your Rules* (${memories.size}/30):")
             appendLine()
             appendLine(list)
             appendLine()
             appendLine(status)
             appendLine()
             appendLine("*Manage rules:*")
-            appendLine("`/forget 3` — remove rule 3")
-            appendLine("`/forget 1,3,5` — remove rules 1, 3 and 5")
-            appendLine("`/forget 2-5` — remove rules 2 through 5")
-            appendLine("`/forget` — clear all rules")
-            appendLine("`/remember <rule>` — add a rule directly")
+            appendLine("`/forget 3` - remove rule 3")
+            appendLine("`/forget 1,3,5` - remove rules 1, 3 and 5")
+            appendLine("`/forget 2-5` - remove rules 2 through 5")
+            appendLine("`/forget` - clear all rules")
+            appendLine("`/remember <rule>` - add a rule directly")
         }.trimEnd()
     }
 
@@ -1469,8 +1469,8 @@ You can also open a document on the phone and say:
         TelegramBotCommand("memory", "Show saved rules"),
         TelegramBotCommand("remember", "Save a new rule"),
         TelegramBotCommand("forget", "Delete rules or clear them all"),
-        TelegramBotCommand("place", "Saved places — /place save home <address>"),
-        TelegramBotCommand("shortcut", "Quick shortcuts — /shortcut add morning = ..."),
+        TelegramBotCommand("place", "Saved places - /place save home <address>"),
+        TelegramBotCommand("shortcut", "Quick shortcuts - /shortcut add morning = ..."),
         TelegramBotCommand("permissions", "View or change permission mode"),
         TelegramBotCommand("knowledge", "Show learned app knowledge"),
         TelegramBotCommand("knowledge_clear", "Clear all or one app's knowledge"),
@@ -1482,9 +1482,9 @@ You can also open a document on the phone and say:
         TelegramBotCommand("install", "Install a community skill"),
         TelegramBotCommand("uninstall", "Remove a community skill"),
         TelegramBotCommand("screenshot", "Take and send a screenshot instantly"),
-        TelegramBotCommand("open", "Open any app — /open Swiggy"),
-        TelegramBotCommand("schedule", "Schedule a task — /schedule 7pm order pizza"),
-        TelegramBotCommand("routine", "Run a command chain — /routine morning"),
+        TelegramBotCommand("open", "Open any app - /open Swiggy"),
+        TelegramBotCommand("schedule", "Schedule a task - /schedule 7pm order pizza"),
+        TelegramBotCommand("routine", "Run a command chain - /routine morning"),
     )
 
     private fun parseTelegramCommand(input: String): ParsedTelegramCommand? {
@@ -1576,7 +1576,7 @@ You can also open a document on the phone and say:
     private fun buildWelcomeMessage(): String = """
 *BharatClaw Agent* is live on this phone.
 
-Tell me what to do — English or Hindi. I'll do it.
+Tell me what to do - English or Hindi. I'll do it.
 
 *Food & Grocery:*
 - "Biryani from Swiggy under 200"
@@ -1621,60 +1621,60 @@ Tell me what to do — English or Hindi. I'll do it.
 - "Open calculator and compute 25 * 4"
 
 *Power Features:*
-- "again" or "repeat" — re-run the last command instantly
-- "order pizza and pay Priya 200" — compound commands (runs both)
+- "again" or "repeat" - re-run the last command instantly
+- "order pizza and pay Priya 200" - compound commands (runs both)
 - Save places: `/place save home Koramangala, Bangalore`
-  Then say: _"take me home"_ or _"Ola to work"_ — I fill in the address
+  Then say: _"take me home"_ or _"Ola to work"_ - I fill in the address
 - Save shortcuts: `/shortcut add morning = give me my morning brief`
   Then just type: _"morning"_ to run it
-📸 /screenshot — instant screen capture sent to Telegram
-📱 /open <app> — launch any installed app
-⏰ /schedule <time> <cmd> — schedule one-time or daily tasks
-🔗 /routine <name> — run named command chains
-🎙️ Voice notes — send any audio, I'll transcribe & execute the command
-📂 Share files — "Share invoice.pdf to Rahul on WhatsApp" — uses the share button
-📄 Read full files — "Read the report.pdf fully" — scrolls through and reads every page
+-- /screenshot - instant screen capture sent to Telegram
+-- /open <app> - launch any installed app
+- /schedule <time> <cmd> - schedule one-time or daily tasks
+-- /routine <name> - run named command chains
+--- Voice notes - send any audio, I'll transcribe & execute the command
+-- Share files - "Share invoice.pdf to Rahul on WhatsApp" - uses the share button
+-- Read full files - "Read the report.pdf fully" - scrolls through and reads every page
 
 *Commands:*
-/help — show this guide
-/skills — list all skills
-/status — agent health check
-/history — recent activity
-/info <topic> — quick web research without opening Chrome
-/research <topic> — deeper web research without opening Chrome
-/summarize — summarize an attached document
-/memory — see your saved rules
-/remember <rule> — add a rule directly
-/forget 3 — delete rule #3
-/place — manage saved places (home, work, gym…)
-/shortcut — manage quick shortcuts
-/knowledge — see what I've learned per app
-/muted — notification relay status + muted apps
-/mute <app> — stop forwarding notifications from that app
-/unmute <app> — re-enable notifications from that app
-/mode — toggle Ask Permission / Just Do It
-/clear — reset conversation memory
-/install <url> — add community skill
+/help - show this guide
+/skills - list all skills
+/status - agent health check
+/history - recent activity
+/info <topic> - quick web research without opening Chrome
+/research <topic> - deeper web research without opening Chrome
+/summarize - summarize an attached document
+/memory - see your saved rules
+            appendLine("`/remember <rule>` - add a rule directly")
+            appendLine("`/forget 3` - remove rule 3")
+/place - manage saved places (home, work, gym-)
+/shortcut - manage quick shortcuts
+/knowledge - see what I've learned per app
+/muted - notification relay status + muted apps
+/mute <app> - stop forwarding notifications from that app
+/unmute <app> - re-enable notifications from that app
+/mode - toggle Ask Permission / Just Do It
+/clear - reset conversation memory
+/install <url> - add community skill
 
-💡 *Tips:*
+-- *Tips:*
 - Teach me naturally: _"next time always confirm before sending"_
 - Or add a rule directly: `/remember Always sort Amazon results by rating`
-- Rules I learn are *mandatory* — I follow them every time, not just sometimes.
-- I also learn each app's layout — every task makes me faster.
+- Rules I learn are *mandatory* - I follow them every time, not just sometimes.
+- I also learn each app's layout - every task makes me faster.
     """.trimIndent()
 
-    // ── Voice note transcription ─────────────────────────────────────────────
+    // -- Voice note transcription ---------------------------------------------
     /**
      * Downloads the voice note, transcribes it with Gemini (audio inline_data)
      * or OpenAI Whisper, echoes what was heard, then re-routes the text through
      * the normal handleMessage pipeline so all skills and AI routing work as usual.
      */
     private suspend fun handleVoiceNote(msg: IncomingMessage): String {
-        val attachment = msg.attachment ?: return "🎙️ No voice attachment found."
+        val attachment = msg.attachment ?: return "--- No voice attachment found."
         poller.sendTyping(msg.chatId)
 
         val downloaded = poller.downloadAttachment(attachment)
-            ?: return "🎙️ Could not download the voice note — please try again."
+            ?: return "--- Could not download the voice note - please try again."
 
         return try {
             val mimeType = attachment.mimeType.ifBlank { "audio/ogg" }
@@ -1683,21 +1683,21 @@ Tell me what to do — English or Hindi. I'll do it.
             if (transcript.isNullOrBlank()) {
                 return when (config.agentProvider) {
                     AIProvider.GEMINI ->
-                        "🎙️ Could not transcribe. Make sure your Gemini key supports audio (Gemini 2.0 Flash or later)."
+                        "--- Could not transcribe. Make sure your Gemini key supports audio (Gemini 2.0 Flash or later)."
                     AIProvider.OPENAI ->
-                        "🎙️ Whisper transcription failed. Check your OpenAI API key in Settings."
+                        "--- Whisper transcription failed. Check your OpenAI API key in Settings."
                     AIProvider.CLAUDE ->
-                        "🎙️ Claude doesn't support audio. Switch to Gemini 2.0+ or OpenAI in Settings → AI Provider."
+                        "--- Claude doesn't support audio. Switch to Gemini 2.0+ or OpenAI in Settings - AI Provider."
                 }
             }
 
             // Echo what was understood so the user can verify
-            poller.sendMessage(msg.chatId, "🎙️ Heard: _\"${transcript.trim()}\"_")
+            poller.sendMessage(msg.chatId, "--- Heard: _\"${transcript.trim()}\"_")
 
-            // Re-run the transcription through the full pipeline — all skills work exactly as for text
+            // Re-run the transcription through the full pipeline - all skills work exactly as for text
             handleMessage(msg.copy(text = transcript.trim(), attachment = null))
         } catch (e: Exception) {
-            "🎙️ Voice transcription error: ${e.message}"
+            "--- Voice transcription error: ${e.message}"
         } finally {
             runCatching { downloaded.file.delete() }
         }
@@ -1709,14 +1709,14 @@ Tell me what to do — English or Hindi. I'll do it.
             AIProvider.GEMINI -> transcribeWithGemini(file, mimeType)
             AIProvider.OPENAI -> transcribeWithWhisper(file, mimeType)
             AIProvider.CLAUDE -> {
-                // Claude has no audio API — try Whisper if the key happens to be an OpenAI key
+                // Claude has no audio API - try Whisper if the key happens to be an OpenAI key
                 if (config.agentApiKey.startsWith("sk-")) transcribeWithWhisper(file, mimeType) else null
             }
         }
     }
 
     /**
-     * Gemini audio transcription — sends audio bytes as base64 inline_data.
+     * Gemini audio transcription - sends audio bytes as base64 inline_data.
      * Requires Gemini 2.0 Flash or later (supports multimodal audio natively).
      */
     private suspend fun transcribeWithGemini(file: java.io.File, mimeType: String): String? =
@@ -1728,7 +1728,7 @@ Tell me what to do — English or Hindi. I'll do it.
                         "parts" to listOf(
                             mapOf("text" to
                                 "Transcribe this voice message exactly as spoken. " +
-                                "Return ONLY the transcription — no quotes, no explanation, no prefix. " +
+                                "Return ONLY the transcription - no quotes, no explanation, no prefix. " +
                                 "If it is a command like 'order pizza from Swiggy', return exactly that."
                             ),
                             mapOf("inline_data" to mapOf("mime_type" to mimeType, "data" to audioBase64)),
@@ -1756,7 +1756,7 @@ Tell me what to do — English or Hindi. I'll do it.
         }
 
     /**
-     * OpenAI Whisper transcription — multipart POST to /v1/audio/transcriptions.
+     * OpenAI Whisper transcription - multipart POST to /v1/audio/transcriptions.
      * Works with any OpenAI key. Supports ogg, mp3, mp4, wav, webm, m4a.
      */
     private suspend fun transcribeWithWhisper(file: java.io.File, mimeType: String): String? =
@@ -1780,13 +1780,13 @@ Tell me what to do — English or Hindi. I'll do it.
             } catch (_: Exception) { null }
         }
 
-    // ── Device info helpers (for /status) ────────────────────────────────────
+    // -- Device info helpers (for /status) ------------------------------------
     private fun getBatteryLevel(): String {
         return try {
             val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
             val pct = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
             val charging = bm.isCharging
-            if (charging) "$pct% ⚡" else "$pct%"
+            if (charging) "$pct% -" else "$pct%"
         } catch (_: Exception) { "N/A" }
     }
 
@@ -1860,14 +1860,14 @@ Tell me what to do — English or Hindi. I'll do it.
 
         grouped[true]?.let { official ->
             official.forEach { s ->
-                sb.appendLine("*${s.name}* — ${s.description}")
+                sb.appendLine("*${s.name}* - ${s.description}")
             }
         }
 
         grouped[false]?.let { community ->
             sb.appendLine("\n*Community Skills:*")
             community.forEach { s ->
-                sb.appendLine("${s.name} by ${s.author} — ${s.description}")
+                sb.appendLine("${s.name} by ${s.author} - ${s.description}")
             }
         }
 
@@ -1897,23 +1897,23 @@ Tell me what to do — English or Hindi. I'll do it.
         return buildString {
             appendLine("*BharatClaw Status*")
             appendLine()
-            appendLine("🤖 *Agent*")
-            appendLine("Running · $uptime uptime · $count commands today")
+            appendLine("-- *Agent*")
+            appendLine("Running - $uptime uptime - $count commands today")
             appendLine("AI: $agentProvider${if (agentModel.isNotBlank()) " ($agentModel)" else ""}")
             appendLine("Research: $researchProvider${if (researchModel.isNotBlank()) " ($researchModel)" else ""}")
-            appendLine("Skills: ${skillRunner.listSkills().size} loaded · Apps learned: $knownApps · Rules: $memCount")
+            appendLine("Skills: ${skillRunner.listSkills().size} loaded - Apps learned: $knownApps - Rules: $memCount")
             appendLine()
-            appendLine("📱 *Device*")
-            appendLine("Battery: $batteryPct · Network: $wifiName · Free: $storageFree")
+            appendLine("-- *Device*")
+            appendLine("Battery: $batteryPct - Network: $wifiName - Free: $storageFree")
             appendLine()
-            appendLine("🔐 *Permissions & Access*")
+            appendLine("-- *Permissions & Access*")
             append(health)
         }.trimEnd()
     }
 
     /**
      * Checks every special permission BharatClaw needs.
-     * ✅ = granted, ❌ = critical missing, ⚠️ = optional missing.
+     * - = granted, - = critical missing, -- = optional missing.
      */
     private fun buildPermissionsHealth(notifGranted: Boolean, mutedCount: Int): String {
         val pkg = context.packageName
@@ -1922,43 +1922,43 @@ Tell me what to do — English or Hindi. I'll do it.
             // 1. Accessibility Service
             val accessOk = AgentAccessibilityService.isConnected
             if (accessOk) {
-                appendLine("✅ Accessibility Service — on-screen control active")
+                appendLine("- Accessibility Service - on-screen control active")
             } else {
-                appendLine("❌ *Accessibility Service* — CRITICAL, nothing works without this")
-                appendLine("   Fix: Settings → Accessibility → BharatClaw → ON")
+                appendLine("- *Accessibility Service* - CRITICAL, nothing works without this")
+                appendLine("   Fix: Settings - Accessibility - BharatClaw - ON")
             }
 
             // 2. Battery Optimisation
             val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
             val batteryOk = pm.isIgnoringBatteryOptimizations(pkg)
             if (batteryOk) {
-                appendLine("✅ Battery Optimisation — unrestricted, agent stays alive")
+                appendLine("- Battery Optimisation - unrestricted, agent stays alive")
             } else {
-                appendLine("❌ *Battery Optimisation* — agent will die in background!")
-                appendLine("   Fix: Settings → Battery → App battery usage → BharatClaw → Unrestricted")
+                appendLine("- *Battery Optimisation* - agent will die in background!")
+                appendLine("   Fix: Settings - Battery - App battery usage - BharatClaw - Unrestricted")
                 val mfr = android.os.Build.MANUFACTURER.lowercase()
                 when (mfr) {
                     "xiaomi", "redmi", "poco" ->
-                        appendLine("   MIUI: Settings → Apps → BharatClaw → Battery Saver → No restrictions + Autostart ON")
+                        appendLine("   MIUI: Settings - Apps - BharatClaw - Battery Saver - No restrictions + Autostart ON")
                     "samsung" ->
-                        appendLine("   Samsung: Device Care → Battery → Background usage limits → Never sleeping → Add BharatClaw")
+                        appendLine("   Samsung: Device Care - Battery - Background usage limits - Never sleeping - Add BharatClaw")
                     "oneplus" ->
-                        appendLine("   OnePlus: Settings → Battery → Battery Optimisation → BharatClaw → Don't optimise")
+                        appendLine("   OnePlus: Settings - Battery - Battery Optimisation - BharatClaw - Don't optimise")
                     "oppo", "realme" ->
-                        appendLine("   ColorOS: Settings → Battery → Power Saving → BharatClaw → Don't restrict")
+                        appendLine("   ColorOS: Settings - Battery - Power Saving - BharatClaw - Don't restrict")
                     "vivo" ->
-                        appendLine("   FunTouchOS: Settings → Battery → Background Power → BharatClaw → No restrictions")
+                        appendLine("   FunTouchOS: Settings - Battery - Background Power - BharatClaw - No restrictions")
                     "huawei", "honor" ->
-                        appendLine("   EMUI: Settings → Apps → BharatClaw → Battery → Run in background → Enable")
+                        appendLine("   EMUI: Settings - Apps - BharatClaw - Battery - Run in background - Enable")
                 }
             }
 
             // 3. Notification Access
             if (notifGranted) {
-                appendLine("✅ Notification Access — relay active${if (mutedCount > 0) " ($mutedCount muted)" else ""}")
+                appendLine("- Notification Access - relay active${if (mutedCount > 0) " ($mutedCount muted)" else ""}")
             } else {
-                appendLine("⚠️ Notification Access — relay disabled")
-                appendLine("   Fix: Settings → Notification Access → BharatClaw → ON")
+                appendLine("-- Notification Access - relay disabled")
+                appendLine("   Fix: Settings - Notification Access - BharatClaw - ON")
             }
 
             // 4. Exact Alarms (Android 12+)
@@ -1967,10 +1967,10 @@ Tell me what to do — English or Hindi. I'll do it.
                 am.canScheduleExactAlarms()
             } else true
             if (exactAlarmsOk) {
-                appendLine("✅ Alarms & Reminders — /schedule fires on time")
+                appendLine("- Alarms & Reminders - /schedule fires on time")
             } else {
-                appendLine("⚠️ Alarms & Reminders — /schedule may fire late")
-                appendLine("   Fix: Settings → Apps → Special app access → Alarms & reminders → BharatClaw → Allow")
+                appendLine("-- Alarms & Reminders - /schedule may fire late")
+                appendLine("   Fix: Settings - Apps - Special app access - Alarms & reminders - BharatClaw - Allow")
             }
 
             // 5. Contacts
@@ -1978,10 +1978,10 @@ Tell me what to do — English or Hindi. I'll do it.
                 context, android.Manifest.permission.READ_CONTACTS
             ) == PackageManager.PERMISSION_GRANTED
             if (contactsOk) {
-                appendLine("✅ Contacts — ContactsSkill can read your contacts")
+                appendLine("- Contacts - ContactsSkill can read your contacts")
             } else {
-                appendLine("⚠️ Contacts — ContactsSkill limited")
-                appendLine("   Fix: Settings → Apps → BharatClaw → Permissions → Contacts → Allow")
+                appendLine("-- Contacts - ContactsSkill limited")
+                appendLine("   Fix: Settings - Apps - BharatClaw - Permissions - Contacts - Allow")
             }
 
             // 6. Calendar
@@ -1989,10 +1989,10 @@ Tell me what to do — English or Hindi. I'll do it.
                 context, android.Manifest.permission.READ_CALENDAR
             ) == PackageManager.PERMISSION_GRANTED
             if (calendarOk) {
-                appendLine("✅ Calendar — CalendarSkill can read your events")
+                appendLine("- Calendar - CalendarSkill can read your events")
             } else {
-                appendLine("⚠️ Calendar — CalendarSkill limited")
-                appendLine("   Fix: Settings → Apps → BharatClaw → Permissions → Calendar → Allow")
+                appendLine("-- Calendar - CalendarSkill limited")
+                appendLine("   Fix: Settings - Apps - BharatClaw - Permissions - Calendar - Allow")
             }
 
             // 7. Storage (only needed Android 9 and below)
@@ -2001,10 +2001,10 @@ Tell me what to do — English or Hindi. I'll do it.
                 context, android.Manifest.permission.READ_EXTERNAL_STORAGE
             ) == PackageManager.PERMISSION_GRANTED
             if (storageOk) {
-                appendLine("✅ Storage — file access available")
+                appendLine("- Storage - file access available")
             } else {
-                appendLine("⚠️ Storage — FileManagerSkill limited")
-                appendLine("   Fix: Settings → Apps → BharatClaw → Permissions → Storage → Allow")
+                appendLine("-- Storage - FileManagerSkill limited")
+                appendLine("   Fix: Settings - Apps - BharatClaw - Permissions - Storage - Allow")
             }
 
             // 8. Usage Access (app foreground detection)
@@ -2018,10 +2018,10 @@ Tell me what to do — English or Hindi. I'll do it.
                 opMode == AppOpsManager.MODE_ALLOWED
             } catch (_: Exception) { false }
             if (usageOk) {
-                appendLine("✅ Usage Access — foreground app detection is precise")
+                appendLine("- Usage Access - foreground app detection is precise")
             } else {
-                appendLine("⚠️ Usage Access — app detection uses accessibility fallback (still works)")
-                appendLine("   Optional: Settings → Apps → Special app access → Usage access → BharatClaw")
+                appendLine("-- Usage Access - app detection uses accessibility fallback (still works)")
+                appendLine("   Optional: Settings - Apps - Special app access - Usage access - BharatClaw")
             }
 
             // 9. OEM Autostart warning
@@ -2029,14 +2029,14 @@ Tell me what to do — English or Hindi. I'll do it.
             val oemRisky = mfr in setOf("xiaomi", "redmi", "poco", "samsung", "oneplus", "oppo", "vivo", "realme", "huawei", "honor")
             if (oemRisky) {
                 appendLine()
-                appendLine("⚠️ *${android.os.Build.MANUFACTURER} phone* — enable Autostart or agent stops after reboot")
+                appendLine("-- *${android.os.Build.MANUFACTURER} phone* - enable Autostart or agent stops after reboot")
                 when (mfr) {
-                    "xiaomi", "redmi", "poco" -> appendLine("   MIUI: Settings → Apps → Manage apps → BharatClaw → Autostart → ON")
-                    "samsung" -> appendLine("   Settings → Device Care → Battery → Background usage limits → Never sleeping → Add")
-                    "oneplus" -> appendLine("   Settings → Battery → Battery Optimisation → BharatClaw → Don't optimise")
-                    "oppo", "realme" -> appendLine("   Settings → Battery → Power Saving → BharatClaw → Don't restrict")
-                    "vivo" -> appendLine("   Settings → Battery → Background Power → BharatClaw → No restrictions")
-                    "huawei", "honor" -> appendLine("   Settings → Apps → BharatClaw → Battery → Run in background → Enable")
+                    "xiaomi", "redmi", "poco" -> appendLine("   MIUI: Settings - Apps - Manage apps - BharatClaw - Autostart - ON")
+                    "samsung" -> appendLine("   Settings - Device Care - Battery - Background usage limits - Never sleeping - Add")
+                    "oneplus" -> appendLine("   Settings - Battery - Battery Optimisation - BharatClaw - Don't optimise")
+                    "oppo", "realme" -> appendLine("   Settings - Battery - Power Saving - BharatClaw - Don't restrict")
+                    "vivo" -> appendLine("   Settings - Battery - Background Power - BharatClaw - No restrictions")
+                    "huawei", "honor" -> appendLine("   Settings - Apps - BharatClaw - Battery - Run in background - Enable")
                 }
             }
 
@@ -2045,9 +2045,9 @@ Tell me what to do — English or Hindi. I'll do it.
             val warnCount = listOf(!notifGranted, !exactAlarmsOk, !contactsOk, !calendarOk, !storageOk).count { it }
             appendLine()
             when {
-                criticalMissing -> append("🚨 *Fix the ❌ items above — agent is impaired*")
-                warnCount > 0 -> append("✨ Core healthy · $warnCount optional permission${if (warnCount != 1) "s" else ""} missing")
-                else -> append("✨ All permissions granted — fully operational")
+                criticalMissing -> append("-- *Fix the - items above - agent is impaired*")
+                warnCount > 0 -> append("- Core healthy - $warnCount optional permission${if (warnCount != 1) "s" else ""} missing")
+                else -> append("- All permissions granted - fully operational")
             }
         }
     }
@@ -2072,7 +2072,7 @@ data class AgentConfig(
     val imageApiProvider: String = "together",
     /** Ultra = vision ON, full context, best model. Efficient = no vision, trimmed context. */
     val ultraMode: Boolean = false,
-    /** WhatsApp channel — authorized sender number that can send commands via WhatsApp. */
+    /** WhatsApp channel - authorized sender number that can send commands via WhatsApp. */
     val whatsappChannelNumber: String = "",
     /** AI call answering via ElevenLabs voice clone + Whisper STT. */
     val callAnsweringEnabled: Boolean = false,
@@ -2080,6 +2080,6 @@ data class AgentConfig(
     val elevenLabsVoiceId: String = "",
     /** Owner's name used in the AI greeting: "Hi, this is [ownerName]'s AI assistant." */
     val ownerName: String = "",
-    /** Comma-separated numbers (any format) that should NOT be AI-answered — owner is alerted instead. */
+    /** Comma-separated numbers (any format) that should NOT be AI-answered - owner is alerted instead. */
     val vipCallerNumbers: String = "",
 )

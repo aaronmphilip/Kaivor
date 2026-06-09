@@ -1,14 +1,14 @@
-# Contributing to BharatDroid
+# Contributing to BharatClaw
 
 First off — thank you for wanting to help! 🙏
 
-BharatDroid is built for India and the world. Whether you fix a bug, add a new skill, improve docs, or just star the repo — every bit helps.
+BharatClaw is built for India and the world. Whether you fix a bug, add a new skill, improve docs, or just star the repo — every bit helps.
 
 ---
 
 ## 🐛 Reporting Bugs
 
-1. Check [existing issues](https://github.com/aaronmphilip/BharatDroid/issues) first
+1. Check [existing issues](https://github.com/aaronmphilip/BharatClaw/issues) first
 2. Open a new issue with:
    - What you said to the bot
    - What it did vs what you expected
@@ -37,7 +37,7 @@ class MyAppSkill : Skill {
         version = "1.0.0",
         description = "What this skill does",
         author = "your-github-username",
-        trusted = false,                       // true = BharatDroid team only
+        trusted = false,                       // true = BharatClaw team only
         permissions = setOf(
             Permission.OPEN_APP,
             Permission.READ_SCREEN,
@@ -118,8 +118,8 @@ register(MyAppSkill())
 
 ```bash
 # Clone
-git clone https://github.com/aaronmphilip/BharatDroid.git
-cd BharatDroid
+git clone https://github.com/aaronmphilip/BharatClaw.git
+cd BharatClaw
 
 # Open in Android Studio (Hedgehog or later)
 # File → Open → select the `android/` folder

@@ -16,7 +16,7 @@ class CurrencySkill : Skill {
         id = "currency",
         name = "Currency Converter",
         version = "1.0.0",
-        description = "Convert between currencies and get live exchange rates — works instantly via API without opening any app. Supports USD, EUR, GBP, INR, JPY, AED, SGD, AUD, CAD, and 30+ more.",
+        description = "Convert between currencies and get live exchange rates - works instantly via API without opening any app. Supports USD, EUR, GBP, INR, JPY, AED, SGD, AUD, CAD, and 30+ more.",
         author = "bharatclaw-team",
         trusted = true,
         permissions = emptySet(),

@@ -19,16 +19,16 @@ import android.widget.TextView
 import androidx.core.app.NotificationCompat
 
 /**
- * NotchOverlay — premium black floating pill with spring animations.
+ * Floating task-progress pill shown while BharatClaw runs an automation.
  *
  * States:
- *   idle    → nothing visible
- *   show    → slides in from top, text fades in, dot pulses
- *   hide    → text fades, pill slides out to top
+ *   idle: nothing visible
+ *   show: slides in from top, text fades in, dot pulses
+ *   hide: text fades, pill slides out to top
  *
  * Usage:
  *   NotchOverlay.show(context, "Booking Uber...") { cancelFn() }
- *   NotchOverlay.updateText("Picking your ride…")
+ *   NotchOverlay.updateText("Picking your ride...")
  *   NotchOverlay.hide()
  */
 object NotchOverlay {
@@ -47,13 +47,13 @@ object NotchOverlay {
     private var dragStartParamY = 0
     private var dragging = false
 
-    // ── Public ────────────────────────────────────────────────────────────────
+    // Public API
 
     fun show(context: Context, taskText: String, onCancel: () -> Unit) {
         if (!isEnabled(context)) return
         if (!hasPermission(context)) {
             // Fallback: update the foreground service notification to show the running task
-            updateServiceNotification(context, "⚡ $taskText")
+            updateServiceNotification(context, "Running: $taskText")
             return
         }
         main.post {
@@ -61,6 +61,7 @@ object NotchOverlay {
             val appCtx = context.applicationContext
             val manager = appCtx.getSystemService(Context.WINDOW_SERVICE) as WindowManager
             wm = manager
+            val targetY = getNotchTargetY(appCtx)
 
             val view = LayoutInflater.from(appCtx).inflate(R.layout.overlay_notch, null)
             root = view
@@ -73,7 +74,7 @@ object NotchOverlay {
             tvTask.alpha = 0f
             btnStop.alpha = 0f
             btnStop.setOnClickListener {
-                updateText("Stopping…")
+                updateText("Stopping...")
                 onCancel()
             }
 
@@ -87,16 +88,16 @@ object NotchOverlay {
                 PixelFormat.TRANSLUCENT,
             ).apply {
                 gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                y = -200     // start off-screen above status bar
+                y = -160
             }
             lp = params
 
             setupDrag(view, manager, params)
             runCatching { manager.addView(view, params) }
 
-            // ── SLIDE IN ─────────────────────────────────────────────────────
+            // Slide in
             slideAnim?.cancel()
-            slideAnim = ValueAnimator.ofInt(-200, 72).apply {
+            slideAnim = ValueAnimator.ofInt(-160, targetY).apply {
                 duration = 420
                 interpolator = OvershootInterpolator(0.8f)
                 addUpdateListener { anim ->
@@ -125,7 +126,7 @@ object NotchOverlay {
 
     fun hide(context: Context? = null) {
         // Restore the foreground notification to idle text when task finishes
-        context?.let { updateServiceNotification(it, "Listening for your Telegram commands…") }
+        context?.let { updateServiceNotification(it, "Listening for Telegram commands...") }
         main.post {
             val view = root ?: return@post
             val manager = wm ?: return@post
@@ -139,7 +140,7 @@ object NotchOverlay {
             view.findViewById<ImageButton>(R.id.btnNotchCancel)
                 ?.animate()?.alpha(0f)?.setDuration(100)?.start()
 
-            // ── SLIDE OUT ────────────────────────────────────────────────────
+            // Slide out
             slideAnim?.cancel()
             slideAnim = ValueAnimator.ofInt(params.y, -300).apply {
                 duration = 280
@@ -165,6 +166,12 @@ object NotchOverlay {
 
     fun hasPermission(context: Context): Boolean = Settings.canDrawOverlays(context)
 
+    private fun getNotchTargetY(context: Context): Int {
+        val id = context.resources.getIdentifier("status_bar_height", "dimen", "android")
+        val statusBarHeight = if (id > 0) context.resources.getDimensionPixelSize(id) else 24
+        return statusBarHeight + 12
+    }
+
     private fun updateServiceNotification(context: Context, text: String) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
             ?: return
@@ -177,10 +184,10 @@ object NotchOverlay {
         nm.notify(AgentForegroundService.NOTIFICATION_ID, notif)
     }
 
-    // ── Internal ─────────────────────────────────────────────────────────────
+
+    // Internal helpers
 
     private fun startPulse(dot: View) {
-        pulseAnim?.cancel()
         pulseAnim = ObjectAnimator.ofFloat(dot, "alpha", 1f, 0.2f).apply {
             duration = 800
             repeatCount = ValueAnimator.INFINITE

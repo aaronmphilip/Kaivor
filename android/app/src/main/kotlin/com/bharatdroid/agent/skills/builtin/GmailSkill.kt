@@ -9,7 +9,7 @@ class GmailSkill : Skill {
         id = "gmail",
         name = "Gmail",
         version = "4.0.0",
-        description = "Read, compose, send, reply, search, delete emails — any Gmail task",
+        description = "Read, compose, send, reply, search, delete emails - any Gmail task",
         author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
@@ -80,7 +80,7 @@ STEPS:
 STEPS:
 1. Look at the inbox list
 2. Find unread emails (bold text)
-3. Report the top 5 emails — sender name, subject, and a brief preview of each"""
+3. Report the top 5 emails - sender name, subject, and a brief preview of each"""
 
             "compose", "send" -> {
                 if (to.isBlank()) return SkillResult.Failure("Who should I send the email to? Provide a 'to' address.")
@@ -91,19 +91,19 @@ STEPS:
 1. Tap the Compose button (pencil/+ FAB at bottom right).
 2. Wait for the compose screen to open.
 3. Tap the "To" field and type "$to".
-   ? A suggestion dropdown appears below the field — TAP the best matching contact suggestion.
+   ? A suggestion dropdown appears below the field - TAP the best matching contact suggestion.
    ? If no suggestion appears (e.g. it's a full email address), press Enter or tap space to add the recipient chip.
    ? The recipient chip must appear before moving on.
 4. Tap the "Subject" field and type "$subject".
 5. Tap the email body area (below Subject) and type "$body".
 6. Tap the Send button (paper plane ? at top right).
-7. Confirm the email was sent — you should return to inbox or see a "Message sent" toast.
+7. Confirm the email was sent - you should return to inbox or see a "Message sent" toast.
 STRICT RULES:
-- ALWAYS tap a suggestion from the dropdown after typing the recipient — this is how Gmail confirms the address.
-- Do NOT tap outside the compose window — it will discard the draft.
+- ALWAYS tap a suggestion from the dropdown after typing the recipient - this is how Gmail confirms the address.
+- Do NOT tap outside the compose window - it will discard the draft.
 - The To field must show the recipient chip before sending."""
                 return SkillResult.NeedsConfirmation(
-                    prompt = "?? *Send Email via Gmail*\n\nTo: *$to*\nSubject: *$subject*\nMessage: \"${body.take(120)}${if (body.length > 120) "…" else ""}\"\n\nReply *YES* to send.",
+                    prompt = "*Send Email via Gmail*\n\nTo: *$to*\nSubject: *$subject*\nMessage: \"${body.take(120)}${if (body.length > 120) "-" else ""}\"\n\nReply *YES* to send.",
                     onConfirm = {
                         val result = agent.executeGoal(runner, composeGoal, maxSteps = 60)
                         SkillResult.Success(result)
@@ -126,7 +126,7 @@ STRICT RULES:
 - Do NOT reply to the wrong email thread.
 - Do NOT tap Reply All unless the user specifically asked."""
                 return SkillResult.NeedsConfirmation(
-                    prompt = "?? *Reply Email via Gmail*\n\n${if (emailContext.isNotBlank()) "Re: *$emailContext*\n" else ""}Reply: \"${body.take(120)}${if (body.length > 120) "…" else ""}\"\n\nReply *YES* to send.",
+                    prompt = "*Reply Email via Gmail*\n\n${if (emailContext.isNotBlank()) "Re: *$emailContext*\n" else ""}Reply: \"${body.take(120)}${if (body.length > 120) "-" else ""}\"\n\nReply *YES* to send.",
                     onConfirm = {
                         val result = agent.executeGoal(runner, replyGoal, maxSteps = 55)
                         SkillResult.Success(result)
@@ -174,14 +174,14 @@ STEPS:
 STEPS:
 1. Tap the three-line hamburger menu at the top left
 2. Tap "Sent" in the navigation drawer
-3. Read the last 5 sent emails — recipient, subject, date"""
+3. Read the last 5 sent emails - recipient, subject, date"""
 
             "drafts" ->
                 """You are in Gmail. Open Drafts folder.
 STEPS:
 1. Tap the three-line hamburger menu at the top left
 2. Tap "Drafts" in the navigation drawer
-3. List the drafts — subject, and who they were being sent to"""
+3. List the drafts - subject, and who they were being sent to"""
 
             else ->
                 params["goal"] as? String ?: "Do this in Gmail: $action $to $search".trim()

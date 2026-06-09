@@ -11,10 +11,10 @@ import java.net.URLEncoder
 
 /**
  * Generates a QR code for any text, URL, UPI ID, or contact info and sends it
- * directly in the Telegram chat. No API key needed — uses qrserver.com (free).
+ * directly in the Telegram chat. No API key needed - uses qrserver.com (free).
  *
  * Examples:
- *   "make a QR code for bharatdroid.com"
+ *   "make a QR code for bharatclaw.com"
  *   "generate QR for UPI ID payments@yourbank"
  *   "QR code for my number 9876543210"
  */
@@ -24,11 +24,11 @@ class QrCodeSkill : Skill {
         id = "qr_code",
         name = "QR Code Generator",
         version = "1.0.0",
-        description = "Generate a QR code for any URL, text, UPI ID, phone number or contact and send it directly in Telegram chat — no app or API key needed.",
+        description = "Generate a QR code for any URL, text, UPI ID, phone number or contact and send it directly in Telegram chat - no app or API key needed.",
         author = "bharatclaw-team",
         trusted = true,
         permissions = emptySet(),
-        exampleParamsHint = """{"content":"https://bharatdroid.com"} | {"content":"upi://pay?pa=you@upi","label":"My UPI QR"} | {"content":"9876543210","label":"Call me"}""",
+        exampleParamsHint = """{"content":"https://bharatclaw.com"} | {"content":"upi://pay?pa=you@upi","label":"My UPI QR"} | {"content":"9876543210","label":"Call me"}""",
     )
 
     private val client = SharedHttpClient.instance
@@ -44,7 +44,7 @@ class QrCodeSkill : Skill {
 
         val label = (params["label"] as? String)?.trim()
         val sizeParam = (params["size"] as? Number)?.toInt()?.coerceIn(100, 1000) ?: 400
-        val caption = label ?: "QR: ${content.take(60)}${if (content.length > 60) "…" else ""}"
+        val caption = label ?: "QR: ${content.take(60)}${if (content.length > 60) "..." else ""}"
 
         return withContext(Dispatchers.IO) {
             try {
@@ -66,7 +66,7 @@ class QrCodeSkill : Skill {
 
                 SkillResult.Media(
                     bytes = bytes,
-                    caption = "📲 $caption",
+                    caption = "$caption",
                     mimeType = "image/png",
                     filename = "qrcode.png",
                 )

@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
  * everywhere. Each client holds its own connection pool and thread pool. Reusing connections and
  * threads reduces latency and saves memory."
  *
- * Without this, each skill created its own instance — 4+ thread pools running simultaneously
+ * Without this, each skill created its own instance - 4+ thread pools running simultaneously
  * for background API calls, wasting ~20 threads and their stack memory.
  */
 internal object SharedHttpClient {

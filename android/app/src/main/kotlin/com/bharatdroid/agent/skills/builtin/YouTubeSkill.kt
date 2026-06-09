@@ -11,7 +11,7 @@ class YouTubeSkill : Skill {
         id = "youtube",
         name = "YouTube",
         version = "9.0.0",
-        description = "Play videos, search, go to channels, share video links, skip ads — any YouTube task",
+        description = "Play videos, search, go to channels, share video links, skip ads - any YouTube task",
         author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
@@ -22,9 +22,9 @@ class YouTubeSkill : Skill {
         allowedPackages = setOf("com.google.android.youtube", "com.whatsapp"),
         exampleParamsHint = """{"action": "play", "query": "Arijit Singh Tum Hi Ho"}""",
         uiKnowledge = """
-YouTube home screen has a search icon (magnifying glass) at top-right. Tapping it opens a search field. After searching, results appear as a scrollable list — each result shows a thumbnail, title, channel name, view count, and duration. Full videos show duration like '4:22' in thumbnail corner. Shorts show a vertical phone icon or say 'Shorts'. Channel results show a round avatar with subscriber count. The bottom navigation has: Home, Shorts, +, Subscriptions, Library tabs — NEVER tap these during a search task.
+YouTube home screen has a search icon (magnifying glass) at top-right. Tapping it opens a search field. After searching, results appear as a scrollable list - each result shows a thumbnail, title, channel name, view count, and duration. Full videos show duration like '4:22' in thumbnail corner. Shorts show a vertical phone icon or say 'Shorts'. Channel results show a round avatar with subscriber count. The bottom navigation has: Home, Shorts, +, Subscriptions, Library tabs - NEVER tap these during a search task.
 
-AD DETECTION: When a YouTube ad plays before a video, the screen shows 'Skip Ad', 'Skip Ads', 'Ad ·', 'Ad 1 of 2', 'Visit advertiser', or 'Your video will play after the ad'. If 'Skip Ad' / 'Skip Ads' button is visible, tap it immediately. If not visible yet, wait — it appears after 5 seconds. Non-skippable ads must be waited out (usually 15-30 seconds).
+AD DETECTION: When a YouTube ad plays before a video, the screen shows 'Skip Ad', 'Skip Ads', 'Ad -', 'Ad 1 of 2', 'Visit advertiser', or 'Your video will play after the ad'. If 'Skip Ad' / 'Skip Ads' button is visible, tap it immediately. If not visible yet, wait - it appears after 5 seconds. Non-skippable ads must be waited out (usually 15-30 seconds).
 
 SHARE LINK: The Share button is in the action row BELOW the video player (same row as Like, Dislike). Tap Share ? a bottom sheet opens. Tap 'Copy link' in that sheet. The YouTube URL is now in the clipboard.
 """.trimIndent(),
@@ -65,8 +65,8 @@ SHARE LINK: The Share button is in the action row BELOW the video player (same r
             "skip_ads", "skip_ad", "watch", "wait_ads" -> {
                 // Skip/wait for ads on whatever is currently playing
                 val hadAd = waitForAdsToFinish(runner, maxWaitMs = 60_000)
-                if (hadAd) SkillResult.Success("? Ads done — video is playing.")
-                else SkillResult.Success("No ads detected — video is already playing.")
+                if (hadAd) SkillResult.Success("? Ads done - video is playing.")
+                else SkillResult.Success("No ads detected - video is already playing.")
             }
 
             "subscriptions", "subs" -> {
@@ -123,12 +123,12 @@ You are watching a YouTube video. Get the video link by following these steps:
    - If the action row is not visible, scroll up slightly.
 2. Tap the Share button.
    ? A bottom sheet appears with app icons and a "Copy link" option.
-3. Tap "Copy link" (NOT any app icon like WhatsApp/Telegram — ONLY "Copy link").
+3. Tap "Copy link" (NOT any app icon like WhatsApp/Telegram - ONLY "Copy link").
    ? The YouTube link is now copied to the clipboard.
 4. Say "LINK COPIED" when done.
 
 STRICT RULES:
-- Tap ONLY "Copy link" in the share sheet — do not tap WhatsApp, Telegram, Instagram, or any other app icon.
+- Tap ONLY "Copy link" in the share sheet - do not tap WhatsApp, Telegram, Instagram, or any other app icon.
 - If the Share button is behind the video controls, tap the video once to reveal controls, then tap Share.
 - Do NOT go back or navigate away from the video.
 """.trimIndent()
@@ -145,7 +145,7 @@ STRICT RULES:
         if (link.isBlank() || !isYouTubeLink) {
             return SkillResult.Failure(
                 "Couldn't read the YouTube link from clipboard (got: \"${link.take(80)}\"). " +
-                "The video is playing — you can manually tap Share ? Copy link."
+                "The video is playing - you can manually tap Share ? Copy link."
             )
         }
 
@@ -154,7 +154,7 @@ STRICT RULES:
             return sendLinkViaWhatsApp(runner, agent, link, contact, query)
         }
 
-        return SkillResult.Success("?? YouTube link:\n$link")
+        return SkillResult.Success("YouTube link:\n$link")
     }
 
     // -- Send a link via WhatsApp to a contact ---------------------------------
@@ -186,7 +186,7 @@ STEPS:
 7. Confirm the message appears in the chat as a sent bubble.
 
 STRICT RULES:
-- Send ONLY the link text above — no extra words before or after.
+- Send ONLY the link text above - no extra words before or after.
 - Do NOT tap any message bubble in the chat history.
 - Do NOT tap voice note / camera / attachment icons.
 - Stop as soon as the link is sent.
@@ -194,7 +194,7 @@ STRICT RULES:
 
         agent.executeGoal(runner, sendGoal, maxSteps = 55)
 
-        return SkillResult.Success("?? Sent YouTube link to *$contact*:\n$link\n_(video: $videoTitle)_")
+        return SkillResult.Success("Sent YouTube link to *$contact*:\n$link\n_(video: $videoTitle)_")
     }
 
     // -- Smart ad detection + skip/wait -----------------------------------------
@@ -203,10 +203,10 @@ STRICT RULES:
         runner: SandboxedRunner,
         maxWaitMs: Long = 60_000,
     ): Boolean {
-        // Ad presence signals — any of these means an ad is playing
+        // Ad presence signals - any of these means an ad is playing
         val adSignals = listOf(
             "Skip Ad", "Skip Ads", "skip ad", "skip ads",
-            "Ad ·", "Ad·", "·Ad",
+            "Ad -", "Ad-", "-Ad",
             "Ad 1 of", "Ad 2 of",
             "Visit advertiser",
             "Why this ad",
@@ -217,7 +217,7 @@ STRICT RULES:
         // Texts for the skippable-ad Skip button (appears after ~5 s)
         val skipButtonTexts = listOf("Skip Ad", "Skip Ads", "Skip ad", "Skip ads", "SKIP AD", "SKIP ADS", "Skip")
 
-        // Quick first-check — if no ad is playing right now, bail immediately
+        // Quick first-check - if no ad is playing right now, bail immediately
         val firstScreen = runner.readScreen()
         val hadAdAtStart = adSignals.any { firstScreen.contains(it, ignoreCase = true) }
         if (!hadAdAtStart) return false
@@ -236,7 +236,7 @@ STRICT RULES:
             }
 
             // -- Try to tap Skip button (appears only on skippable ads after 5s) --
-            // First try by element — more reliable than text-match alone
+            // First try by element - more reliable than text-match alone
             val elements = runner.getClickableElements()
             val skipEl = elements.firstOrNull { el ->
                 val combined = (el.text + " " + el.contentDescription).lowercase()
@@ -262,7 +262,7 @@ STRICT RULES:
                 continue
             }
 
-            // No skip button yet — non-skippable ad or skip not available yet
+            // No skip button yet - non-skippable ad or skip not available yet
             // Wait and try again
             delay(1500)
         }
@@ -393,10 +393,10 @@ STRICT RULES:
                     || afterScreen.contains("Like", ignoreCase = true)
                 val isOnChannel = isChannelPage(afterScreen)
                 if (isVideoPlaying) {
-                    return SkillResult.Success("?? Playing: *${target.text.take(80)}*")
+                    return SkillResult.Success("Playing: *${target.text.take(80)}*")
                 }
                 if (isOnChannel) {
-                    return SkillResult.Success("?? Opened channel: *${target.text.take(80)}*")
+                    return SkillResult.Success("Opened channel: *${target.text.take(80)}*")
                 }
                 return SkillResult.Success("Opened: *${target.text.take(80)}*")
             }
@@ -417,7 +417,7 @@ STRICT RULES:
             if (after.contains("Comments", ignoreCase = true)
                 || after.contains("Like", ignoreCase = true)
                 || isChannelPage(after)) {
-                return SkillResult.Success("?? Playing video for: *$searchQuery*")
+                return SkillResult.Success("Playing video for: *$searchQuery*")
             }
 
             val wentHome = !after.contains(searchQuery.take(5), ignoreCase = true)
@@ -427,7 +427,7 @@ STRICT RULES:
 
             if (wentHome) {
                 if (retryCount >= 1) {
-                    return SkillResult.Success("Searched YouTube for *$searchQuery* — tap a result to play.")
+                    return SkillResult.Success("Searched YouTube for *$searchQuery* - tap a result to play.")
                 }
                 tapSearchIcon(runner)
                 delay(500)
@@ -447,7 +447,7 @@ STRICT RULES:
             }
         }
 
-        return SkillResult.Success("Searched YouTube for *$searchQuery* — tap a result to play.")
+        return SkillResult.Success("Searched YouTube for *$searchQuery* - tap a result to play.")
     }
 
     // -- Dismiss YouTube-specific popups ---------------------------------------
@@ -511,34 +511,34 @@ STRICT RULES:
             appendLine("DO EXACTLY what the user asked. NOTHING MORE. NOTHING LESS.")
             appendLine()
             appendLine("STEPS:")
-            appendLine("1. Tap the Search icon (magnifying glass at top-right) — NOT the mic icon")
+            appendLine("1. Tap the Search icon (magnifying glass at top-right) - NOT the mic icon")
             appendLine("2. Type \"$searchTerm\" in the search field (text only, NOT voice)")
-            appendLine("3. Press Enter — wait for results")
+            appendLine("3. Press Enter - wait for results")
             appendLine("4. Dismiss banners (\"Got it\", \"No thanks\") if they appear")
             if (isChannelGoal) {
                 appendLine("5. FIND THE CHANNEL in results:")
                 appendLine("   - Look for a result that has a ROUND AVATAR + channel name + subscriber count")
                 appendLine("   - If you see filter chips at the top of results, tap \"Channels\" to filter")
                 appendLine("   - Tap the channel name/avatar to open the channel page")
-                appendLine("6. SUCCESS — you are DONE when you see the channel page:")
+                appendLine("6. SUCCESS - you are DONE when you see the channel page:")
                 appendLine("   - Channel name as a heading at top")
                 appendLine("   - Subscriber count (e.g. \"12M subscribers\")")
                 appendLine("   - Tab row with Videos / Shorts / Playlists")
                 appendLine("   - Call done IMMEDIATELY when you reach the channel page")
             } else {
-                appendLine("5. Do exactly what the goal says — tap the right video/channel/button")
+                appendLine("5. Do exactly what the goal says - tap the right video/channel/button")
                 appendLine("6. If an ad plays after tapping a video:")
                 appendLine("   - If 'Skip Ad' button appears ? tap it immediately")
                 appendLine("   - If no skip button ? wait for the ad to finish (do NOT go back)")
-                appendLine("7. SUCCESS — call done when you reach the target (video playing or action done)")
+                appendLine("7. SUCCESS - call done when you reach the target (video playing or action done)")
             }
             appendLine()
             appendLine("STRICT RULES:")
-            appendLine("- NEVER press back — scroll or tap visible elements instead")
+            appendLine("- NEVER press back - scroll or tap visible elements instead")
             appendLine("- NEVER tap Home/Shorts/Library/Subscriptions bottom tabs")
-            appendLine("- NEVER tap the mic/voice/camera icon — text search ONLY")
+            appendLine("- NEVER tap the mic/voice/camera icon - text search ONLY")
             appendLine("- Do NOT add extra actions (don't like if asked to subscribe)")
-            appendLine("- Call done IMMEDIATELY when goal is achieved — do NOT keep navigating")
+            appendLine("- Call done IMMEDIATELY when goal is achieved - do NOT keep navigating")
         }.trimEnd()
     }
 }

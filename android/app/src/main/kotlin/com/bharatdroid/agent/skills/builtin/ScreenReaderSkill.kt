@@ -41,7 +41,7 @@ class ScreenReaderSkill : Skill {
                     val screen = runner.readScreen()
                     if (screen.isBlank()) return SkillResult.Failure("Screen appears empty or unreadable.")
                     val header = if (question != null) "Q: $question\n\n" else ""
-                    SkillResult.Success("${header}📱 Screen content:\n```\n${screen.take(1200)}\n```")
+                    SkillResult.Success("${header}-- Screen content:\n```\n${screen.take(1200)}\n```")
                 }
             }
 
@@ -57,9 +57,9 @@ class ScreenReaderSkill : Skill {
                     val content = captureFullDocumentDedup(runner, maxScrolls)
                     val header = if (question != null) "Q: $question\n\n" else ""
                     val preview = content.take(3500)
-                    val suffix = if (content.length > 3500) "\n_...${content.length} chars total — ask me to summarize for a concise version._" else ""
+                    val suffix = if (content.length > 3500) "\n_...${content.length} chars total - ask me to summarize for a concise version._" else ""
                     SkillResult.Success(
-                        "${header}📱 Full content:\n```\n$preview\n```$suffix",
+                        "${header}-- Full content:\n```\n$preview\n```$suffix",
                         delivery = DeliveryMode.LONG_TEXT,
                     )
                 }
@@ -124,7 +124,7 @@ class ScreenReaderSkill : Skill {
 
     /**
      * Captures visible text across multiple scroll passes.
-     * Each pass reads the full screen — content is concatenated with scroll markers.
+     * Each pass reads the full screen - content is concatenated with scroll markers.
      * Used for AI summarization (AI handles de-dup in its context window).
      */
     private suspend fun captureVisibleDocument(
@@ -140,7 +140,7 @@ class ScreenReaderSkill : Skill {
             delay(650)
             val nextScreen = runner.readScreen()
             if (nextScreen.isNotBlank()) {
-                sb.appendLine("── scroll ${index + 2} ──")
+                sb.appendLine("-- scroll ${index + 2} --")
                 sb.appendLine(nextScreen)
             }
         }
@@ -149,7 +149,7 @@ class ScreenReaderSkill : Skill {
     }
 
     /**
-     * Deep document capture with deduplication — for full_read mode where we want
+     * Deep document capture with deduplication - for full_read mode where we want
      * unique content only. Stops automatically when no new content appears (end of doc).
      * Uses line-level deduplication so repeated nav bars / headers are suppressed.
      */
@@ -165,7 +165,7 @@ class ScreenReaderSkill : Skill {
                 val line = raw.trim()
                 // Skip blank lines and very short noise (single chars, decorators)
                 if (line.length < 3) return@forEach
-                // Case-insensitive dedup — navigation bars repeat on every screen
+                // Case-insensitive dedup - navigation bars repeat on every screen
                 if (seenLines.add(line.lowercase())) {
                     output.appendLine(line)
                 }

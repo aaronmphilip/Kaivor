@@ -26,9 +26,7 @@
             android:textSize="12sp"
             android:layout_marginTop="20dp" />
 
-        <!-- ═══════════════════════════════════ -->
         <!--  STEP 1: Welcome                   -->
-        <!-- ═══════════════════════════════════ -->
         <LinearLayout
             android:id="@+id/step1"
             android:layout_width="match_parent"
@@ -89,9 +87,7 @@
                 android:layout_marginTop="40dp" />
         </LinearLayout>
 
-        <!-- ═══════════════════════════════════ -->
         <!--  STEP 2: Telegram Bot Token        -->
-        <!-- ═══════════════════════════════════ -->
         <LinearLayout
             android:id="@+id/step2"
             android:layout_width="match_parent"
@@ -167,9 +163,7 @@
                 android:layout_marginTop="16dp" />
         </LinearLayout>
 
-        <!-- ═══════════════════════════════════ -->
         <!--  STEP 3: Auto-detect Chat ID       -->
-        <!-- ═══════════════════════════════════ -->
         <LinearLayout
             android:id="@+id/step3"
             android:layout_width="match_parent"
@@ -235,9 +229,7 @@
                 android:visibility="gone" />
         </LinearLayout>
 
-        <!-- ═══════════════════════════════════ -->
         <!--  STEP 4: Claude API Key            -->
-        <!-- ═══════════════════════════════════ -->
         <LinearLayout
             android:id="@+id/step4"
             android:layout_width="match_parent"
@@ -403,9 +395,7 @@
                 android:layout_marginTop="20dp" />
         </LinearLayout>
 
-        <!-- ═══════════════════════════════════ -->
         <!--  STEP 5: Accessibility + Launch     -->
-        <!-- ═══════════════════════════════════ -->
         <LinearLayout
             android:id="@+id/step5"
             android:layout_width="match_parent"
@@ -544,9 +534,7 @@
                 android:layout_marginTop="32dp" />
         </LinearLayout>
 
-        <!-- ═══════════════════════════════════ -->
         <!--  STEP 6: Power Features + Launch   -->
-        <!-- ═══════════════════════════════════ -->
         <LinearLayout
             android:id="@+id/step6"
             android:layout_width="match_parent"
@@ -572,7 +560,7 @@
                 android:textSize="14sp"
                 android:layout_marginTop="8dp" />
 
-            <!-- ── Phone Setup Type ─────────────────────────────────────── -->
+            <!-- Phone setup type -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

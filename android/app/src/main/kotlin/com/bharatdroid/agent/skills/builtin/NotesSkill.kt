@@ -9,7 +9,7 @@ class NotesSkill : Skill {
         id = "notes",
         name = "Google Keep Notes",
         version = "2.0.0",
-        description = "Create notes, to-do lists, reminders on Google Keep — any notes task",
+        description = "Create notes, to-do lists, reminders on Google Keep - any notes task",
         author = "bharatclaw-team",
         trusted = true,
         permissions = setOf(
@@ -23,14 +23,14 @@ class NotesSkill : Skill {
 Google Keep UI guide:
 - Home screen: grid or list of coloured note cards; search bar at the top ("Search your notes"); new-note input at the bottom ("Take a note..."); bottom nav: Notes | Reminders | Labels | Archive.
 - Creating a note: tap "Take a note..." at the bottom ? expands into a full-screen editor with separate Title (top) and Note (body) fields.
-- Title field: smaller text box at the top of the editor labelled "Title" — type the note title here.
-- Note body field: larger text area below the title — tap it and type all content; supports multi-line.
+- Title field: smaller text box at the top of the editor labelled "Title" - type the note title here.
+- Note body field: larger text area below the title - tap it and type all content; supports multi-line.
 - Checklist / To-do: tap the checkbox icon in the bottom toolbar to convert the note into a checklist; each line becomes a checkable item.
 - Saving: Google Keep auto-saves as you type. Tap the back arrow or the ? to close and save.
 - Note colours: rounded colour palette at the bottom of the editor; changing colour helps organise.
 - Labels: tap the three-dot menu ? Labels ? assign label to categorise notes.
-- Reminders (bell icon): tap the bell ?? at the top of the editor ? set date/time or location trigger.
-- Pinning: tap the pin ?? icon at the top to pin a note so it stays at the top of the list.
+- Reminders (bell icon): tap the bell at the top of the editor, then set date/time or location trigger.
+- Pinning: tap the pin icon at the top to pin a note so it stays at the top of the list.
 - Search: tap the search bar at the top of the home screen ? type keywords; results show matching notes.
 - Archive: swipe a note left to archive it (removes from main view but keeps it in Archive).
 - Delete: tap the three-dot menu on a note ? Delete (moves to Trash for 7 days).
@@ -66,7 +66,7 @@ Google Keep UI guide:
                     appendLine("2) Tap the Title field and type the title: $safeTitle")
                     appendLine("3) Tap the note body field (below title) and type the full content in ONE type action:")
                     appendLine("   $safeContent")
-                    appendLine("   Use \\n for line breaks. Type ALL the content in a single type action — do NOT type line by line.")
+                    appendLine("   Use \\n for line breaks. Type ALL the content in a single type action - do NOT type line by line.")
                 } else {
                     appendLine("2) Tap the note body and type the full content in ONE type action:")
                     appendLine("   $safeContent")

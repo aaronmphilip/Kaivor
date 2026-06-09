@@ -48,7 +48,7 @@ class PhoneFinderSkill : Skill {
         return try {
             ringtone.play()
             delay(durationSec * 1000L)
-            SkillResult.Success("📍 Rang for $durationSec seconds. Found it?")
+            SkillResult.Success("Rang for $durationSec seconds. Found it?")
         } finally {
             try { if (ringtone.isPlaying) ringtone.stop() } catch (_: Exception) {}
             audioManager.setStreamVolume(AudioManager.STREAM_ALARM, originalAlarmVol, 0)

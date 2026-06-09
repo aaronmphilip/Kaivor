@@ -15,10 +15,10 @@ import org.json.JSONObject
  * Generates an image from a text prompt and delivers it directly in Telegram chat.
  *
  * Supports:
- *   - Together AI  (provider = "together") — Flux.1-schnell, fast and cheap
- *   - OpenAI       (provider = "openai")   — DALL-E 3, high quality
+ *   - Together AI  (provider = "together") - Flux.1-schnell, fast and cheap
+ *   - OpenAI       (provider = "openai")   - DALL-E 3, high quality
  *
- * The user sets their image API key via Settings → Image API Key.
+ * The user sets their image API key via Settings -> Image API Key.
  * Provider is auto-detected from the key format, or can be set explicitly.
  */
 class ImageGeneratorSkill(
@@ -30,7 +30,7 @@ class ImageGeneratorSkill(
         id = "image_generate",
         name = "Image Generator",
         version = "1.0.0",
-        description = "Generate any image from a text description and send it directly to your Telegram chat — no app needed. Powered by Flux/DALL-E AI.",
+        description = "Generate any image from a text description and send it directly to your Telegram chat - no app needed. Powered by Flux/DALL-E AI.",
         author = "bharatclaw-team",
         trusted = true,
         permissions = emptySet(),
@@ -56,7 +56,7 @@ class ImageGeneratorSkill(
                 val imageUrl = when {
                     provider.contains("openai") || apiKey.startsWith("sk-") -> generateWithOpenAI(fullPrompt, sizeHint)
                     else -> generateWithTogether(fullPrompt, sizeHint)
-                } ?: return@withContext SkillResult.Failure("Image generation failed — check your API key and try again.")
+                } ?: return@withContext SkillResult.Failure("Image generation failed - check your API key and try again.")
 
                 // Download the generated image
                 val imageBytes = downloadBytes(imageUrl)
@@ -64,7 +64,7 @@ class ImageGeneratorSkill(
 
                 SkillResult.Media(
                     bytes = imageBytes,
-                    caption = "🎨 $prompt",
+                    caption = "-- $prompt",
                     mimeType = "image/jpeg",
                     filename = "generated.jpg",
                 )
