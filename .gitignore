@@ -29,6 +29,7 @@ git-temp-index .lock
 git-temp-index.lock
 __push_tmp/
 .wrangler/
+.codex/screenshots/
 
 # Logs
 *.log
