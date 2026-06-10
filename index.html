@@ -3,51 +3,52 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BharatClaw | Personal Android Agent</title>
+    <title>BharatClaw | Your Android, On Autopilot</title>
     <meta
       name="description"
-      content="BharatClaw is a personal Android agent that uses your phone for you: app navigation, forms, replies, research, rides, food, files, and routine work from one Telegram thread."
+      content="BharatClaw is a personal Android agent that opens apps, reads screens, fills forms, asks for missing info in Telegram, and shows live progress while your phone does the work."
     />
-    <meta name="theme-color" content="#0b1014" />
+    <meta name="theme-color" content="#07080b" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="site-header">
-      <a class="brand-mark" href="#top" aria-label="BharatClaw home">
-        <span class="brand-mark__glyph">BC</span>
+      <a class="brand" href="#top" aria-label="BharatClaw home">
+        <span class="brand__mark">BC</span>
         <span>BharatClaw</span>
       </a>
 
       <nav class="site-nav" aria-label="Primary navigation">
-        <a href="#use-cases">Use cases</a>
-        <a href="#how">How it works</a>
+        <a href="#jobs">Jobs</a>
+        <a href="#brain">Brain</a>
         <a href="#proof">Proof</a>
         <a href="#setup">Setup</a>
       </nav>
 
-      <a class="nav-cta" href="#download">Download</a>
+      <a class="nav-download" href="#download">Get APK</a>
     </header>
 
     <main id="top">
-      <section class="hero">
+      <section class="hero" aria-label="BharatClaw product hero">
         <video class="hero__video" autoplay muted loop playsinline preload="metadata">
           <source src="Demo.mp4" type="video/mp4" />
         </video>
         <div class="hero__shade"></div>
 
-        <div class="hero__content">
+        <div class="hero__copy">
           <p class="eyebrow">Personal Android agent</p>
           <h1>BharatClaw</h1>
-          <p class="hero__lead">
-            Tell your phone what job you want done. BharatClaw opens apps, reads
-            screens, fills forms, replies in chats, asks for missing info, and
-            shows progress while the work is happening.
+          <p class="hero__tagline">Your Android, on autopilot.</p>
+          <p class="hero__text">
+            Send one Telegram message. BharatClaw opens apps, reads screens,
+            fills forms, replies, asks for missing info, and shows live progress
+            while the phone does the work.
           </p>
 
           <div class="hero__actions">
@@ -55,236 +56,213 @@
               Download APK
             </a>
             <a
-              class="button button--ghost"
-              href="https://github.com/aaronmphilip/BharatClaw"
+              class="button button--secondary"
+              href="https://github.com/aaronmphilip/BharatClaw/tree/codex/mvp-initial"
               target="_blank"
               rel="noreferrer"
             >
-              View source
+              View GitHub
             </a>
           </div>
 
-          <div class="hero__status" aria-label="Live agent capabilities">
-            <span class="status-pill status-pill--live">Notch progress</span>
-            <span class="status-pill">Telegram control</span>
-            <span class="status-pill">Screen brain</span>
-            <span class="status-pill">Missing-info prompts</span>
+          <div class="hero__signals" aria-label="Core product signals">
+            <span>Notch progress</span>
+            <span>Telegram control</span>
+            <span>Screen-aware actions</span>
           </div>
         </div>
 
-        <aside class="agent-console" aria-label="BharatClaw example workflow">
-          <div class="console__top">
-            <span class="console__dot"></span>
-            <span>Running task</span>
+        <aside class="task-card" aria-label="Live BharatClaw task">
+          <div class="task-card__head">
+            <span class="live-dot"></span>
+            <span>Live task</span>
           </div>
-          <p class="console__command">
-            "Go to my website, fill the form with my details, and message me if
-            anything is missing."
+          <p class="task-card__prompt">
+            Fill my website form. If anything is missing, ask me on Telegram.
           </p>
-          <ol class="console__steps">
-            <li style="--delay: 0ms">Opens Chrome</li>
-            <li style="--delay: 160ms">Reads the live page</li>
-            <li style="--delay: 320ms">Maps form fields to saved info</li>
-            <li style="--delay: 480ms">Asks in Telegram for missing values</li>
-            <li style="--delay: 640ms">Submits only after confirmation</li>
+          <ol class="task-card__steps">
+            <li style="--delay: 0ms">Chrome opened</li>
+            <li style="--delay: 140ms">Form fields mapped</li>
+            <li style="--delay: 280ms">Phone number missing</li>
+            <li style="--delay: 420ms">Telegram question sent</li>
           </ol>
         </aside>
+
+        <div class="app-rail" aria-label="Supported Android work examples">
+          <div class="app-rail__track">
+            <span>Chrome forms</span>
+            <span>WhatsApp replies</span>
+            <span>PDFs</span>
+            <span>Maps</span>
+            <span>Food orders</span>
+            <span>Ride checks</span>
+            <span>Files</span>
+            <span>YouTube search</span>
+            <span>Chrome forms</span>
+            <span>WhatsApp replies</span>
+            <span>PDFs</span>
+            <span>Maps</span>
+          </div>
+        </div>
       </section>
 
-      <section class="signal-strip" aria-label="BharatClaw product signals">
-        <div>
-          <strong>1 thread</strong>
-          <span>Telegram becomes the command center</span>
-        </div>
-        <div>
-          <strong>30+ skills</strong>
-          <span>Apps, files, rides, food, research, calls</span>
-        </div>
-        <div>
-          <strong>Live proof</strong>
-          <span>Notch progress, screenshots, replies</span>
-        </div>
+      <section class="section intro">
+        <p class="eyebrow">Not another chatbot</p>
+        <h2>It is a phone operator for the small jobs you keep postponing.</h2>
+        <p>
+          The taste test is simple: if the task needs opening apps, reading a
+          screen, typing details, checking a result, or asking you one missing
+          question, BharatClaw should be able to run the loop instead of making
+          you tap through it.
+        </p>
       </section>
 
-      <section class="section" id="use-cases">
-        <div class="section__heading">
-          <p class="eyebrow">Use cases</p>
-          <h2>Do your Android work without living inside app menus.</h2>
+      <section class="section job-grid" id="jobs" aria-label="BharatClaw jobs">
+        <article class="job-card job-card--wide">
+          <span>01</span>
+          <h3>Forms without babysitting</h3>
           <p>
-            The product is not another chatbot. It is a phone-side operator for
-            everyday jobs that normally require tapping, searching, typing, and
-            checking multiple apps.
+            Opens a live page, reads required fields, uses the details you gave,
+            and pauses in Telegram when something is missing.
+          </p>
+        </article>
+        <article class="job-card job-card--acid">
+          <span>02</span>
+          <h3>App errands</h3>
+          <p>Compare prices, check delivery status, search maps, and report back.</p>
+        </article>
+        <article class="job-card">
+          <span>03</span>
+          <h3>Messages and notifications</h3>
+          <p>Turn one Telegram thread into the command center for phone work.</p>
+        </article>
+        <article class="job-card">
+          <span>04</span>
+          <h3>Documents and files</h3>
+          <p>Open downloads, read pages, summarize PDFs, and send outputs back.</p>
+        </article>
+        <article class="job-card job-card--blue">
+          <span>05</span>
+          <h3>Repeatable routines</h3>
+          <p>Run saved macros, schedule jobs, and repeat the last successful task.</p>
+        </article>
+      </section>
+
+      <section class="section brain" id="brain">
+        <div class="brain__copy">
+          <p class="eyebrow">The brain</p>
+          <h2>Plan. See. Tap. Recover.</h2>
+          <p>
+            BharatClaw is useful only if it can survive real app screens. The
+            agent chooses a skill when the task is known, then uses screen
+            context and Android actions to keep moving when the UI changes.
           </p>
         </div>
 
-        <div class="use-case-grid">
-          <article class="use-card use-card--wide">
-            <span>01</span>
-            <h3>Website and form work</h3>
-            <p>
-              Open Chrome, inspect a page, fill fields from the info you gave,
-              and ask you in Telegram when a required value is missing.
-            </p>
+        <div class="brain__steps">
+          <article>
+            <strong>Plan</strong>
+            <p>Breaks the Telegram request into a runnable phone task.</p>
           </article>
-          <article class="use-card">
-            <span>02</span>
-            <h3>App errands</h3>
-            <p>
-              Check prices, compare food delivery apps, open ride apps, read
-              order status, and keep you updated.
-            </p>
+          <article>
+            <strong>See</strong>
+            <p>Reads buttons, fields, lists, warnings, and current app state.</p>
           </article>
-          <article class="use-card">
-            <span>03</span>
-            <h3>Messaging and notifications</h3>
-            <p>
-              Forward app notifications to Telegram and reply into supported
-              apps from the same control thread.
-            </p>
+          <article>
+            <strong>Act</strong>
+            <p>Taps, types, scrolls, opens apps, and checks what changed.</p>
           </article>
-          <article class="use-card">
-            <span>04</span>
-            <h3>Files and reading</h3>
-            <p>
-              Open downloads, read documents, summarize pages, create PDFs, and
-              send generated files back through Telegram.
-            </p>
-          </article>
-          <article class="use-card use-card--accent">
-            <span>05</span>
-            <h3>Routine phone operations</h3>
-            <p>
-              Schedule commands, run macros, open apps, use maps, search
-              YouTube, manage settings, and repeat your last task.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <section class="section split" id="how">
-        <div class="section__heading section__heading--sticky">
-          <p class="eyebrow">How it works</p>
-          <h2>The brain is screen-aware, not menu-scripted.</h2>
-          <p>
-            BharatClaw should navigate like a person: observe the UI, decide the
-            next step, act, verify, and recover when the screen is different
-            from the ideal path.
-          </p>
-        </div>
-
-        <div class="timeline">
-          <article class="timeline__item">
-            <span>Plan</span>
-            <h3>Turns your request into a task plan</h3>
-            <p>
-              The router chooses a skill when the job is known, or falls back to
-              the general screen agent for open-ended app work.
-            </p>
-          </article>
-          <article class="timeline__item">
-            <span>Observe</span>
-            <h3>Reads the current Android screen</h3>
-            <p>
-              Accessibility data and screen context tell the agent what fields,
-              buttons, lists, and warnings are actually visible.
-            </p>
-          </article>
-          <article class="timeline__item">
-            <span>Act</span>
-            <h3>Taps, types, scrolls, opens apps</h3>
-            <p>
-              It uses controlled Android actions and avoids sensitive steps like
-              entering UPI PINs or payment confirmations.
-            </p>
-          </article>
-          <article class="timeline__item">
-            <span>Recover</span>
-            <h3>Asks for missing information</h3>
-            <p>
-              If a form asks for data you never supplied, BharatClaw pauses and
-              asks in Telegram instead of inventing an answer.
-            </p>
+          <article>
+            <strong>Recover</strong>
+            <p>Asks you for missing info instead of hallucinating details.</p>
           </article>
         </div>
       </section>
 
       <section class="section proof" id="proof">
-        <div class="proof__copy">
-          <p class="eyebrow">Product proof</p>
-          <h2>Progress has to be visible while the phone is working.</h2>
-          <p>
-            The floating notch is not decoration. It is the local progress
-            surface: running, waiting for info, continuing, stopped, or done.
-            When overlay permission is unavailable, the foreground notification
-            still carries the task status.
-          </p>
+        <div class="proof__phone" aria-label="Notch progress preview">
+          <div class="phone-shell">
+            <div class="notch-pill">
+              <span class="live-dot"></span>
+              <div>
+                <small>BHARATCLAW</small>
+                <strong>Filling form...</strong>
+              </div>
+              <button type="button" aria-label="Stop task">x</button>
+            </div>
+            <div class="phone-lines">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="telegram-bubble">
+              Need your GST number before I can submit.
+            </div>
+          </div>
         </div>
 
-        <div class="notch-demo" aria-label="Notch progress animation">
-          <div class="notch-demo__pill">
-            <span class="notch-demo__dot"></span>
-            <div>
-              <small>BHARATCLAW RUNNING</small>
-              <strong>Filling website form...</strong>
-            </div>
-            <button aria-label="Stop task" type="button">x</button>
-          </div>
-          <div class="notch-demo__screen">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
+        <div class="proof__copy">
+          <p class="eyebrow">Visible progress</p>
+          <h2>The notch is the receipt that the phone is working.</h2>
+          <p>
+            Running, waiting, continuing, stopped, or done should be visible on
+            the phone. If overlay permission is missing, the foreground
+            notification still carries the task state.
+          </p>
         </div>
       </section>
 
       <section class="section setup" id="setup">
-        <div class="section__heading">
+        <div class="setup__head">
           <p class="eyebrow">Setup</p>
-          <h2>Install, connect Telegram, enable permissions, run jobs.</h2>
+          <h2>Four steps. Then your phone becomes the worker.</h2>
         </div>
+
         <div class="setup-grid">
           <article>
-            <strong>1</strong>
-            <h3>Create a Telegram bot</h3>
-            <p>Use BotFather, paste the token into BharatClaw, then pair your chat.</p>
+            <span>1</span>
+            <h3>Create Telegram bot</h3>
+            <p>Use BotFather, paste the token, and pair your chat.</p>
           </article>
           <article>
-            <strong>2</strong>
-            <h3>Add an AI key</h3>
-            <p>Pick Gemini, Claude, or OpenAI inside onboarding and save the key.</p>
+            <span>2</span>
+            <h3>Add AI key</h3>
+            <p>Choose Gemini, Claude, or OpenAI in onboarding.</p>
           </article>
           <article>
-            <strong>3</strong>
+            <span>3</span>
             <h3>Enable Accessibility</h3>
-            <p>This is what lets BharatClaw operate the Android UI on your behalf.</p>
+            <p>This lets BharatClaw operate visible Android UI.</p>
           </article>
           <article>
-            <strong>4</strong>
-            <h3>Grant optional relay/notch permissions</h3>
-            <p>Notification access powers app replies; overlay access powers the notch.</p>
+            <span>4</span>
+            <h3>Turn on relay and notch</h3>
+            <p>Notification access powers replies; overlay powers progress.</p>
           </article>
         </div>
       </section>
 
       <section class="download" id="download">
-        <p class="eyebrow">Download</p>
-        <h2>Get BharatClaw on the Android phone that should do the work.</h2>
-        <p>
-          Current tracked APK: <strong>BharatClaw-v1.0.apk</strong>. The file is
-          hosted inside this repository, so the link works locally and on the
-          deployed site.
-        </p>
+        <div>
+          <p class="eyebrow">Download</p>
+          <h2>Install BharatClaw on the Android that should do the work.</h2>
+          <p>
+            Current APK: <strong>BharatClaw-v1.0.apk</strong>. The same download
+            works from GitHub and the live Vercel site.
+          </p>
+        </div>
         <div class="download__actions">
           <a class="button button--primary" href="downloads/BharatClaw-v1.0.apk" download>
             Download APK v1.0
           </a>
           <a
-            class="button button--ghost"
-            href="https://github.com/aaronmphilip/BharatClaw"
+            class="button button--secondary"
+            href="https://github.com/aaronmphilip/BharatClaw/tree/codex/mvp-initial"
             target="_blank"
             rel="noreferrer"
           >
-            GitHub repository
+            Open branch
           </a>
         </div>
       </section>
@@ -292,7 +270,7 @@
 
     <footer class="site-footer">
       <p>BharatClaw</p>
-      <p>Personal Android agent for real phone work.</p>
+      <p>Your Android, on autopilot.</p>
     </footer>
   </body>
 </html>
