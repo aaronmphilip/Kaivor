@@ -3,18 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BharatClaw | Your Android, On Autopilot</title>
+    <title>BharatClaw | Android Personal Agent</title>
     <meta
       name="description"
-      content="BharatClaw is a personal Android agent that opens apps, reads screens, fills forms, asks for missing info in Telegram, and shows live progress while your phone does the work."
+      content="BharatClaw is a fast personal Android agent that opens apps, reads screens, fills forms, asks for missing info in Telegram, and shows progress while your phone works."
     />
-    <meta name="theme-color" content="#07080b" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap"
-      rel="stylesheet"
-    />
+    <meta name="theme-color" content="#08090d" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -36,25 +30,19 @@
         href="https://bharatclawapp.vercel.app/downloads/BharatClaw-v1.0.apk"
         download
       >
-        Get APK
+        Download APK
       </a>
     </header>
 
     <main id="top">
-      <section class="hero" aria-label="BharatClaw product hero">
-        <video class="hero__video" autoplay muted loop playsinline preload="metadata">
-          <source src="Demo.mp4" type="video/mp4" />
-        </video>
-        <div class="hero__shade"></div>
-
+      <section class="hero">
         <div class="hero__copy">
           <p class="eyebrow">Personal Android agent</p>
-          <h1>BharatClaw</h1>
-          <p class="hero__tagline">Your Android, on autopilot.</p>
+          <h1>Make your Android do the work.</h1>
           <p class="hero__text">
-            Send one Telegram message. BharatClaw opens apps, reads screens,
-            fills forms, replies, asks for missing info, and shows live progress
-            while the phone does the work.
+            BharatClaw runs phone tasks from one Telegram thread: open apps,
+            read screens, fill forms, ask for missing info, and show progress
+            while the job is running.
           </p>
 
           <div class="hero__actions">
@@ -66,178 +54,196 @@
               Download APK
             </a>
             <a
-              class="button button--secondary"
+              class="button button--ghost"
               href="https://github.com/aaronmphilip/BharatClaw/tree/codex/mvp-initial"
               target="_blank"
               rel="noreferrer"
             >
-              View GitHub
+              GitHub branch
             </a>
           </div>
 
-          <div class="hero__signals" aria-label="Core product signals">
-            <span>Notch progress</span>
-            <span>Telegram control</span>
-            <span>Screen-aware actions</span>
-          </div>
+          <dl class="hero__metrics">
+            <div>
+              <dt>30+</dt>
+              <dd>built-in skills</dd>
+            </div>
+            <div>
+              <dt>1</dt>
+              <dd>Telegram control thread</dd>
+            </div>
+            <div>
+              <dt>Live</dt>
+              <dd>notch progress</dd>
+            </div>
+          </dl>
         </div>
 
-        <aside class="task-card" aria-label="Live BharatClaw task">
-          <div class="task-card__head">
-            <span class="live-dot"></span>
-            <span>Live task</span>
+        <div class="agent-panel" aria-label="BharatClaw task preview">
+          <div class="phone-preview">
+            <div class="phone-preview__notch">
+              <span class="live-dot"></span>
+              <div>
+                <small>BHARATCLAW</small>
+                <strong>Filling website form</strong>
+              </div>
+            </div>
+
+            <div class="phone-preview__screen">
+              <div class="field-row">
+                <span>Name</span>
+                <strong>Ready</strong>
+              </div>
+              <div class="field-row">
+                <span>Email</span>
+                <strong>Ready</strong>
+              </div>
+              <div class="field-row field-row--waiting">
+                <span>GST number</span>
+                <strong>Asking Telegram</strong>
+              </div>
+            </div>
+
+            <div class="telegram-card">
+              Need your GST number before I submit.
+            </div>
           </div>
-          <p class="task-card__prompt">
-            Fill my website form. If anything is missing, ask me on Telegram.
-          </p>
-          <ol class="task-card__steps">
-            <li style="--delay: 0ms">Chrome opened</li>
-            <li style="--delay: 140ms">Form fields mapped</li>
-            <li style="--delay: 280ms">Phone number missing</li>
-            <li style="--delay: 420ms">Telegram question sent</li>
+
+          <ol class="task-list">
+            <li><span>1</span>Open Chrome and read form</li>
+            <li><span>2</span>Map fields to saved info</li>
+            <li><span>3</span>Ask for missing values</li>
+            <li><span>4</span>Submit after confirmation</li>
           </ol>
-        </aside>
-
-        <div class="app-rail" aria-label="Supported Android work examples">
-          <div class="app-rail__track">
-            <span>Chrome forms</span>
-            <span>WhatsApp replies</span>
-            <span>PDFs</span>
-            <span>Maps</span>
-            <span>Food orders</span>
-            <span>Ride checks</span>
-            <span>Files</span>
-            <span>YouTube search</span>
-            <span>Chrome forms</span>
-            <span>WhatsApp replies</span>
-            <span>PDFs</span>
-            <span>Maps</span>
-          </div>
         </div>
+      </section>
+
+      <section class="quick-jobs" aria-label="BharatClaw job examples">
+        <span>Chrome forms</span>
+        <span>WhatsApp replies</span>
+        <span>PDF summaries</span>
+        <span>Maps checks</span>
+        <span>Food orders</span>
+        <span>Ride status</span>
+        <span>File work</span>
+        <span>Routine macros</span>
       </section>
 
       <section class="section intro">
-        <p class="eyebrow">Not another chatbot</p>
-        <h2>It is a phone operator for the small jobs you keep postponing.</h2>
+        <p class="eyebrow">What it is</p>
+        <h2>A phone-side worker, not another chat screen.</h2>
         <p>
-          The taste test is simple: if the task needs opening apps, reading a
-          screen, typing details, checking a result, or asking you one missing
-          question, BharatClaw should be able to run the loop instead of making
-          you tap through it.
+          The product only matters if it touches the real Android UI. BharatClaw
+          should inspect what is on screen, choose the next action, and ask you
+          when it needs information instead of making up answers.
         </p>
       </section>
 
-      <section class="section job-grid" id="jobs" aria-label="BharatClaw jobs">
+      <section class="section job-grid" id="jobs">
         <article class="job-card job-card--wide">
           <span>01</span>
-          <h3>Forms without babysitting</h3>
+          <h3>Website and form work</h3>
           <p>
-            Opens a live page, reads required fields, uses the details you gave,
-            and pauses in Telegram when something is missing.
+            Open a page, read required fields, fill what it knows, and pause in
+            Telegram when a value is missing.
           </p>
         </article>
-        <article class="job-card job-card--acid">
+        <article class="job-card">
           <span>02</span>
           <h3>App errands</h3>
-          <p>Compare prices, check delivery status, search maps, and report back.</p>
+          <p>Check prices, delivery status, maps, files, and app results.</p>
         </article>
         <article class="job-card">
           <span>03</span>
-          <h3>Messages and notifications</h3>
-          <p>Turn one Telegram thread into the command center for phone work.</p>
+          <h3>Replies and notifications</h3>
+          <p>Use Telegram as the control room for supported phone actions.</p>
         </article>
         <article class="job-card">
           <span>04</span>
-          <h3>Documents and files</h3>
-          <p>Open downloads, read pages, summarize PDFs, and send outputs back.</p>
+          <h3>Documents</h3>
+          <p>Read downloads, summarize pages, make PDFs, and send outputs back.</p>
         </article>
-        <article class="job-card job-card--blue">
+        <article class="job-card job-card--accent">
           <span>05</span>
           <h3>Repeatable routines</h3>
-          <p>Run saved macros, schedule jobs, and repeat the last successful task.</p>
+          <p>Run saved macros and repeat jobs that worked before.</p>
         </article>
       </section>
 
       <section class="section brain" id="brain">
-        <div class="brain__copy">
+        <div>
           <p class="eyebrow">The brain</p>
-          <h2>Plan. See. Tap. Recover.</h2>
+          <h2>Plan, observe, act, recover.</h2>
           <p>
-            BharatClaw is useful only if it can survive real app screens. The
-            agent chooses a skill when the task is known, then uses screen
-            context and Android actions to keep moving when the UI changes.
+            Skills handle known tasks. The screen agent handles open-ended app
+            navigation. The point is not a pretty chatbot; the point is getting
+            the phone to finish the job.
           </p>
         </div>
 
-        <div class="brain__steps">
+        <div class="flow-grid">
           <article>
             <strong>Plan</strong>
-            <p>Breaks the Telegram request into a runnable phone task.</p>
+            <p>Turn your Telegram request into a runnable task.</p>
           </article>
           <article>
-            <strong>See</strong>
-            <p>Reads buttons, fields, lists, warnings, and current app state.</p>
+            <strong>Observe</strong>
+            <p>Read visible buttons, fields, lists, and warnings.</p>
           </article>
           <article>
             <strong>Act</strong>
-            <p>Taps, types, scrolls, opens apps, and checks what changed.</p>
+            <p>Tap, type, scroll, open apps, and verify changes.</p>
           </article>
           <article>
             <strong>Recover</strong>
-            <p>Asks you for missing info instead of hallucinating details.</p>
+            <p>Ask for missing info instead of guessing.</p>
           </article>
         </div>
       </section>
 
       <section class="section proof" id="proof">
-        <div class="proof__phone" aria-label="Notch progress preview">
-          <div class="phone-shell">
-            <div class="notch-pill">
-              <span class="live-dot"></span>
-              <div>
-                <small>BHARATCLAW</small>
-                <strong>Filling form...</strong>
-              </div>
-              <button type="button" aria-label="Stop task">x</button>
-            </div>
-            <div class="phone-lines">
-              <span></span>
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-            <div class="telegram-bubble">
-              Need your GST number before I can submit.
-            </div>
-          </div>
+        <div>
+          <p class="eyebrow">Visible progress</p>
+          <h2>The notch shows what the phone is doing.</h2>
+          <p>
+            Running, waiting, continuing, stopped, or done should be visible.
+            If overlay permission is not enabled, the foreground notification
+            still carries the task status.
+          </p>
         </div>
 
-        <div class="proof__copy">
-          <p class="eyebrow">Visible progress</p>
-          <h2>The notch is the receipt that the phone is working.</h2>
-          <p>
-            Running, waiting, continuing, stopped, or done should be visible on
-            the phone. If overlay permission is missing, the foreground
-            notification still carries the task state.
-          </p>
+        <div class="notch-demo">
+          <div class="notch-demo__pill">
+            <span class="live-dot"></span>
+            <div>
+              <small>RUNNING</small>
+              <strong>Reading screen...</strong>
+            </div>
+            <button type="button" aria-label="Stop task">x</button>
+          </div>
+          <div class="notch-demo__body">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
         </div>
       </section>
 
       <section class="section setup" id="setup">
-        <div class="setup__head">
+        <div class="section-head">
           <p class="eyebrow">Setup</p>
-          <h2>Four steps. Then your phone becomes the worker.</h2>
+          <h2>Install it. Connect Telegram. Enable permissions.</h2>
         </div>
 
         <div class="setup-grid">
           <article>
             <span>1</span>
-            <h3>Create Telegram bot</h3>
+            <h3>Create a Telegram bot</h3>
             <p>Use BotFather, paste the token, and pair your chat.</p>
           </article>
           <article>
             <span>2</span>
-            <h3>Add AI key</h3>
+            <h3>Add an AI key</h3>
             <p>Choose Gemini, Claude, or OpenAI in onboarding.</p>
           </article>
           <article>
@@ -247,7 +253,7 @@
           </article>
           <article>
             <span>4</span>
-            <h3>Turn on relay and notch</h3>
+            <h3>Enable relay and notch</h3>
             <p>Notification access powers replies; overlay powers progress.</p>
           </article>
         </div>
@@ -256,10 +262,10 @@
       <section class="download" id="download">
         <div>
           <p class="eyebrow">Download</p>
-          <h2>Install BharatClaw on the Android that should do the work.</h2>
+          <h2>Get BharatClaw on the Android phone that should work for you.</h2>
           <p>
-            Current APK: <strong>BharatClaw-v1.0.apk</strong>. The same download
-            works from GitHub and the live Vercel site.
+            The APK is hosted on the live Vercel site, so anyone online can use
+            the button directly.
           </p>
         </div>
         <div class="download__actions">
@@ -271,7 +277,7 @@
             Download APK v1.0
           </a>
           <a
-            class="button button--secondary"
+            class="button button--ghost"
             href="https://github.com/aaronmphilip/BharatClaw/tree/codex/mvp-initial"
             target="_blank"
             rel="noreferrer"
@@ -284,7 +290,7 @@
 
     <footer class="site-footer">
       <p>BharatClaw</p>
-      <p>Your Android, on autopilot.</p>
+      <p>Personal Android agent for real phone work.</p>
     </footer>
   </body>
 </html>

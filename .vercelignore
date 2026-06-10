@@ -12,6 +12,7 @@ packages/
 skills/
 tests/
 node_modules/
+Demo.mp4
 
 .env
 .env.*
