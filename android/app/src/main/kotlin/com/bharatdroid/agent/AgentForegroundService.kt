@@ -79,7 +79,8 @@ class AgentForegroundService : LifecycleService() {
         val imageApiKey = prefs.getString("image_api_key", "")?.trim().orEmpty()
         val imageApiProvider = prefs.getString("image_api_provider", "together") ?: "together"
 
-        val ultraMode = prefs.getBoolean("ultra_mode", false)
+        // One fast execution path. The screen agent decides when vision is needed.
+        val ultraMode = false
         val whatsappChannelNumber = prefs.getString("whatsapp_channel_number", "")?.trim().orEmpty()
         val callAnsweringEnabled = prefs.getBoolean("call_answering_enabled", false)
         val elevenLabsApiKey = prefs.getString("elevenlabs_api_key", "")?.trim().orEmpty()

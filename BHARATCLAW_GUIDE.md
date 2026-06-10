@@ -137,27 +137,15 @@ You can drag the notch anywhere on the screen. It disappears automatically when 
 
 ---
 
-### Efficient vs Ultra Mode
+### Fast Adaptive Execution
 
-BharatClaw has two operating modes, selectable in Settings → Agent Mode.
+BharatClaw has one execution path: fast by default, visual when needed.
 
-**Efficient Mode (default)**
-- Uses fewer AI tokens per action
-- Reads the screen only when needed
-- Faster execution on most tasks
-- Lower API cost
-- Best for: everyday tasks you run repeatedly (order food, book rides, pay bills, set alarms)
-
-**Ultra Mode**
-- Reads the screen with vision at every step
-- Uses full conversation context
-- Handles ambiguous or complex multi-app tasks better
-- Higher API cost
-- Best for: new tasks you haven't run before, tasks that involve reading content (contracts, menus, receipts), situations where previous attempts in Efficient mode failed
-
-**Switching modes:** BharatClaw Settings → Agent Mode → toggle between Efficient and Ultra. Change takes effect on the next command.
-
-**Tip:** Use Efficient for 90% of tasks. Switch to Ultra when something isn't working right or when the task is genuinely complex.
+- Starts acting without a separate planning delay.
+- Reads the Android accessibility tree first because it is faster than screenshots.
+- Turns on visual screen reading for forms, documents, sparse screens, and recovery when the agent is stuck.
+- Keeps the notch updated while it opens apps, reads fields, types, scrolls, waits, or asks for missing information.
+- Best for: everyday app work, website forms, document reading, shopping, rides, replies, and multi-step routines.
 
 ---
 
@@ -588,8 +576,8 @@ Run each command individually first to make sure it works, then save them as a r
 **9. Name your shortcuts intuitively**
 Name macros the way you naturally think: `lunch`, `home`, `office`, `gym`, `bd` (book driver). Short words you'd actually type in a hurry.
 
-**10. Pair Ultra mode with unfamiliar tasks**
-The first time you use a new skill or app, run it in Ultra mode. Once it's working reliably, switch back to Efficient for future runs.
+**10. Keep the target screen visible for unfamiliar tasks**
+For a new app or messy form, leave the relevant screen open. BharatClaw will read the accessibility tree first and use visual reading automatically when the tree is not enough.
 
 ---
 
@@ -957,7 +945,7 @@ Check: BharatClaw Settings → Notification Access → must be ON. Also ensure t
 Go to Settings → Apps → BharatClaw → Display over other apps → Allow.
 
 **Task finishes too quickly without completing**
-The app UI may have changed. Try switching to Ultra mode for that task — it uses vision to adapt to layout changes automatically.
+The app UI may have changed or the target app may be blocking automation. Send the command again with the exact missing detail, or send a screenshot/document so BharatClaw can use visual reading.
 
 **Can't book a ride / food order fails at payment**
 UPI apps sometimes require biometric confirmation. Set up an SMS or MPIN fallback in your UPI app settings.

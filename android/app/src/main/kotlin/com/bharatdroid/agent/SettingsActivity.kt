@@ -369,27 +369,11 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupModeToggle() {
-        val btnEfficient = findViewById<Button>(R.id.btnModeEfficient)
+        val btnFast = findViewById<Button>(R.id.btnModeFast)
         val btnUltra = findViewById<Button>(R.id.btnModeUltra)
-
-        fun render(ultra: Boolean) {
-            ultraMode = ultra
-            if (!ultra) {
-                btnEfficient.setBackgroundColor(0xFF00CC88.toInt())
-                btnEfficient.setTextColor(0xFF000000.toInt())
-                btnUltra.setBackgroundColor(0xFF1A1A1A.toInt())
-                btnUltra.setTextColor(0xFFAAAAAA.toInt())
-            } else {
-                btnUltra.setBackgroundColor(0xFFFF5C00.toInt())
-                btnUltra.setTextColor(0xFFFFFFFF.toInt())
-                btnEfficient.setBackgroundColor(0xFF1A1A1A.toInt())
-                btnEfficient.setTextColor(0xFFAAAAAA.toInt())
-            }
-        }
-
-        btnEfficient.setOnClickListener { render(false) }
-        btnUltra.setOnClickListener { render(true) }
-        render(ultraMode)
+        ultraMode = false
+        btnFast.visibility = android.view.View.GONE
+        btnUltra.visibility = android.view.View.GONE
     }
 
     private fun setupCallAnswering() {

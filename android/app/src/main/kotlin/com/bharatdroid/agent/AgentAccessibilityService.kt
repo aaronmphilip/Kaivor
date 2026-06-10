@@ -55,7 +55,7 @@ class AgentAccessibilityService : AccessibilityService() {
     /**
      * Proactive popup dismisser — listens for TYPE_WINDOW_STATE_CHANGED events.
      *
-     * Key insight from OpenClaw/AppAgent research: instead of waiting for the agent loop
+     * Key insight from mobile-agent research: instead of waiting for the agent loop
      * to notice a popup (which costs 1-2 steps of stuck time), we can dismiss obvious
      * non-essential popups the moment their window appears. This is what makes fast agents
      * appear "seamless" — they never visibly pause on a rate-us dialog.

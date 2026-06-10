@@ -749,12 +749,12 @@
             android:stateListAnimator="@null" />
 
         <!-- ═══════════════════════════════════════ -->
-        <!--  SECTION: AGENT MODE                    -->
+        <!--  SECTION: SPEED                         -->
         <!-- ═══════════════════════════════════════ -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="AGENT MODE"
+            android:text="SPEED"
             android:textColor="#666666"
             android:textSize="11sp"
             android:textStyle="bold"
@@ -764,7 +764,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Efficient vs Ultra"
+            android:text="Fast automation"
             android:textColor="#FFFFFF"
             android:textSize="15sp"
             android:textStyle="bold"
@@ -773,7 +773,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Efficient saves API credits: fast, lean, great for everyday tasks. Ultra uses vision on every step, full context, and maximum steps."
+            android:text="BharatClaw uses one fast execution path. It reads the accessibility tree first and turns on visual screen reading only when forms, documents, or stuck screens need it."
             android:textColor="#777777"
             android:textSize="12sp"
             android:lineSpacingMultiplier="1.3"
@@ -787,11 +787,11 @@
             android:weightSum="2">
 
             <Button
-                android:id="@+id/btnModeEfficient"
+                android:id="@+id/btnModeFast"
                 android:layout_width="0dp"
                 android:layout_height="46dp"
                 android:layout_weight="1"
-                android:text="Efficient"
+                android:text="Fast"
                 android:textSize="13sp"
                 android:textStyle="bold"
                 android:backgroundTint="#00CC88"
@@ -804,7 +804,7 @@
                 android:layout_width="0dp"
                 android:layout_height="46dp"
                 android:layout_weight="1"
-                android:text="Ultra"
+                android:text="Adaptive vision"
                 android:textSize="13sp"
                 android:backgroundTint="#1A1A1A"
                 android:textColor="#AAAAAA"

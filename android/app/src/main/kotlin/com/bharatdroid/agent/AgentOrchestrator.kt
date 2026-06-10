@@ -1707,10 +1707,10 @@ Tell me what to do - English or Hindi. I'll do it.
     private suspend fun transcribeAudio(file: java.io.File, mimeType: String): String? {
         return when (config.agentProvider) {
             AIProvider.GEMINI -> transcribeWithGemini(file, mimeType)
-            AIProvider.OPENAI -> transcribeWithWhisper(file, mimeType)
+            AIProvider.OPENAI -> transcribeWithOpenAI(file, mimeType)
             AIProvider.CLAUDE -> {
-                // Claude has no audio API - try Whisper if the key happens to be an OpenAI key
-                if (config.agentApiKey.startsWith("sk-")) transcribeWithWhisper(file, mimeType) else null
+                // Claude has no audio API - try OpenAI STT if the key happens to be an OpenAI key.
+                if (config.agentApiKey.startsWith("sk-")) transcribeWithOpenAI(file, mimeType) else null
             }
         }
     }
@@ -1756,15 +1756,26 @@ Tell me what to do - English or Hindi. I'll do it.
         }
 
     /**
-     * OpenAI Whisper transcription - multipart POST to /v1/audio/transcriptions.
-     * Works with any OpenAI key. Supports ogg, mp3, mp4, wav, webm, m4a.
+     * OpenAI speech-to-text. Try the low-latency transcription model first and
+     * fall back to whisper-1 for accounts that do not have the newer model yet.
      */
-    private suspend fun transcribeWithWhisper(file: java.io.File, mimeType: String): String? =
+    private suspend fun transcribeWithOpenAI(file: java.io.File, mimeType: String): String? {
+        return transcribeWithOpenAIModel(file, mimeType, "gpt-4o-mini-transcribe")
+            ?: transcribeWithOpenAIModel(file, mimeType, "whisper-1")
+    }
+
+    private suspend fun transcribeWithOpenAIModel(
+        file: java.io.File,
+        mimeType: String,
+        model: String,
+    ): String? =
         withContext(Dispatchers.IO) {
             try {
                 val body = MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
-                    .addFormDataPart("model", "whisper-1")
+                    .addFormDataPart("model", model)
+                    .addFormDataPart("response_format", "text")
+                    .addFormDataPart("prompt", "This is a BharatClaw Android task command. Transcribe exactly.")
                     .addFormDataPart("file", file.name, file.asRequestBody(mimeType.toMediaType()))
                     .build()
                 val req = okhttp3.Request.Builder()
@@ -1775,7 +1786,7 @@ Tell me what to do - English or Hindi. I'll do it.
                 SharedHttpClient.imageInstance.newCall(req).execute().use { resp ->
                     val raw = resp.body?.string() ?: return@use null
                     if (!resp.isSuccessful) return@use null
-                    JsonParser.parseString(raw).asJsonObject.get("text")?.asString?.trim()
+                    raw.trim().takeIf { it.isNotBlank() }
                 }
             } catch (_: Exception) { null }
         }
@@ -2070,7 +2081,7 @@ data class AgentConfig(
     /** Optional. When set, "generate an image of X" sends a photo directly in Telegram. */
     val imageApiKey: String = "",
     val imageApiProvider: String = "together",
-    /** Ultra = vision ON, full context, best model. Efficient = no vision, trimmed context. */
+    /** Legacy setting. Runtime now uses one fast path with adaptive vision. */
     val ultraMode: Boolean = false,
     /** WhatsApp channel - authorized sender number that can send commands via WhatsApp. */
     val whatsappChannelNumber: String = "",

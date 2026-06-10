@@ -17,7 +17,7 @@
 | Live call handoff to human | ✅ Full | Tap notification or press volume button |
 | Vision / screenshot analysis | ✅ Full | Gemini Vision / Claude Vision |
 | App knowledge base | ✅ Full | Learns patterns per app over time |
-| Efficient / Ultra mode | ✅ Full | Toggle model, steps, vision, context |
+| Fast adaptive execution | ✅ Full | Accessibility-first actions with vision only when needed |
 | Routines + macros | ✅ Full | Named command sequences |
 | User memory | ✅ Full | Persists preferences and context |
 | Wake-on-command (screen off) | ✅ Full | Foreground service + wake lock |
@@ -111,7 +111,7 @@ Floating overlay                   ✅         ✅ (Live Activities)
 AI call answering (cellular)       ✅         ❌ (VoIP or forwarding)
 Cloned voice                       ✅         ✅ (via VoIP)
 Vision / screen analysis           ✅         ⚠️ (manual images only)
-Efficient / Ultra mode             ✅         ✅
+Fast adaptive execution            ✅         ⚠️ (manual images only)
 App knowledge base                 ✅         ❌
 User memory                        ✅         ✅
 ```

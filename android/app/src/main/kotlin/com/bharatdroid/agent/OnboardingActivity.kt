@@ -387,29 +387,12 @@ class OnboardingActivity : AppCompatActivity() {
         btnSimYes.setOnClickListener { selectSim(true) }
         btnSimNo.setOnClickListener { selectSim(false) }
 
-        // -- Agent mode ---------------------------------------------------
-        val btnEfficient = findViewById<Button>(R.id.btnOnboardEfficient)
+        // -- Execution speed ---------------------------------------------
+        val btnFast = findViewById<Button>(R.id.btnOnboardFast)
         val btnUltra = findViewById<Button>(R.id.btnOnboardUltra)
-
-        fun selectEfficient() {
-            ultraMode = false
-            btnEfficient.setBackgroundColor(0xFF00CC88.toInt())
-            btnEfficient.setTextColor(0xFF000000.toInt())
-            btnUltra.setBackgroundColor(0xFF1E1E1E.toInt())
-            btnUltra.setTextColor(0xFFAAAAAA.toInt())
-        }
-
-        fun selectUltra() {
-            ultraMode = true
-            btnUltra.setBackgroundColor(0xFFFF5C00.toInt())
-            btnUltra.setTextColor(0xFFFFFFFF.toInt())
-            btnEfficient.setBackgroundColor(0xFF1E1E1E.toInt())
-            btnEfficient.setTextColor(0xFFAAAAAA.toInt())
-        }
-
-        btnEfficient.setOnClickListener { selectEfficient() }
-        btnUltra.setOnClickListener { selectUltra() }
-        selectEfficient()
+        ultraMode = false
+        btnFast.visibility = View.GONE
+        btnUltra.visibility = View.GONE
 
         findViewById<Button>(R.id.btnLaunchAgent).setOnClickListener {
             whatsappChannelNumber = findViewById<EditText>(R.id.etOnboardWaNumber)

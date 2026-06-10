@@ -779,11 +779,11 @@
 
             </LinearLayout>
 
-            <!-- Agent Mode -->
+            <!-- Execution speed -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Agent Mode"
+                android:text="Execution speed"
                 android:textColor="#FFFFFF"
                 android:textSize="15sp"
                 android:textStyle="bold"
@@ -792,7 +792,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Efficient: saves API credits, fast, good for everyday tasks.\nUltra: vision on every step, full context, maximum steps."
+                android:text="BharatClaw uses one fast path. It reads app screens instantly and adds visual reading only when forms, documents, or stuck screens need it."
                 android:textColor="#888888"
                 android:textSize="12sp"
                 android:lineSpacingMultiplier="1.4"
@@ -805,11 +805,11 @@
                 android:layout_marginTop="10dp">
 
                 <Button
-                    android:id="@+id/btnOnboardEfficient"
+                    android:id="@+id/btnOnboardFast"
                     android:layout_width="0dp"
                     android:layout_height="46dp"
                     android:layout_weight="1"
-                    android:text="Efficient"
+                    android:text="Fast"
                     android:textSize="13sp"
                     android:textStyle="bold"
                     android:backgroundTint="#00CC88"
@@ -822,7 +822,7 @@
                     android:layout_width="0dp"
                     android:layout_height="46dp"
                     android:layout_weight="1"
-                    android:text="Ultra"
+                    android:text="Adaptive vision"
                     android:textSize="13sp"
                     android:backgroundTint="#1E1E1E"
                     android:textColor="#AAAAAA"

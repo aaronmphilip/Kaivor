@@ -30,7 +30,7 @@ data class IncomingMessage(
     val replyToMessageId: Long? = null,
 )
 
-enum class TelegramAttachmentKind { DOCUMENT, PHOTO }
+enum class TelegramAttachmentKind { DOCUMENT, PHOTO, AUDIO }
 
 data class TelegramAttachment(
     val kind: TelegramAttachmentKind,
@@ -480,6 +480,11 @@ class TelegramPoller(
         return when (fileName.substringAfterLast('.', "").lowercase()) {
             "pdf" -> "application/pdf"
             "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "ogg", "oga", "opus" -> "audio/ogg"
+            "mp3" -> "audio/mpeg"
+            "m4a", "mp4" -> "audio/mp4"
+            "wav" -> "audio/wav"
+            "webm" -> "audio/webm"
             "txt", "md", "csv", "json", "xml", "log" -> "text/plain"
             "html", "htm" -> "text/html"
             "jpg", "jpeg" -> "image/jpeg"
@@ -498,6 +503,31 @@ class TelegramPoller(
             fileName = document.get("file_name")?.asString.orEmpty(),
             mimeType = document.get("mime_type")?.asString.orEmpty(),
             sizeBytes = document.get("file_size")?.asLong ?: 0L,
+        )
+    }
+
+    private fun parseVoiceAttachment(message: JsonObject): TelegramAttachment? {
+        val voice = message.getAsJsonObject("voice") ?: return null
+        return TelegramAttachment(
+            kind = TelegramAttachmentKind.AUDIO,
+            fileId = voice.get("file_id")?.asString ?: return null,
+            uniqueId = voice.get("file_unique_id")?.asString.orEmpty(),
+            fileName = "voice_${voice.get("file_unique_id")?.asString.orEmpty()}.ogg",
+            mimeType = voice.get("mime_type")?.asString ?: "audio/ogg",
+            sizeBytes = voice.get("file_size")?.asLong ?: 0L,
+        )
+    }
+
+    private fun parseAudioAttachment(message: JsonObject): TelegramAttachment? {
+        val audio = message.getAsJsonObject("audio") ?: return null
+        val fileName = audio.get("file_name")?.asString.orEmpty()
+        return TelegramAttachment(
+            kind = TelegramAttachmentKind.AUDIO,
+            fileId = audio.get("file_id")?.asString ?: return null,
+            uniqueId = audio.get("file_unique_id")?.asString.orEmpty(),
+            fileName = fileName.ifBlank { "audio_${audio.get("file_unique_id")?.asString.orEmpty()}" },
+            mimeType = audio.get("mime_type")?.asString ?: inferMimeType(fileName),
+            sizeBytes = audio.get("file_size")?.asLong ?: 0L,
         )
     }
 
@@ -536,7 +566,9 @@ class TelegramPoller(
                         ?: message.get("caption")?.asString
                         ?: ""
                     val from = message.getAsJsonObject("from")
-                    val attachment = parseDocumentAttachment(message)
+                    val attachment = parseVoiceAttachment(message)
+                        ?: parseAudioAttachment(message)
+                        ?: parseDocumentAttachment(message)
                         ?: parsePhotoAttachment(message)
                     if (text.isBlank() && attachment == null) return@mapNotNull null
 
