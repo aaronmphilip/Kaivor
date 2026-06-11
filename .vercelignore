@@ -1,5 +1,6 @@
 .git/
 .codex/
+.codex-screenshots/
 .claire/
 .claude/
 .vercel/
