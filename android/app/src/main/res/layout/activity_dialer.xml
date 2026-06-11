@@ -7,7 +7,7 @@
     android:gravity="center_horizontal"
     android:padding="24dp">
 
-    <View android:layout_width="match_parent" android:layout_height="3dp" android:background="#FF5C00"/>
+    <View android:layout_width="match_parent" android:layout_height="3dp" android:background="#CAFF3F"/>
 
     <Button
         android:id="@+id/btnDialerBack"

@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0A0A0A"
+    android:background="#07090D"
     android:fillViewport="true"
     android:scrollbars="none">
 
@@ -19,7 +19,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="3dp"
-            android:background="#FF5C00" />
+            android:background="#CAFF3F" />
 
         <!-- ─── Header ───────────────────────────── -->
         <LinearLayout
@@ -49,7 +49,7 @@
                 android:textSize="22sp"
                 android:textStyle="bold"
                 android:layout_marginStart="14dp"
-                android:letterSpacing="-0.01" />
+                android:letterSpacing="0" />
         </LinearLayout>
 
         <!-- ═══════════════════════════════════════ -->
@@ -59,7 +59,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="AGENT AI"
-            android:textColor="#666666"
+            android:textColor="#8B96A5"
             android:textSize="11sp"
             android:textStyle="bold"
             android:letterSpacing="0.15"
@@ -77,7 +77,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="The AI that powers phone actions"
+            android:text="Gemini is recommended for fast phone actions, voice notes, screen reading, and documents."
             android:textColor="#777777"
             android:textSize="12sp"
             android:layout_marginTop="2dp" />
@@ -97,8 +97,8 @@
                 android:text="Gemini"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:backgroundTint="#1A73E8"
-                android:textColor="#FFFFFF"
+                android:backgroundTint="#CAFF3F"
+                android:textColor="#05070A"
                 android:layout_marginEnd="6dp"
                 android:stateListAnimator="@null" />
 
@@ -129,7 +129,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="API Key"
+            android:text="Gemini API Key"
             android:textColor="#FFFFFF"
             android:textSize="15sp"
             android:textStyle="bold"
@@ -139,7 +139,7 @@
             android:id="@+id/tvKeyHint"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Get your free key at aistudio.google.com/apikey"
+            android:text="Paste a Gemini API key from aistudio.google.com/apikey"
             android:textColor="#777777"
             android:textSize="12sp"
             android:layout_marginTop="2dp" />
@@ -170,7 +170,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Optional. Leave blank for defaults: gemini-2.5-flash - claude-haiku-4-5 - gpt-4o-mini"
+            android:text="Optional. Leave blank for the fastest safe default for the selected provider."
             android:textColor="#777777"
             android:textSize="12sp"
             android:lineSpacingMultiplier="1.3"
@@ -197,7 +197,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="RESEARCH AI"
-            android:textColor="#666666"
+            android:textColor="#8B96A5"
             android:textSize="11sp"
             android:textStyle="bold"
             android:letterSpacing="0.15"
@@ -215,7 +215,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Powers /info and /research. Leave key blank to reuse the Agent AI."
+            android:text="Powers /info and /research. Leave blank to reuse the Gemini agent key."
             android:textColor="#777777"
             android:textSize="12sp"
             android:layout_marginTop="2dp" />
@@ -266,7 +266,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="API Key"
+            android:text="Research API Key"
             android:textColor="#FFFFFF"
             android:textSize="15sp"
             android:textStyle="bold"
@@ -400,7 +400,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Optional - platform.openai.com/api-keys - ~$0.015 per 1k characters"
+            android:text="Optional. Use an OpenAI API key from platform.openai.com/api-keys if you want voice-note replies."
             android:textColor="#777777"
             android:textSize="12sp"
             android:layout_marginTop="2dp" />
@@ -562,8 +562,8 @@
                 android:text="Ask Permission"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:backgroundTint="#00CC88"
-                android:textColor="#000000"
+                android:backgroundTint="#4ED7FF"
+                android:textColor="#05070A"
                 android:layout_marginEnd="6dp"
                 android:stateListAnimator="@null" />
 
@@ -612,8 +612,8 @@
                 android:text="Learning ON"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:backgroundTint="#00CC88"
-                android:textColor="#000000"
+                android:backgroundTint="#CAFF3F"
+                android:textColor="#05070A"
                 android:layout_marginEnd="6dp"
                 android:stateListAnimator="@null" />
 
@@ -636,7 +636,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="WHATSAPP CHANNEL"
-            android:textColor="#666666"
+            android:textColor="#8B96A5"
             android:textSize="11sp"
             android:textStyle="bold"
             android:letterSpacing="0.15"
@@ -681,7 +681,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="DISPLAY"
-            android:textColor="#666666"
+            android:textColor="#8B96A5"
             android:textSize="11sp"
             android:textStyle="bold"
             android:letterSpacing="0.15"
@@ -720,8 +720,8 @@
                 android:text="Notch ON"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:backgroundTint="#00CC88"
-                android:textColor="#000000"
+                android:backgroundTint="#CAFF3F"
+                android:textColor="#05070A"
                 android:layout_marginEnd="6dp"
                 android:stateListAnimator="@null" />
 
@@ -745,7 +745,7 @@
             android:text="Grant Display over other apps"
             android:textSize="13sp"
             android:backgroundTint="#1A1A1A"
-            android:textColor="#FF5C00"
+            android:textColor="#CAFF3F"
             android:stateListAnimator="@null" />
 
         <!-- ═══════════════════════════════════════ -->
@@ -755,7 +755,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="SPEED"
-            android:textColor="#666666"
+            android:textColor="#8B96A5"
             android:textSize="11sp"
             android:textStyle="bold"
             android:letterSpacing="0.15"
@@ -794,8 +794,8 @@
                 android:text="Fast"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:backgroundTint="#00CC88"
-                android:textColor="#000000"
+                android:backgroundTint="#CAFF3F"
+                android:textColor="#05070A"
                 android:layout_marginEnd="6dp"
                 android:stateListAnimator="@null" />
 
@@ -818,7 +818,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="AI CALL ANSWERING"
-            android:textColor="#666666"
+            android:textColor="#8B96A5"
             android:textSize="11sp"
             android:textStyle="bold"
             android:letterSpacing="0.15"
@@ -850,7 +850,7 @@
             android:text="Set as Default Phone App"
             android:textSize="13sp"
             android:backgroundTint="#1A1A1A"
-            android:textColor="#FF5C00"
+            android:textColor="#CAFF3F"
             android:stateListAnimator="@null" />
 
         <LinearLayout
@@ -1017,8 +1017,8 @@
             android:text="Save and Restart Agent"
             android:textSize="15sp"
             android:textStyle="bold"
-            android:backgroundTint="#FF5C00"
-            android:textColor="#FFFFFF"
+            android:backgroundTint="#CAFF3F"
+            android:textColor="#05070A"
             android:layout_marginTop="36dp"
             android:stateListAnimator="@null" />
 
@@ -1035,7 +1035,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="DANGER ZONE"
-            android:textColor="#FF6B6B"
+            android:textColor="#FF775C"
             android:textSize="11sp"
             android:textStyle="bold"
             android:letterSpacing="0.15"
@@ -1048,7 +1048,7 @@
             android:text="Reset App (erase all settings)"
             android:textSize="13sp"
             android:backgroundTint="#1A0A0A"
-            android:textColor="#FF6B6B"
+            android:textColor="#FF775C"
             android:layout_marginTop="12dp"
             android:stateListAnimator="@null" />
 

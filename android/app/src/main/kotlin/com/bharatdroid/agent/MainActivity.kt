@@ -47,13 +47,13 @@ class MainActivity : AppCompatActivity() {
         SkillCard("Maps", "Navigation", "#1EA362"),
         SkillCard("Chrome", "Web + forms", "#4285F4"),
         SkillCard("Calendar", "Schedule", "#4285F4"),
-        SkillCard("Contacts", "Phone + Contacts", "#1A73E8"),
+        SkillCard("Contacts", "Phone + Contacts", "#4ED7FF"),
         SkillCard("Notes", "Google Keep", "#FBBC04"),
         SkillCard("Files", "Browse + Share", "#8B949E"),
         SkillCard("YouTube", "Videos", "#FF5A5A"),
         SkillCard("Settings", "Phone Settings", "#8B949E"),
         SkillCard("Screen", "Read + Summarize", "#00BCD4"),
-        SkillCard("General", "Any Task", "#FF5C00"),
+        SkillCard("General", "Any Task", "#CAFF3F"),
     )
     data class SkillCard(val name: String, val description: String, val color: String)
 
@@ -136,19 +136,19 @@ class MainActivity : AppCompatActivity() {
             statusText.text = "BharatClaw Online"
             statusText.setTextColor(Color.WHITE)
             toggleBtn.text = "Stop Agent"
-            toggleBtn.setBackgroundColor(0xFF331111.toInt())
-            toggleBtn.setTextColor(0xFFFF6B6B.toInt())
+            toggleBtn.setBackgroundColor(0xFF25151A.toInt())
+            toggleBtn.setTextColor(0xFFFF775C.toInt())
         } else {
             dot.setBackgroundResource(R.drawable.dot_red)
             statusText.text = "BharatClaw Paused"
-            statusText.setTextColor(0xFFFF6B6B.toInt())
+            statusText.setTextColor(0xFFFF775C.toInt())
             toggleBtn.text = "Start Agent"
-            toggleBtn.setBackgroundColor(0xFF113311.toInt())
-            toggleBtn.setTextColor(0xFF00CC88.toInt())
+            toggleBtn.setBackgroundColor(0xFF182712.toInt())
+            toggleBtn.setTextColor(0xFFCAFF3F.toInt())
         }
 
         accessText.text = if (serviceOk) "Accessibility: Connected" else "Accessibility: Not connected (tap to fix)"
-        accessText.setTextColor(if (serviceOk) 0xFF888888.toInt() else 0xFFFF6B6B.toInt())
+        accessText.setTextColor(if (serviceOk) 0xFF8B96A5.toInt() else 0xFFFF775C.toInt())
         if (!serviceOk) {
             accessText.setOnClickListener {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
@@ -175,27 +175,27 @@ class MainActivity : AppCompatActivity() {
         val btn = findViewById<Button>(R.id.btnEnableNotifRelay)
         if (notifGranted) {
             badge.text = "LIVE"
-            badge.setTextColor(0xFF00CC88.toInt())
-            badge.setBackgroundColor(0xFF0D2B1E.toInt())
+            badge.setTextColor(0xFFCAFF3F.toInt())
+            badge.setBackgroundColor(0xFF182712.toInt())
             desc.text = "Active. App notifications are forwarded to Telegram. Reply to a forwarded message to answer inside that app when quick reply is available.\n\nSend /muted to manage per-app muting."
             btn.text = "Manage in Settings"
         } else {
             badge.text = "OFF"
-            badge.setTextColor(0xFFFF6B6B.toInt())
-            badge.setBackgroundColor(0xFF331111.toInt())
+            badge.setTextColor(0xFFFF775C.toInt())
+            badge.setBackgroundColor(0xFF25151A.toInt())
             desc.text = "Forward app notifications to Telegram and answer supported notifications without opening the app."
             btn.text = "Enable Notification Access"
         }
 
         // Capability badges: Voice STT and notification relay.
-        val agentKey = prefs.getString("agent_api_key", prefs.getString("ai_api_key", ""))?.trim().orEmpty()
+        val agentKey = prefs.getString("agent_ai_key", prefs.getString("ai_key", ""))?.trim().orEmpty()
         val sttText  = findViewById<TextView>(R.id.tvSttStatus)
         sttText.text = if (agentKey.isNotBlank()) "Voice ON" else "Voice OFF"
-        sttText.setTextColor(if (agentKey.isNotBlank()) 0xFF00CC88.toInt() else 0xFFFF6B6B.toInt())
+        sttText.setTextColor(if (agentKey.isNotBlank()) 0xFFCAFF3F.toInt() else 0xFFFF775C.toInt())
 
         val notifMini = findViewById<TextView>(R.id.tvNotifBadgeMini)
         notifMini.text = if (notifGranted) "Notifs ON" else "Notifs OFF"
-        notifMini.setTextColor(if (notifGranted) 0xFF00CC88.toInt() else 0xFF888888.toInt())
+        notifMini.setTextColor(if (notifGranted) 0xFF4ED7FF.toInt() else 0xFF8B96A5.toInt())
     }
 
     private fun renderTaskProgress(task: TaskProgressSnapshot) {
@@ -214,12 +214,12 @@ class MainActivity : AppCompatActivity() {
         title.text = label
         progress.text = task.stage.ifBlank { "Idle" }
         progress.setTextColor(when (task.status) {
-            TaskProgressStore.STATUS_RUNNING -> 0xFFFF5C00.toInt()
+            TaskProgressStore.STATUS_RUNNING -> 0xFFCAFF3F.toInt()
             TaskProgressStore.STATUS_WAITING -> 0xFFFFCC00.toInt()
-            TaskProgressStore.STATUS_DONE -> 0xFF00CC88.toInt()
-            TaskProgressStore.STATUS_FAILED -> 0xFFFF6B6B.toInt()
+            TaskProgressStore.STATUS_DONE -> 0xFF4ED7FF.toInt()
+            TaskProgressStore.STATUS_FAILED -> 0xFFFF775C.toInt()
             TaskProgressStore.STATUS_STOPPED -> 0xFFAAAAAA.toInt()
-            else -> 0xFF666666.toInt()
+            else -> 0xFF8B96A5.toInt()
         })
 
         val parts = buildList {
@@ -299,7 +299,7 @@ class MainActivity : AppCompatActivity() {
             })
             addView(TextView(this@MainActivity).apply {
                 text = skill.description
-                setTextColor(0xFF666666.toInt())
+                setTextColor(0xFF8B96A5.toInt())
                 textSize = 10.5f
             })
         }
@@ -313,7 +313,7 @@ class MainActivity : AppCompatActivity() {
         if (entries.isEmpty()) {
             container.addView(TextView(this).apply {
                 text = "No activity yet. Send a Telegram command to start."
-                setTextColor(0xFF555555.toInt())
+                setTextColor(0xFF8B96A5.toInt())
                 textSize = 13f
                 setPadding(0, 8.dp, 0, 0)
             })
@@ -322,7 +322,7 @@ class MainActivity : AppCompatActivity() {
 
         entries.forEach { entry ->
             val icon = if (entry.result == "success") "\u2713" else "\u2717"
-            val iconColor = if (entry.result == "success") 0xFF00CC88.toInt() else 0xFFFF6B6B.toInt()
+            val iconColor = if (entry.result == "success") 0xFFCAFF3F.toInt() else 0xFFFF775C.toInt()
 
             container.addView(LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -347,7 +347,7 @@ class MainActivity : AppCompatActivity() {
                     })
                     addView(TextView(this@MainActivity).apply {
                         text = "${entry.summary.take(60)} \u00b7 ${entry.timeFormatted}"
-                        setTextColor(0xFF666666.toInt())
+                        setTextColor(0xFF8B96A5.toInt())
                         textSize = 11f
                     })
                 })

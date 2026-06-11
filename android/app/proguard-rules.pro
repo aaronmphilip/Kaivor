@@ -13,6 +13,9 @@
 -keep class okhttp3.** { *; }
 -keep interface okhttp3.** { *; }
 
+# PDFBox Android references this optional JPEG2000 decoder when JPX images are present.
+-dontwarn com.gemalto.jp2.JP2Decoder
+
 # Keep BharatClaw skill manifests (used in reflection/serialization)
 -keep class com.bharatdroid.agent.skills.** { *; }
 -keep class com.bharatdroid.agent.AgentConfig { *; }

@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0A0A0A"
+    android:background="#07090D"
     android:padding="24dp">
 
     <LinearLayout
@@ -14,7 +14,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="3dp"
-            android:background="#FF5C00"/>
+            android:background="#CAFF3F"/>
 
         <!-- Step indicator -->
         <TextView
@@ -22,7 +22,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Step 1 of 6"
-            android:textColor="#FF5C00"
+            android:textColor="#CAFF3F"
             android:textSize="12sp"
             android:layout_marginTop="20dp" />
 
@@ -35,6 +35,13 @@
             android:gravity="center_horizontal"
             android:layout_marginTop="60dp"
             android:visibility="visible">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/ic_logo_mark"
+                android:contentDescription="BharatClaw logo"
+                android:layout_marginBottom="18dp" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -59,7 +66,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="&quot;Fill this website form with my details&quot;\n&quot;Find the best ride and message me the ETA&quot;\n&quot;Read the PDF in Downloads&quot;\n&quot;Reply to that WhatsApp notification&quot;"
-                android:textColor="#00CC88"
+                android:textColor="#CAFF3F"
                 android:textSize="14sp"
                 android:gravity="center"
                 android:lineSpacingMultiplier="1.5"
@@ -82,8 +89,8 @@
                 android:text="Get Started"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                android:backgroundTint="#FF5C00"
-                android:textColor="#FFFFFF"
+                android:backgroundTint="#CAFF3F"
+                android:textColor="#05070A"
                 android:layout_marginTop="40dp" />
         </LinearLayout>
 
@@ -158,8 +165,8 @@
                 android:layout_height="52dp"
                 android:text="Verify Token"
                 android:textSize="15sp"
-                android:backgroundTint="#FF5C00"
-                android:textColor="#FFFFFF"
+                android:backgroundTint="#CAFF3F"
+                android:textColor="#05070A"
                 android:layout_marginTop="16dp" />
         </LinearLayout>
 
@@ -196,14 +203,14 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:layout_marginTop="32dp"
-                android:indeterminateTint="#FF4500" />
+                android:indeterminateTint="#CAFF3F" />
 
             <TextView
                 android:id="@+id/tvPairResult"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text=""
-                android:textColor="#00CC88"
+                android:textColor="#CAFF3F"
                 android:textSize="15sp"
                 android:gravity="center"
                 android:layout_marginTop="16dp" />
@@ -223,13 +230,13 @@
                 android:layout_height="52dp"
                 android:text="Continue"
                 android:textSize="15sp"
-                android:backgroundTint="#FF5C00"
-                android:textColor="#FFFFFF"
+                android:backgroundTint="#CAFF3F"
+                android:textColor="#05070A"
                 android:layout_marginTop="16dp"
                 android:visibility="gone" />
         </LinearLayout>
 
-        <!--  STEP 4: Claude API Key            -->
+        <!--  STEP 4: Gemini API Key            -->
         <LinearLayout
             android:id="@+id/step4"
             android:layout_width="match_parent"
@@ -249,7 +256,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Choose the model provider that will plan and execute phone actions."
+                android:text="Gemini is recommended for phone actions, voice notes, screen reading, and documents. Other providers remain available if you already use them."
                 android:textColor="#AAAAAA"
                 android:textSize="15sp"
                 android:layout_marginTop="16dp" />
@@ -268,8 +275,8 @@
                     android:layout_weight="1"
                     android:text="Gemini"
                     android:textSize="11sp"
-                    android:backgroundTint="#1A73E8"
-                    android:textColor="#FFFFFF"
+                    android:backgroundTint="#CAFF3F"
+                    android:textColor="#05070A"
                     android:layout_marginEnd="4dp" />
 
                 <Button
@@ -300,7 +307,7 @@
                 android:id="@+id/tvAIInstructions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="1. Go to aistudio.google.com/apikey\n2. Sign in with Google\n3. Click 'Create API Key'\n4. Copy and paste below"
+                android:text="1. Open aistudio.google.com/apikey\n2. Sign in with Google\n3. Create a Gemini API key\n4. Paste it below"
                 android:textColor="#AAAAAA"
                 android:textSize="14sp"
                 android:lineSpacingMultiplier="1.5"
@@ -310,7 +317,7 @@
                 android:id="@+id/btnOpenClaude"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:text="Get Free Gemini API Key"
+                android:text="Get Gemini API Key"
                 android:backgroundTint="#1E1E1E"
                 android:textColor="#00AAFF"
                 android:layout_marginTop="12dp" />
@@ -345,7 +352,7 @@
                     android:layout_height="48dp"
                     android:layout_weight="1"
                     android:text="Ask Permission"
-                    android:backgroundTint="#00CC88"
+                    android:backgroundTint="#CAFF3F"
                     android:textColor="#000000"
                     android:textSize="12sp"
                     android:layout_marginEnd="6dp" />
@@ -365,7 +372,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Paste API key:"
+                android:text="Paste Gemini API key:"
                 android:textColor="#CCCCCC"
                 android:textSize="13sp"
                 android:layout_marginTop="16dp"
@@ -375,7 +382,7 @@
                 android:id="@+id/etClaudeKey"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="sk-ant-api03-..."
+                android:hint="AIzaSy..."
                 android:inputType="textPassword"
                 android:textColor="#FFFFFF"
                 android:textColorHint="#555555"
@@ -390,8 +397,8 @@
                 android:layout_height="52dp"
                 android:text="Continue"
                 android:textSize="15sp"
-                android:backgroundTint="#FF5C00"
-                android:textColor="#FFFFFF"
+                android:backgroundTint="#CAFF3F"
+                android:textColor="#05070A"
                 android:layout_marginTop="20dp" />
         </LinearLayout>
 
@@ -436,7 +443,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Not enabled"
-                android:textColor="#FF6B6B"
+                android:textColor="#FF775C"
                 android:textSize="13sp"
                 android:layout_marginTop="8dp" />
 
@@ -473,7 +480,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Not enabled"
-                android:textColor="#FF6B6B"
+                android:textColor="#FF775C"
                 android:textSize="13sp"
                 android:layout_marginTop="8dp" />
 
@@ -529,8 +536,8 @@
                 android:layout_height="52dp"
                 android:text="Continue"
                 android:textSize="15sp"
-                android:backgroundTint="#FF5C00"
-                android:textColor="#FFFFFF"
+                android:backgroundTint="#CAFF3F"
+                android:textColor="#05070A"
                 android:layout_marginTop="32dp" />
         </LinearLayout>
 
@@ -624,7 +631,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Dedicated AI phone setup"
-                    android:textColor="#00CC88"
+                    android:textColor="#CAFF3F"
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
@@ -687,7 +694,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="After setup: open Settings, then AI Call Answering, to set your name, ElevenLabs voice, and VIP numbers."
-                        android:textColor="#00CC88"
+                        android:textColor="#CAFF3F"
                         android:textSize="11sp"
                         android:layout_marginTop="8dp" />
 
@@ -728,7 +735,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Main phone setup"
-                    android:textColor="#00CC88"
+                    android:textColor="#CAFF3F"
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
@@ -764,7 +771,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Option 2: AI Call Answering (Power Mode)"
-                    android:textColor="#FF5C00"
+                    android:textColor="#FF775C"
                     android:textSize="13sp"
                     android:textStyle="bold" />
 
@@ -812,7 +819,7 @@
                     android:text="Fast"
                     android:textSize="13sp"
                     android:textStyle="bold"
-                    android:backgroundTint="#00CC88"
+                    android:backgroundTint="#CAFF3F"
                     android:textColor="#000000"
                     android:layout_marginEnd="6dp"
                     android:stateListAnimator="@null" />
@@ -870,8 +877,8 @@
                 android:text="Launch BharatClaw"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:backgroundTint="#FF5C00"
-                android:textColor="#FFFFFF"
+                android:backgroundTint="#CAFF3F"
+                android:textColor="#05070A"
                 android:layout_marginTop="32dp" />
 
             <TextView

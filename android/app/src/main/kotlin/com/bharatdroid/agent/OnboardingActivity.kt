@@ -46,17 +46,17 @@ class OnboardingActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvAccessStatus)?.let { tv ->
             if (AgentAccessibilityService.isConnected) {
                 tv.text = "Accessibility enabled"
-                tv.setTextColor(0xFF00CC88.toInt())
+                tv.setTextColor(0xFFCAFF3F.toInt())
             } else {
                 tv.text = "Not enabled yet"
-                tv.setTextColor(0xFFFF6B6B.toInt())
+                tv.setTextColor(0xFFFF775C.toInt())
             }
         }
         // Notification access status
         findViewById<TextView>(R.id.tvNotifStatus)?.let { tv ->
             if (NotificationRelay.isPermissionGranted(this)) {
                 tv.text = "Notification access enabled. Relay is active"
-                tv.setTextColor(0xFF00CC88.toInt())
+                tv.setTextColor(0xFF4ED7FF.toInt())
             } else {
                 tv.text = "Not enabled. Optional"
                 tv.setTextColor(0xFFAAAAAA.toInt())
@@ -66,7 +66,7 @@ class OnboardingActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvOverlayStatus)?.let { tv ->
             if (Settings.canDrawOverlays(this)) {
                 tv.text = "Overlay granted. Notch is ready"
-                tv.setTextColor(0xFF00CC88.toInt())
+                tv.setTextColor(0xFFCAFF3F.toInt())
             } else {
                 tv.text = "Not granted. Optional"
                 tv.setTextColor(0xFFAAAAAA.toInt())
@@ -137,7 +137,7 @@ class OnboardingActivity : AppCompatActivity() {
     private fun showTokenStatus(msg: String, success: Boolean) {
         val tv = findViewById<TextView>(R.id.tvTokenStatus)
         tv.text = msg
-        tv.setTextColor(if (success) 0xFF00CC88.toInt() else 0xFFFF6B6B.toInt())
+        tv.setTextColor(if (success) 0xFFCAFF3F.toInt() else 0xFFFF775C.toInt())
     }
 
     // -- Step 3: Auto-detect Chat ID ----------
@@ -180,12 +180,12 @@ class OnboardingActivity : AppCompatActivity() {
                 chatId = user.chatId
                 result.text = "Paired with ${user.firstName}" +
                         (if (user.username != null) " (@${user.username})" else "")
-                result.setTextColor(0xFF00CC88.toInt())
+                result.setTextColor(0xFFCAFF3F.toInt())
                 nextBtn.visibility = View.VISIBLE
                 nextBtn.setOnClickListener { showStep(4) }
             } else {
                 result.text = "Timed out. Make sure you sent /start to the right bot."
-                result.setTextColor(0xFFFF6B6B.toInt())
+                result.setTextColor(0xFFFF775C.toInt())
                 instructions.text = "Tap the button below to open your bot, then send /start."
                 nextBtn.visibility = View.VISIBLE
                 nextBtn.text = "Retry"
@@ -220,19 +220,19 @@ class OnboardingActivity : AppCompatActivity() {
         fun selectGemini() {
             selectedProvider = AIProvider.GEMINI
             resetProviderButtons()
-            btnGemini.setBackgroundColor(0xFF1A73E8.toInt())
-            btnGemini.setTextColor(0xFFFFFFFF.toInt())
-            instructions.text = "1. Go to aistudio.google.com/apikey\n2. Sign in with Google\n3. Click 'Create API Key'\n4. Copy and paste below"
-            openBtn.text = "Get Free Gemini API Key"
+            btnGemini.setBackgroundColor(0xFFCAFF3F.toInt())
+            btnGemini.setTextColor(0xFF05070A.toInt())
+            instructions.text = "1. Open aistudio.google.com/apikey\n2. Sign in with Google\n3. Create a Gemini API key\n4. Paste it below"
+            openBtn.text = "Get Gemini API Key"
             keyField.hint = "AIzaSy..."
         }
 
         fun selectClaude() {
             selectedProvider = AIProvider.CLAUDE
             resetProviderButtons()
-            btnClaude.setBackgroundColor(0xFFCC7000.toInt())
+            btnClaude.setBackgroundColor(0xFF2A2118.toInt())
             btnClaude.setTextColor(0xFFFFFFFF.toInt())
-            instructions.text = "1. Go to console.anthropic.com\n2. Sign up / Log in\n3. Go to API Keys -> Create key\n4. Copy and paste below\n\nNote: Claude is paid (~\$0.25/1000 commands)"
+            instructions.text = "1. Open console.anthropic.com\n2. Sign up or log in\n3. Create an API key\n4. Paste it below\n\nA paid account may be required."
             openBtn.text = "Open console.anthropic.com"
             keyField.hint = "sk-ant-api03-..."
         }
@@ -240,9 +240,9 @@ class OnboardingActivity : AppCompatActivity() {
         fun selectOpenAI() {
             selectedProvider = AIProvider.OPENAI
             resetProviderButtons()
-            btnOpenAI?.setBackgroundColor(0xFF10A37F.toInt())
+            btnOpenAI?.setBackgroundColor(0xFF16332A.toInt())
             btnOpenAI?.setTextColor(0xFFFFFFFF.toInt())
-            instructions.text = "1. Go to platform.openai.com/api-keys\n2. Sign up / Log in\n3. Create a new API key\n4. Copy and paste below\n\nNote: ChatGPT is paid (~\$0.15/1000 commands)"
+            instructions.text = "1. Open platform.openai.com/api-keys\n2. Sign up or log in\n3. Create an API key\n4. Paste it below\n\nA paid account may be required."
             openBtn.text = "Get ChatGPT API Key"
             keyField.hint = "sk-proj-..."
         }
@@ -267,16 +267,16 @@ class OnboardingActivity : AppCompatActivity() {
 
         fun selectAskMode() {
             askPermission = true
-            btnAskMode.setBackgroundColor(0xFF00CC88.toInt())
-            btnAskMode.setTextColor(0xFF000000.toInt())
+            btnAskMode.setBackgroundColor(0xFF4ED7FF.toInt())
+            btnAskMode.setTextColor(0xFF05070A.toInt())
             btnJustDoIt.setBackgroundColor(0xFF1E1E1E.toInt())
             btnJustDoIt.setTextColor(0xFFAAAAAA.toInt())
         }
 
         fun selectJustDoIt() {
             askPermission = false
-            btnJustDoIt.setBackgroundColor(0xFFFF4500.toInt())
-            btnJustDoIt.setTextColor(0xFFFFFFFF.toInt())
+            btnJustDoIt.setBackgroundColor(0xFFCAFF3F.toInt())
+            btnJustDoIt.setTextColor(0xFF05070A.toInt())
             btnAskMode.setBackgroundColor(0xFF1E1E1E.toInt())
             btnAskMode.setTextColor(0xFFAAAAAA.toInt())
         }
@@ -356,7 +356,7 @@ class OnboardingActivity : AppCompatActivity() {
             getSharedPreferences("bharatdroid", MODE_PRIVATE).edit()
                 .putString("phone_setup_type", if (dedicated) "dedicated" else "main").apply()
             if (dedicated) {
-                btnDedicated.setBackgroundColor(0xFF00CC88.toInt()); btnDedicated.setTextColor(0xFF000000.toInt())
+                btnDedicated.setBackgroundColor(0xFFCAFF3F.toInt()); btnDedicated.setTextColor(0xFF05070A.toInt())
                 btnMainPhone.setBackgroundColor(0xFF1E1E1E.toInt()); btnMainPhone.setTextColor(0xFFAAAAAA.toInt())
                 layoutDedicated.visibility = android.view.View.VISIBLE
                 layoutMain.visibility = android.view.View.GONE
@@ -370,7 +370,7 @@ class OnboardingActivity : AppCompatActivity() {
 
         fun selectSim(hasActive: Boolean) {
             if (hasActive) {
-                btnSimYes.setBackgroundColor(0xFF00CC88.toInt()); btnSimYes.setTextColor(0xFF000000.toInt())
+                btnSimYes.setBackgroundColor(0xFFCAFF3F.toInt()); btnSimYes.setTextColor(0xFF05070A.toInt())
                 btnSimNo.setBackgroundColor(0xFF1E1E1E.toInt()); btnSimNo.setTextColor(0xFFAAAAAA.toInt())
                 layoutSimYes.visibility = android.view.View.VISIBLE
                 layoutSimNo.visibility = android.view.View.GONE

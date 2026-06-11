@@ -200,21 +200,21 @@ class SettingsActivity : AppCompatActivity() {
 
             when (provider) {
                 AIProvider.GEMINI -> {
-                    btnGemini.setBackgroundColor(0xFF1A73E8.toInt())
-                    btnGemini.setTextColor(0xFFFFFFFF.toInt())
-                    keyHint.text = "Get your free key at aistudio.google.com/apikey"
+                    btnGemini.setBackgroundColor(0xFFCAFF3F.toInt())
+                    btnGemini.setTextColor(0xFF05070A.toInt())
+                    keyHint.text = "Paste a Gemini API key from aistudio.google.com/apikey"
                     keyField.hint = "AIzaSy..."
                 }
                 AIProvider.CLAUDE -> {
-                    btnClaude.setBackgroundColor(0xFFCC7000.toInt())
+                    btnClaude.setBackgroundColor(0xFF2A2118.toInt())
                     btnClaude.setTextColor(0xFFFFFFFF.toInt())
-                    keyHint.text = "Get key at console.anthropic.com (paid)"
+                    keyHint.text = "Use an Anthropic API key from console.anthropic.com"
                     keyField.hint = "sk-ant-api03-..."
                 }
                 AIProvider.OPENAI -> {
-                    btnOpenAI.setBackgroundColor(0xFF10A37F.toInt())
+                    btnOpenAI.setBackgroundColor(0xFF16332A.toInt())
                     btnOpenAI.setTextColor(0xFFFFFFFF.toInt())
-                    keyHint.text = "Get key at platform.openai.com/api-keys (paid)"
+                    keyHint.text = "Use an OpenAI API key from platform.openai.com/api-keys"
                     keyField.hint = "sk-proj-..."
                 }
             }
@@ -234,13 +234,13 @@ class SettingsActivity : AppCompatActivity() {
         fun selectMode(ask: Boolean) {
             askPermission = ask
             if (ask) {
-                btnAsk.setBackgroundColor(0xFF00CC88.toInt())
-                btnAsk.setTextColor(0xFF000000.toInt())
+                btnAsk.setBackgroundColor(0xFF4ED7FF.toInt())
+                btnAsk.setTextColor(0xFF05070A.toInt())
                 btnJust.setBackgroundColor(0xFF1E1E1E.toInt())
                 btnJust.setTextColor(0xFFAAAAAA.toInt())
             } else {
-                btnJust.setBackgroundColor(0xFFFF4500.toInt())
-                btnJust.setTextColor(0xFFFFFFFF.toInt())
+                btnJust.setBackgroundColor(0xFFCAFF3F.toInt())
+                btnJust.setTextColor(0xFF05070A.toInt())
                 btnAsk.setBackgroundColor(0xFF1E1E1E.toInt())
                 btnAsk.setTextColor(0xFFAAAAAA.toInt())
             }
@@ -259,8 +259,8 @@ class SettingsActivity : AppCompatActivity() {
         fun selectLearning(enabled: Boolean) {
             learningEnabled = enabled
             if (enabled) {
-                btnOn.setBackgroundColor(0xFF00CC88.toInt())
-                btnOn.setTextColor(0xFF000000.toInt())
+                btnOn.setBackgroundColor(0xFFCAFF3F.toInt())
+                btnOn.setTextColor(0xFF05070A.toInt())
                 btnOff.setBackgroundColor(0xFF1E1E1E.toInt())
                 btnOff.setTextColor(0xFFAAAAAA.toInt())
             } else {
@@ -284,8 +284,8 @@ class SettingsActivity : AppCompatActivity() {
         fun render(enabled: Boolean) {
             ttsEnabled = enabled
             if (enabled) {
-                btnOn.setBackgroundColor(0xFF00CC88.toInt())
-                btnOn.setTextColor(0xFF000000.toInt())
+                btnOn.setBackgroundColor(0xFFCAFF3F.toInt())
+                btnOn.setTextColor(0xFF05070A.toInt())
                 btnOff.setBackgroundColor(0xFF1A1A1A.toInt())
                 btnOff.setTextColor(0xFFAAAAAA.toInt())
             } else {
@@ -318,8 +318,8 @@ class SettingsActivity : AppCompatActivity() {
                 "shimmer" -> btnShimmer
                 else -> btnAlloy
             }
-            active.setBackgroundColor(0xFFFF5C00.toInt())
-            active.setTextColor(0xFFFFFFFF.toInt())
+            active.setBackgroundColor(0xFF4ED7FF.toInt())
+            active.setTextColor(0xFF05070A.toInt())
         }
 
         btnAlloy.setOnClickListener { render("alloy") }
@@ -336,8 +336,8 @@ class SettingsActivity : AppCompatActivity() {
         fun render(enabled: Boolean) {
             notchEnabled = enabled
             if (enabled) {
-                btnOn.setBackgroundColor(0xFF00CC88.toInt())
-                btnOn.setTextColor(0xFF000000.toInt())
+                btnOn.setBackgroundColor(0xFFCAFF3F.toInt())
+                btnOn.setTextColor(0xFF05070A.toInt())
                 btnOff.setBackgroundColor(0xFF1A1A1A.toInt())
                 btnOff.setTextColor(0xFFAAAAAA.toInt())
             } else {
@@ -384,8 +384,8 @@ class SettingsActivity : AppCompatActivity() {
         fun render(enabled: Boolean) {
             callAnsweringEnabled = enabled
             if (enabled) {
-                btnOn.setBackgroundColor(0xFF00CC88.toInt())
-                btnOn.setTextColor(0xFF000000.toInt())
+                btnOn.setBackgroundColor(0xFFCAFF3F.toInt())
+                btnOn.setTextColor(0xFF05070A.toInt())
                 btnOff.setBackgroundColor(0xFF1A1A1A.toInt())
                 btnOff.setTextColor(0xFFAAAAAA.toInt())
             } else {

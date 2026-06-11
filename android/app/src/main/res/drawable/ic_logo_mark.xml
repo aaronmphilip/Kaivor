@@ -2,32 +2,32 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="48dp"
     android:height="48dp"
-    android:viewportWidth="40"
-    android:viewportHeight="40">
+    android:viewportWidth="48"
+    android:viewportHeight="48">
 
-    <!-- Background — deep dark rounded square -->
     <path
-        android:pathData="M6,0 L34,0 Q40,0 40,6 L40,34 Q40,40 34,40 L6,40 Q0,40 0,34 L0,6 Q0,0 6,0 Z"
-        android:fillColor="#0D0D0D"/>
+        android:fillColor="#07090D"
+        android:pathData="M9,3 L39,3 Q45,3 45,9 L45,39 Q45,45 39,45 L9,45 Q3,45 3,39 L3,9 Q3,3 9,3 Z" />
 
-    <!-- B — vertical spine -->
     <path
-        android:pathData="M7,6 L13,6 L13,34 L7,34 Z"
-        android:fillColor="#FF5C00"/>
+        android:strokeColor="#334ED7FF"
+        android:strokeWidth="1.4"
+        android:fillColor="#00000000"
+        android:pathData="M9,3 L39,3 Q45,3 45,9 L45,39 Q45,45 39,45 L9,45 Q3,45 3,39 L3,9 Q3,3 9,3 Z" />
 
-    <!-- B — top bump (D-shape) -->
     <path
-        android:pathData="M13,6 L21,6 Q29,6 29,13 Q29,20 21,20 L13,20 Z"
-        android:fillColor="#FF5C00"/>
+        android:fillColor="#CAFF3F"
+        android:pathData="M15,10 L22,10 L17.5,38 L10.5,38 Z" />
 
-    <!-- B — bottom bump (D-shape, wider) -->
     <path
-        android:pathData="M13,21 L22,21 Q31,21 31,28 Q31,34 22,34 L13,34 Z"
-        android:fillColor="#FF5C00"/>
+        android:fillColor="#4ED7FF"
+        android:pathData="M25,10 L32,10 L27.5,38 L20.5,38 Z" />
 
-    <!-- Accent dot — top right, premium touch -->
     <path
-        android:pathData="M34,6 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0"
-        android:fillColor="#FF7A30"/>
+        android:fillColor="#FF775C"
+        android:pathData="M35,10 L39,10 L35.7,29 L31.7,29 Z" />
 
+    <path
+        android:fillColor="#CAFF3F"
+        android:pathData="M35,34 m-3.5,0 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0" />
 </vector>
