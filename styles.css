@@ -117,19 +117,25 @@ li {
 
 .site-header {
   position: sticky;
-  top: 0;
+  top: 14px;
   z-index: 40;
-  width: min(100%, var(--page));
-  min-height: 70px;
-  margin: 0 auto;
+  width: min(calc(100% - 32px), 1080px);
+  min-height: 68px;
+  margin: 14px auto 0;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 18px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--line);
-  background: rgba(3, 8, 6, 0.82);
-  backdrop-filter: blur(18px);
+  gap: 14px;
+  padding: 10px 12px 10px 14px;
+  border: 1px solid rgba(248, 244, 234, 0.16);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(248, 244, 234, 0.1), rgba(248, 244, 234, 0.04)),
+    rgba(3, 8, 6, 0.72);
+  box-shadow:
+    0 22px 70px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(248, 244, 234, 0.12);
+  backdrop-filter: blur(22px) saturate(150%);
 }
 
 .brand,
@@ -203,8 +209,13 @@ li {
 
 .site-nav {
   display: flex;
+  justify-self: center;
   justify-content: center;
   gap: 5px;
+  border: 1px solid rgba(248, 244, 234, 0.1);
+  border-radius: 999px;
+  padding: 4px;
+  background: rgba(248, 244, 234, 0.055);
   color: #e6eee5;
   font-size: 0.88rem;
 }
@@ -215,8 +226,8 @@ li {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius);
-  padding: 0 12px;
+  border-radius: 999px;
+  padding: 0 14px;
 }
 
 .site-nav a:hover,
@@ -227,7 +238,7 @@ li {
 
 .header-cta {
   border: 1px solid var(--line);
-  background: rgba(248, 244, 234, 0.08);
+  background: rgba(248, 244, 234, 0.1);
 }
 
 .hero,
@@ -247,26 +258,12 @@ li {
   overflow: hidden;
   border: 1px solid rgba(248, 244, 234, 0.16);
   border-radius: 18px;
-  background: var(--bg-deep);
-  box-shadow: 0 26px 100px rgba(0, 0, 0, 0.36);
-}
-
-.scene-video,
-.band-video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.scene-overlay,
-.band-overlay {
-  position: absolute;
-  inset: 0;
   background:
-    linear-gradient(90deg, rgba(3, 8, 6, 0.94) 0%, rgba(3, 8, 6, 0.74) 42%, rgba(3, 8, 6, 0.32) 100%),
-    linear-gradient(0deg, rgba(3, 8, 6, 0.82) 0%, transparent 38%, rgba(3, 8, 6, 0.34) 100%);
+    linear-gradient(132deg, rgba(213, 255, 95, 0.16), transparent 34%),
+    linear-gradient(28deg, rgba(105, 221, 206, 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(248, 244, 234, 0.07), rgba(248, 244, 234, 0.02)),
+    #07100d;
+  box-shadow: 0 26px 100px rgba(0, 0, 0, 0.36);
 }
 
 .hero-inner {
@@ -283,7 +280,6 @@ li {
 .hero-inner > *,
 .problem-section > *,
 .system > *,
-.role-card > *,
 .console-grid article {
   min-width: 0;
 }
@@ -310,10 +306,6 @@ li {
   line-height: 1;
 }
 
-.career-hero h1 {
-  max-width: 12.6ch;
-}
-
 .hero-text,
 .lead {
   max-width: 63ch;
@@ -322,8 +314,7 @@ li {
 }
 
 .hero-actions,
-.download-band,
-.careers-teaser {
+.download-band {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -405,9 +396,7 @@ li {
 .notch-pill small,
 .console-grid span,
 .flow-node span,
-.case-number,
-.role-card span,
-.principle-list span {
+.case-number {
   color: var(--soft);
   font-size: 0.72rem;
   font-weight: 800;
@@ -468,10 +457,7 @@ li {
 
 .outcome-strip article,
 .case-card,
-.setup-steps article,
-.mission-grid article,
-.role-card,
-.principle-list article {
+.setup-steps article {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background:
@@ -509,8 +495,7 @@ li {
 }
 
 .section h2,
-.download-band h2,
-.careers-teaser h2 {
+.download-band h2 {
   max-width: 14ch;
   font-size: 2.45rem;
   line-height: 1.08;
@@ -570,9 +555,7 @@ li {
 }
 
 .case-card h3,
-.setup-steps h3,
-.mission-grid h3,
-.role-card h3 {
+.setup-steps h3 {
   margin-top: 20px;
   margin-bottom: 10px;
   font-size: 1.18rem;
@@ -685,23 +668,17 @@ li {
 }
 
 .calm-band {
-  position: relative;
   min-height: 390px;
   overflow: hidden;
   border: 1px solid rgba(248, 244, 234, 0.16);
   border-radius: 18px;
-  background: var(--bg-deep);
-}
-
-.band-overlay {
   background:
-    linear-gradient(90deg, rgba(3, 8, 6, 0.9), rgba(3, 8, 6, 0.58), rgba(3, 8, 6, 0.8)),
-    linear-gradient(0deg, rgba(3, 8, 6, 0.72), transparent);
+    linear-gradient(135deg, rgba(105, 221, 206, 0.12), transparent 48%),
+    linear-gradient(315deg, rgba(213, 255, 95, 0.13), transparent 50%),
+    rgba(13, 23, 19, 0.94);
 }
 
 .band-copy {
-  position: relative;
-  z-index: 2;
   max-width: 620px;
   display: grid;
   gap: 13px;
@@ -733,17 +710,6 @@ li {
   font-weight: 800;
 }
 
-.careers-teaser {
-  align-items: center;
-  justify-content: space-between;
-  border: 1px solid rgba(105, 221, 206, 0.2);
-  border-radius: var(--radius);
-  padding: 28px;
-  background:
-    linear-gradient(135deg, rgba(105, 221, 206, 0.11), rgba(213, 255, 95, 0.08)),
-    rgba(13, 23, 19, 0.92);
-}
-
 .download-band {
   align-items: center;
   justify-content: space-between;
@@ -762,87 +728,8 @@ li {
   gap: 10px;
 }
 
-.download-band .button,
-.careers-teaser .button {
+.download-band .button {
   flex: 0 0 auto;
-}
-
-.career-hero {
-  min-height: 560px;
-}
-
-.career-hero-inner {
-  display: flex;
-  max-width: 760px;
-  min-height: inherit;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 18px;
-}
-
-.mission-section,
-.roles-section,
-.work-style {
-  display: grid;
-  gap: 24px;
-}
-
-.mission-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.mission-grid article {
-  min-height: 220px;
-  padding: 20px;
-}
-
-.role-list {
-  display: grid;
-  gap: 12px;
-}
-
-.role-card {
-  display: grid;
-  grid-template-columns: minmax(230px, 0.42fr) 1fr;
-  gap: 24px;
-  align-items: start;
-  padding: 20px;
-}
-
-.role-card span {
-  color: var(--green);
-}
-
-.role-card h3 {
-  margin-top: 8px;
-}
-
-.principle-list {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.principle-list article {
-  min-height: 150px;
-  padding: 18px;
-}
-
-.principle-list span {
-  color: var(--green);
-}
-
-.principle-list p {
-  margin-top: 24px;
-  color: #eef4e9;
-  font-weight: 700;
-}
-
-.apply-band {
-  margin-top: 82px;
 }
 
 .site-footer {
@@ -857,19 +744,6 @@ li {
 .site-footer p:first-child {
   color: var(--ink);
   font-weight: 900;
-}
-
-.asset-credit {
-  max-width: 390px;
-  text-align: right;
-  font-size: 0.86rem;
-}
-
-.asset-credit a {
-  color: #edf4ea;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
 }
 
 @keyframes notch-slide {
@@ -905,12 +779,15 @@ li {
 
 @media (max-width: 1040px) {
   .site-header {
-    grid-template-columns: 1fr auto;
+    width: min(calc(100% - 28px), 760px);
+    grid-template-columns: 1fr;
+    justify-items: center;
+    border-radius: 28px;
   }
 
   .site-nav {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
+    justify-self: center;
+    justify-content: center;
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -925,8 +802,7 @@ li {
 
   .hero-inner,
   .problem-section,
-  .system,
-  .role-card {
+  .system {
     grid-template-columns: 1fr;
   }
 
@@ -949,13 +825,8 @@ li {
   }
 
   .outcome-strip,
-  .setup-steps,
-  .principle-list {
+  .setup-steps {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .mission-grid {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -965,11 +836,14 @@ li {
   }
 
   .site-header {
-    position: static;
-    width: 100%;
+    position: sticky;
+    top: 10px;
+    width: calc(100% - 20px);
     grid-template-columns: 1fr;
     gap: 10px;
+    margin-top: 10px;
     padding: 12px 10px;
+    border-radius: 24px;
   }
 
   .brand {
@@ -977,8 +851,9 @@ li {
   }
 
   .site-nav {
+    width: 100%;
     grid-column: auto;
-    justify-content: flex-start;
+    justify-content: center;
     gap: 4px;
     font-size: 0.84rem;
   }
@@ -1007,14 +882,7 @@ li {
     border-radius: 14px;
   }
 
-  .scene-overlay {
-    background:
-      linear-gradient(180deg, rgba(3, 8, 6, 0.9), rgba(3, 8, 6, 0.64), rgba(3, 8, 6, 0.88)),
-      linear-gradient(90deg, rgba(3, 8, 6, 0.86), rgba(3, 8, 6, 0.52));
-  }
-
-  .hero-inner,
-  .career-hero-inner {
+  .hero-inner {
     width: 100%;
     max-width: 100%;
     min-height: auto;
@@ -1044,18 +912,13 @@ li {
     line-height: 1.06;
   }
 
-  .career-hero h1 {
-    max-width: 11.8ch;
-  }
-
   .hero-text,
   .lead {
     font-size: 1rem;
   }
 
   .hero-actions,
-  .download-band,
-  .careers-teaser {
+  .download-band {
     display: grid;
     grid-template-columns: 1fr;
   }
@@ -1090,8 +953,7 @@ li {
 
   .outcome-strip,
   .case-grid,
-  .setup-steps,
-  .principle-list {
+  .setup-steps {
     grid-template-columns: 1fr;
   }
 
@@ -1100,17 +962,14 @@ li {
   }
 
   .section h2,
-  .download-band h2,
-  .careers-teaser h2 {
+  .download-band h2 {
     max-width: 13ch;
     font-size: 1.85rem;
     line-height: 1.1;
   }
 
   .case-card,
-  .setup-steps article,
-  .mission-grid article,
-  .principle-list article {
+  .setup-steps article {
     min-height: auto;
   }
 
@@ -1127,7 +986,6 @@ li {
     padding: 28px 20px;
   }
 
-  .careers-teaser,
   .download-band {
     padding: 22px;
   }
@@ -1136,17 +994,12 @@ li {
     display: grid;
   }
 
-  .asset-credit {
-    max-width: none;
-    text-align: left;
-  }
 }
 
 @media (max-width: 720px) {
   .hero-copy,
   .hero-actions,
-  .operation-console,
-  .career-hero-inner {
+  .operation-console {
     width: min(100%, 320px) !important;
     max-width: 320px !important;
   }
@@ -1167,10 +1020,6 @@ li {
 
   .case-card,
   .setup-steps article,
-  .mission-grid article,
-  .role-card,
-  .principle-list article,
-  .careers-teaser,
   .download-band {
     max-width: 100%;
     overflow: hidden;
