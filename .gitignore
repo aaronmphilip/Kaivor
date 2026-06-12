@@ -37,3 +37,4 @@ __push_tmp/
 # Node (if tooling is added later)
 node_modules/
 dist/
+.vercel
