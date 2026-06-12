@@ -65,6 +65,25 @@ class MockD1 {
             const config = this.tenantConfigs.find((row) => row.tenant_id === tenantId) ?? null;
             return tenant && config ? { tenant_name: tenant.name, metadata: config.metadata } : null;
         }
+        if (query.includes("SELECT t.id AS tenant_id,t.name AS business_name,o.name AS owner_name,o.email,o.phone,c.metadata")) {
+            const ownerEmail = String(values[0] ?? "").toLowerCase();
+            const businessName = String(values[1] ?? "").toLowerCase();
+            const owner = this.owners.find((row) => row.is_primary === 1 && String(row.email ?? "").toLowerCase() === ownerEmail) ?? null;
+            const tenant = owner
+                ? this.tenants.find((row) => row.id === owner.tenant_id && String(row.name ?? "").toLowerCase() === businessName) ?? null
+                : null;
+            const config = tenant ? this.tenantConfigs.find((row) => row.tenant_id === tenant.id) ?? null : null;
+            return tenant && owner && config
+                ? {
+                    tenant_id: tenant.id,
+                    business_name: tenant.name,
+                    owner_name: owner.name,
+                    email: owner.email,
+                    phone: owner.phone,
+                    metadata: config.metadata
+                }
+                : null;
+        }
         if (query.includes("SELECT COUNT(*) AS count FROM leads WHERE tenant_id=? AND status='FOLLOWUP_PENDING'")) {
             return { count: 0 };
         }
@@ -188,7 +207,7 @@ function createEnv(db) {
         TELEGRAM_WEBHOOK_SECRET: "telegram-secret-test",
         OWNER_CONNECT_BOT_TOKEN: "shared-bot-token",
         OWNER_CONNECT_BOT_SECRET: "owner-secret",
-        OWNER_CONNECT_BOT_USERNAME: "bharatclawbot",
+        OWNER_CONNECT_BOT_USERNAME: "kaivorbot",
         PUBLIC_SIGNUP_ENABLED: "true",
         FREE_MODE: "true"
     };
@@ -196,7 +215,7 @@ function createEnv(db) {
 describe("cloudflare worker", () => {
     it("creates a start in shared bot mode", async () => {
         const env = createEnv(new MockD1());
-        const request = new Request("https://bharatclaw-telegram.bharatclaw.workers.dev/public/start", {
+        const request = new Request("https://kaivor-telegram.kaivor.workers.dev/public/start", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
@@ -209,15 +228,15 @@ describe("cloudflare worker", () => {
         const body = (await response.json());
         expect(response.status).toBe(201);
         expect(body.ok).toBe(true);
-        expect(String(body.ownerPairCode)).toMatch(/^BC/);
+        expect(String(body.ownerPairCode)).toMatch(/^KV/);
         expect(String(body.leadEntryUrl)).toContain("lead_");
-        expect(String(body.ownerConnectBotUrl)).toBe("https://t.me/bharatclawbot");
+        expect(String(body.ownerConnectBotUrl)).toBe("https://t.me/kaivorbot");
         expect(String(body.profile?.workflowLabel)).toBe("Lead capture");
         expect(String(body.statusUrl)).toContain("/public/start/");
     });
     it("returns structured json instead of crashing when the database throws", async () => {
         const env = createEnv(new MockD1("fail"));
-        const request = new Request("https://bharatclaw-telegram.bharatclaw.workers.dev/public/start", {
+        const request = new Request("https://kaivor-telegram.kaivor.workers.dev/public/start", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
@@ -233,7 +252,7 @@ describe("cloudflare worker", () => {
     });
     it("returns authenticated workspace data", async () => {
         const env = createEnv(new MockD1());
-        const createRequest = new Request("https://bharatclaw-telegram.bharatclaw.workers.dev/public/start", {
+        const createRequest = new Request("https://kaivor-telegram.kaivor.workers.dev/public/start", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
@@ -247,7 +266,7 @@ describe("cloudflare worker", () => {
         const workspace = new URL(String(created.workspaceUrl));
         const tenantId = workspace.searchParams.get("tenantId");
         const token = workspace.searchParams.get("token");
-        const workspaceResponse = await worker.fetch(new Request(`https://bharatclaw-telegram.bharatclaw.workers.dev/public/workspaces/${tenantId}?token=${token}`), env);
+        const workspaceResponse = await worker.fetch(new Request(`https://kaivor-telegram.kaivor.workers.dev/public/workspaces/${tenantId}?token=${token}`), env);
         const body = (await workspaceResponse.json());
         expect(workspaceResponse.status).toBe(200);
         expect(body.businessName).toBe("Acme Business");
@@ -256,7 +275,7 @@ describe("cloudflare worker", () => {
     it("stores waitlist signups", async () => {
         const db = new MockD1();
         const env = createEnv(db);
-        const request = new Request("https://bharatclaw-telegram.bharatclaw.workers.dev/public/waitlist", {
+        const request = new Request("https://kaivor-telegram.kaivor.workers.dev/public/waitlist", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
@@ -288,7 +307,7 @@ describe("cloudflare worker", () => {
             metadata: "{broken"
         });
         const env = createEnv(db);
-        const request = new Request("https://bharatclaw-telegram.bharatclaw.workers.dev/webhooks/telegram/tenant-1", {
+        const request = new Request("https://kaivor-telegram.kaivor.workers.dev/webhooks/telegram/tenant-1", {
             method: "POST",
             headers: {
                 "content-type": "application/json",

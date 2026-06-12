@@ -1,14 +1,14 @@
-# Contributing to BharatClaw
+# Contributing to Kaivor
 
 First off — thank you for wanting to help! 🙏
 
-BharatClaw is built for India and the world. Whether you fix a bug, add a new skill, improve docs, or just star the repo — every bit helps.
+Kaivor is built for India and the world. Whether you fix a bug, add a new skill, improve docs, or just star the repo — every bit helps.
 
 ---
 
 ## 🐛 Reporting Bugs
 
-1. Check [existing issues](https://github.com/aaronmphilip/BharatClaw/issues) first
+1. Check [existing issues](https://github.com/aaronmphilip/Kaivor/issues) first
 2. Open a new issue with:
    - What you said to the bot
    - What it did vs what you expected
@@ -24,9 +24,9 @@ A **Skill** is a thin wrapper that opens an app and describes a goal to the AI. 
 ### Skill Template
 
 ```kotlin
-package com.bharatdroid.agent.skills.builtin
+package com.kaivor.agent.skills.builtin
 
-import com.bharatdroid.agent.skills.*
+import com.kaivor.agent.skills.*
 import kotlinx.coroutines.delay
 
 class MyAppSkill : Skill {
@@ -37,7 +37,7 @@ class MyAppSkill : Skill {
         version = "1.0.0",
         description = "What this skill does",
         author = "your-github-username",
-        trusted = false,                       // true = BharatClaw team only
+        trusted = false,                       // true = Kaivor team only
         permissions = setOf(
             Permission.OPEN_APP,
             Permission.READ_SCREEN,
@@ -118,8 +118,8 @@ register(MyAppSkill())
 
 ```bash
 # Clone
-git clone https://github.com/aaronmphilip/BharatClaw.git
-cd BharatClaw
+git clone https://github.com/aaronmphilip/Kaivor.git
+cd Kaivor
 
 # Open in Android Studio (Hedgehog or later)
 # File → Open → select the `android/` folder

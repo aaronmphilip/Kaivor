@@ -11,7 +11,17 @@ function inferLanguage(input, fallback) {
         return "hi";
     if (["english", "eng", "en"].includes(text))
         return "en";
+    if (/\b(mujhe|mujko|chahiye|karna|karo|hai|nahi|haan|kal|aaj|abhi|jaldi|kitna|kaise|kahan)\b/.test(text))
+        return "hi";
     return fallback ?? "en";
+}
+function parseExplicitLanguage(input) {
+    const text = cleanText(input, 40).toLowerCase().replace(/^\//, "");
+    if (["hindi", "hin", "hi", "2", "hi language"].includes(text))
+        return "hi";
+    if (["english", "eng", "en", "1"].includes(text))
+        return "en";
+    return null;
 }
 function isRestartCommand(input) {
     const text = cleanText(input, 60).toLowerCase();
@@ -32,6 +42,7 @@ function looksLikeNonRequirement(input) {
 export function computeTransition(currentState, inboundText, preferredLanguage) {
     const text = cleanText(inboundText);
     const workflowMode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "lead_capture";
+    const explicitLanguage = parseExplicitLanguage(text);
     if (currentState === "OWNER_TAKEOVER") {
         return {
             nextState: "OWNER_TAKEOVER",
@@ -47,7 +58,7 @@ export function computeTransition(currentState, inboundText, preferredLanguage) 
             nextState: "AWAITING_NAME",
             nextLeadStatus: "IN_PROGRESS",
             replyKey: "ASK_NAME",
-            preferredLanguage: inferLanguage(text, preferredLanguage),
+            preferredLanguage: null,
             customerName: "",
             requirement: "",
             workflowMode,
@@ -71,6 +82,18 @@ export function computeTransition(currentState, inboundText, preferredLanguage) 
         };
     }
     if (currentState === "AWAITING_NAME") {
+        if (explicitLanguage) {
+            return {
+                nextState: "AWAITING_NAME",
+                nextLeadStatus: "IN_PROGRESS",
+                replyKey: "ASK_NAME",
+                preferredLanguage: explicitLanguage,
+                workflowMode,
+                shouldNotifyOwner: false,
+                shouldScheduleFollowups: false,
+                shouldReply: true
+            };
+        }
         if (looksLikeMissingName(text)) {
             return {
                 nextState: "AWAITING_NAME",
@@ -96,6 +119,18 @@ export function computeTransition(currentState, inboundText, preferredLanguage) 
         };
     }
     if (currentState === "AWAITING_REQUIREMENT") {
+        if (explicitLanguage) {
+            return {
+                nextState: "AWAITING_REQUIREMENT",
+                nextLeadStatus: "IN_PROGRESS",
+                replyKey: "REASK_REQUIREMENT",
+                preferredLanguage: explicitLanguage,
+                workflowMode,
+                shouldNotifyOwner: false,
+                shouldScheduleFollowups: false,
+                shouldReply: true
+            };
+        }
         if (looksLikeNonRequirement(text)) {
             return {
                 nextState: "AWAITING_REQUIREMENT",

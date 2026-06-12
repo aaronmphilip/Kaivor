@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.BharatClaw" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">#CAFF3F</item>
-        <item name="colorPrimaryVariant">#8FEA2A</item>
-        <item name="colorOnPrimary">#05070A</item>
-        <item name="colorSecondary">#4ED7FF</item>
-        <item name="colorSecondaryVariant">#0EA5D7</item>
-        <item name="colorSurface">#0B0F14</item>
+    <style name="Theme.Kaivor" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#FFFFFF</item>
+        <item name="colorPrimaryVariant">#D8D8D8</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorSecondary">#F5F5F5</item>
+        <item name="colorSecondaryVariant">#CFCFCF</item>
+        <item name="colorSurface">#080808</item>
         <item name="colorOnSurface">#FFFFFF</item>
-        <item name="android:colorBackground">#07090D</item>
-        <item name="android:statusBarColor">#07090D</item>
-        <item name="android:navigationBarColor">#07090D</item>
+        <item name="android:colorBackground">#000000</item>
+        <item name="android:statusBarColor">#000000</item>
+        <item name="android:navigationBarColor">#000000</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>

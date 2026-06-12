@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>🤖 BharatClaw</h1>
+<h1>🤖 Kaivor</h1>
 
 <p><strong>Your Android phone, controlled by AI — via Telegram</strong></p>
 
@@ -25,7 +25,7 @@ Just tell it what to do — in <strong>English or Hindi</strong>.</p>
 
 ## 🌟 The Vision
 
-Most AI assistants tell you what to do. BharatClaw **does it for you**.
+Most AI assistants tell you what to do. Kaivor **does it for you**.
 
 We are building an AI agent that lives on your Android phone and understands your intent the same way a human assistant would — it looks at the screen, figures out what's there, makes a plan, and executes it step by step. No cloud server doing the heavy lifting. No subscription. Your phone, your data, your AI.
 
@@ -136,7 +136,7 @@ Your Telegram message
 
 ### 🔑 Getting an API Key
 
-BharatClaw works with **any of these AI providers** — pick one:
+Kaivor works with **any of these AI providers** — pick one:
 
 | Provider | Key starts with | Free tier | Link |
 |---|---|---|---|
@@ -159,20 +159,20 @@ Open Telegram → message @BotFather → /newbot → give it any name ending in 
 Copy the token it gives you (looks like: 7123456789:AAF...)
 
 You can name your bot anything — "MyPhoneBot", "HomeAssistantBot", etc.
-BharatClaw is the app on your phone — your Telegram bot name is up to you.
+Kaivor is the app on your phone — your Telegram bot name is up to you.
 ```
 
 **2. Install the app**
 
-👉 **[Download latest APK from Releases](https://github.com/aaronmphilip/BharatClaw/releases)**
+👉 **[Download latest APK from Releases](https://github.com/aaronmphilip/Kaivor/releases)**
 
 Install it on your Android phone like any APK (enable "Install from unknown sources" if prompted).
 
-**3. Open BharatClaw and configure**
+**3. Open Kaivor and configure**
 - Paste your **Telegram Bot Token**
 - Paste your **AI API Key** (Gemini/Claude/OpenAI — app auto-detects which)
-- Tap **Enable Accessibility Service** → find BharatClaw in the list → toggle ON → go back
-- *(Optional)* Tap **Enable Notification Access** → find BharatClaw → toggle ON → go back
+- Tap **Enable Accessibility Service** → find Kaivor in the list → toggle ON → go back
+- *(Optional)* Tap **Enable Notification Access** → find Kaivor → toggle ON → go back
   - This enables the **24×7 notification relay** — every app notification is forwarded to your Telegram, and you can reply directly from Telegram
   - Use `/muted` in Telegram to see status, `/mute <app>` to silence specific apps
 - Tap **Start Agent**
@@ -186,8 +186,8 @@ Install it on your Android phone like any APK (enable "Install from unknown sour
 
 > 🔧 **For developers** who want to build from source:
 > ```bash
-> git clone https://github.com/aaronmphilip/BharatClaw.git
-> cd BharatClaw/android && ./gradlew assembleDebug
+> git clone https://github.com/aaronmphilip/Kaivor.git
+> cd Kaivor/android && ./gradlew assembleDebug
 > # APK: android/app/build/outputs/apk/debug/app-debug.apk
 > ```
 
@@ -196,9 +196,9 @@ Install it on your Android phone like any APK (enable "Install from unknown sour
 ## 🧩 Project Structure
 
 ```
-BharatClaw/
+Kaivor/
 ├── android/                          # Android app (Kotlin)
-│   └── app/src/main/kotlin/com/bharatdroid/agent/
+│   └── app/src/main/kotlin/com/kaivor/agent/
 │       ├── AIBrain.kt                # Intent → skill routing
 │       ├── ScreenAgent.kt            # Universal AI screen controller
 │       ├── AgentAccessibilityService.kt  # Gestures + screenshot
@@ -240,7 +240,7 @@ BharatClaw/
 **We want your help building this!** Read **[CONTRIBUTING.md](CONTRIBUTING.md)** for the full guide.
 
 Quick ways to contribute:
-- 🐛 **Found a bug?** → [Open an issue](https://github.com/aaronmphilip/BharatClaw/issues)
+- 🐛 **Found a bug?** → [Open an issue](https://github.com/aaronmphilip/Kaivor/issues)
 - ➕ **Add a new skill** → Any Android app can become a skill in ~50 lines
 - 🌐 **Add language support** → Hindi built-in, add Tamil, Telugu, Bengali...
 - 📝 **Improve docs** → Always welcome
@@ -283,6 +283,6 @@ The MIT license means: do whatever you want with this code. Use it in your own p
 
 Built with ❤️ for India 🇮🇳 — but works everywhere
 
-**[⭐ Star this repo](https://github.com/aaronmphilip/BharatClaw)** · **[🐛 Report Bug](https://github.com/aaronmphilip/BharatClaw/issues)** · **[💡 Request Feature](https://github.com/aaronmphilip/BharatClaw/issues)**
+**[⭐ Star this repo](https://github.com/aaronmphilip/Kaivor)** · **[🐛 Report Bug](https://github.com/aaronmphilip/Kaivor/issues)** · **[💡 Request Feature](https://github.com/aaronmphilip/Kaivor/issues)**
 
 </div>

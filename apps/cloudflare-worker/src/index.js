@@ -276,7 +276,7 @@ function buildWorkspaceInsights(input) {
         (input.totalLeads > 3 ? 10 : 0));
     const recommendedActions = [];
     if (!input.ownerConnected) {
-        recommendedActions.push("Pair the owner chat so BharatClaw can send alerts, handoffs, and live status updates.");
+        recommendedActions.push("Pair the owner chat so Kaivor can send alerts, handoffs, and live status updates.");
     }
     if (!input.totalLeads) {
         recommendedActions.push("Share the lead link in bios, QR cards, pinned messages, and profile links to start filling the funnel.");
@@ -291,7 +291,7 @@ function buildWorkspaceInsights(input) {
         recommendedActions.push(`Start with ${priorityQueue[0]?.customerName || "the top lead"} because it currently has the strongest rescue or conversion signal.`);
     }
     if (!recommendedActions.length) {
-        recommendedActions.push("Keep routing customer conversations into BharatClaw and watch the owner console for fresh intent.");
+        recommendedActions.push("Keep routing customer conversations into Kaivor and watch the owner console for fresh intent.");
     }
     let launchStage = "Workspace created and ready for traffic";
     if (!input.ownerConnected) {
@@ -665,7 +665,7 @@ async function userOwnsTenant(env, tenantId, email) {
     return Boolean(row?.ok);
 }
 function ownerConnectBotUsername(env) {
-    return txt(env.OWNER_CONNECT_BOT_USERNAME ?? "bharatclawbot", 64).replace(/^@/, "") || "bharatclawbot";
+    return txt(env.OWNER_CONNECT_BOT_USERNAME ?? "kaivorbot", 64).replace(/^@/, "") || "kaivorbot";
 }
 function ownerConnectBotUrl(env) {
     return `https://t.me/${ownerConnectBotUsername(env)}`;
@@ -674,12 +674,12 @@ function ownerConnectStartUrl(env, code) {
     return `${ownerConnectBotUrl(env)}?start=pair_${encodeURIComponent(code)}`;
 }
 function appBaseUrl(env) {
-    const source = txt(env.LANDING_CTA_URL ?? "https://bharatclawapp.vercel.app/get-started", 500);
+    const source = txt(env.LANDING_CTA_URL ?? "https://kaivorapp.vercel.app/get-started", 500);
     try {
         return new URL(source).origin;
     }
     catch {
-        return "https://bharatclawapp.vercel.app";
+        return "https://kaivorapp.vercel.app";
     }
 }
 function workspaceUrl(env, tenantId, token) {
@@ -695,7 +695,7 @@ function randomCode(length) {
     return output;
 }
 function generateOwnerPairCode() {
-    return `BC${randomCode(6)}`;
+    return `KV${randomCode(6)}`;
 }
 function parseOwnerPairCodeFromText(message) {
     const input = txt(message, 180);
@@ -704,19 +704,19 @@ function parseOwnerPairCodeFromText(message) {
     const startMatch = /^\/start\s+pair_([a-z0-9-]{4,40})$/i.exec(input);
     if (startMatch) {
         const normalized = startMatch[1].toUpperCase().replace(/[^A-Z0-9]/g, "");
-        const finalCode = normalized.startsWith("BC") ? normalized : `BC${normalized}`;
-        return /^BC[A-Z0-9]{6,10}$/.test(finalCode) ? finalCode : null;
+        const finalCode = normalized.startsWith("KV") ? normalized : `KV${normalized}`;
+        return /^KV[A-Z0-9]{6,10}$/.test(finalCode) ? finalCode : null;
     }
     const pairMatch = /^\/pair\s+([a-z0-9-]{4,40})$/i.exec(input);
     if (pairMatch) {
         const normalized = pairMatch[1].toUpperCase().replace(/[^A-Z0-9]/g, "");
-        const finalCode = normalized.startsWith("BC") ? normalized : `BC${normalized}`;
-        return /^BC[A-Z0-9]{6,10}$/.test(finalCode) ? finalCode : null;
+        const finalCode = normalized.startsWith("KV") ? normalized : `KV${normalized}`;
+        return /^KV[A-Z0-9]{6,10}$/.test(finalCode) ? finalCode : null;
     }
     const compact = input.toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (!/^[A-Z0-9\s-]+$/i.test(input))
         return null;
-    if (/^BC[A-Z0-9]{6,10}$/.test(compact))
+    if (/^KV[A-Z0-9]{6,10}$/.test(compact))
         return compact;
     return null;
 }
@@ -736,7 +736,7 @@ async function generateUniqueOwnerPairCode(env, attempts = 8) {
         if (!(await ownerPairCodeExists(env, pairCode)))
             return pairCode;
     }
-    return `BC${randomCode(10)}`;
+    return `KV${randomCode(10)}`;
 }
 function generateLeadJoinCode() {
     return `LD${randomCode(6)}`;
@@ -953,10 +953,10 @@ async function callAiCopilot(env, input) {
     if (!apiKey || !model)
         return fallback;
     const transcript = input.transcript
-        .map((row) => `${row.direction === "INBOUND" ? "Lead" : "BharatClaw"} (${row.created_at}): ${txt(row.body, 280)}`)
+        .map((row) => `${row.direction === "INBOUND" ? "Lead" : "Kaivor"} (${row.created_at}): ${txt(row.body, 280)}`)
         .join("\n");
     const systemPrompt = [
-        "You are BharatClaw Copilot, a high-conviction conversational sales assistant for Indian businesses.",
+        "You are Kaivor Copilot, a high-conviction conversational sales assistant for Indian businesses.",
         "Your job is to help qualify leads, keep replies concise, sound human, and know when the owner should take over.",
         "Never mention being an AI, a model, or an assistant.",
         "Avoid hallucinating prices, promises, timings, or policies.",
@@ -1028,8 +1028,8 @@ function renderLandingPage(ctaUrl) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BharatClaw | Never miss a lead again</title>
-  <meta name="description" content="BharatClaw helps Indian businesses capture Telegram leads, follow up automatically, and close faster." />
+  <title>Kaivor | Never miss a lead again</title>
+  <meta name="description" content="Kaivor helps Indian businesses capture Telegram leads, follow up automatically, and close faster." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1292,7 +1292,7 @@ function renderLandingPage(ctaUrl) {
 <body class="noise">
   <div class="container">
     <nav class="nav">
-      <div class="brand">BharatClaw</div>
+      <div class="brand">Kaivor</div>
       <div class="pill">Telegram-first lead automation for India</div>
     </nav>
 
@@ -1300,7 +1300,7 @@ function renderLandingPage(ctaUrl) {
       <div class="panel">
         <h1>Never miss a lead again.</h1>
         <p class="subtitle">
-          BharatClaw replies instantly, captures lead details, follows up automatically, and alerts the owner so your business closes faster.
+          Kaivor replies instantly, captures lead details, follows up automatically, and alerts the owner so your business closes faster.
         </p>
         <div class="cta-row">
           <a class="btn btn-primary" href="${safeUrl}" target="_blank" rel="noreferrer">Start Free Trial</a>
@@ -1336,7 +1336,7 @@ function renderLandingPage(ctaUrl) {
     </section>
 
     <section class="section" id="how">
-      <h2>How BharatClaw Works</h2>
+      <h2>How Kaivor Works</h2>
       <div class="grid-3">
         <article class="card">
           <h3>1. Instant Response</h3>
@@ -1364,7 +1364,7 @@ function renderLandingPage(ctaUrl) {
     </section>
 
     <footer>
-      BharatClaw. Premium Telegram lead capture for Indian businesses.
+      Kaivor. Premium Telegram lead capture for Indian businesses.
     </footer>
   </div>
 </body>
@@ -1438,12 +1438,12 @@ function formatLeadStatus(status) {
 }
 function buildOwnerWelcomeMessage(input) {
     return [
-        `BharatClaw is live for ${input.businessName}.`,
+        `Kaivor is live for ${input.businessName}.`,
         "",
         "Share this lead link with customers:",
         input.leadUrl,
         "",
-        "Important: every new customer should enter through this lead link so BharatClaw routes the chat into your workspace correctly.",
+        "Important: every new customer should enter through this lead link so Kaivor routes the chat into your workspace correctly.",
         "",
         input.ownerWorkspaceUrl ? `Owner console:\n${input.ownerWorkspaceUrl}\n` : "",
         "Owner commands:",
@@ -1744,11 +1744,11 @@ async function handleOwnerMessage(env, input) {
         return;
     }
     if (normalized === "/link" || normalized === "link" || normalized === "/leadlink") {
-        await sendTelegram(input.botToken, input.ownerChatId, `Share this lead link with customers:\n${leadUrl}\n\nImportant: every new customer should start from this link so BharatClaw routes the chat into your workspace correctly.`, ownerActionMarkup(leadUrl, ownerWorkspaceUrl));
+        await sendTelegram(input.botToken, input.ownerChatId, `Share this lead link with customers:\n${leadUrl}\n\nImportant: every new customer should start from this link so Kaivor routes the chat into your workspace correctly.`, ownerActionMarkup(leadUrl, ownerWorkspaceUrl));
         return;
     }
     if (normalized === "/workspace" || normalized === "workspace") {
-        await sendTelegram(input.botToken, input.ownerChatId, ownerWorkspaceUrl ? `Open your BharatClaw owner console:\n${ownerWorkspaceUrl}` : "Owner console link is not ready yet.", ownerActionMarkup(leadUrl, ownerWorkspaceUrl));
+        await sendTelegram(input.botToken, input.ownerChatId, ownerWorkspaceUrl ? `Open your Kaivor owner console:\n${ownerWorkspaceUrl}` : "Owner console link is not ready yet.", ownerActionMarkup(leadUrl, ownerWorkspaceUrl));
         return;
     }
     await sendTelegram(input.botToken, input.ownerChatId, buildOwnerWelcomeMessage({ businessName: input.businessName, leadUrl, ownerWorkspaceUrl }), ownerActionMarkup(leadUrl, ownerWorkspaceUrl));
@@ -2154,7 +2154,7 @@ export default {
                 return html(renderLandingPage(env.LANDING_CTA_URL ?? "https://t.me"));
             }
             if (request.method === "GET" && path === "/health")
-                return j({ ok: true, service: "bharatclaw-cf" });
+                return j({ ok: true, service: "kaivor-cf" });
             const requiresDb = path !== "/" && !(request.method === "OPTIONS" && path.startsWith("/public/"));
             if (requiresDb) {
                 await ensureCompatibilitySchema(env);
@@ -2385,7 +2385,7 @@ export default {
                     .run();
                 return jPublic({
                     ok: true,
-                    message: "You are on the BharatClaw waitlist. We will send product updates as we ship them."
+                    message: "You are on the Kaivor waitlist. We will send product updates as we ship them."
                 }, 201);
             }
             if (request.method === "POST" && isStartCreatePath(path)) {
@@ -2429,8 +2429,8 @@ export default {
                             ...summary,
                             statusUrl: `${url.origin}/public/start/${existing.tenantId}/status`,
                             nextStep: summary.ownerConnected
-                                ? "This BharatClaw setup is already paired. Open your owner console or share the lead link."
-                                : "This BharatClaw setup already exists. Open @bharatclawbot and finish pairing."
+                                ? "This Kaivor setup is already paired. Open your owner console or share the lead link."
+                                : "This Kaivor setup already exists. Open @kaivorbot and finish pairing."
                         }, 200);
                     }
                 }
@@ -2480,7 +2480,7 @@ export default {
                 }
                 if (!created) {
                     return jPublic({
-                        error: "Could not start BharatClaw right now",
+                        error: "Could not start Kaivor right now",
                         detail: lastCreateError instanceof Error ? lastCreateError.message : "Slug collision retry limit reached"
                     }, 409);
                 }
@@ -2531,8 +2531,8 @@ export default {
                     }),
                     statusUrl: `${url.origin}/public/start/${created.tenantId}/status`,
                     nextStep: created.ownerConnected
-                        ? "BharatClaw is paired. Share your lead link and start receiving leads."
-                        : "Open @bharatclawbot, send the pairing code, and BharatClaw will activate."
+                        ? "Kaivor is paired. Share your lead link and start receiving leads."
+                        : "Open @kaivorbot, send the pairing code, and Kaivor will activate."
                 }, 201);
             }
             if (request.method === "POST" && path === "/admin/tenants") {
@@ -2579,7 +2579,7 @@ export default {
                         continue;
                     const pairCode = parseOwnerPairCodeFromText(msg.text);
                     if (pairCode) {
-                        let reply = "Invalid code. Open BharatClaw onboarding and copy the latest pairing code.";
+                        let reply = "Invalid code. Open Kaivor onboarding and copy the latest pairing code.";
                         const connected = await connectOwnerByPairCode(env, pairCode, txt(msg.chatId, 64));
                         if (connected.status === "CONNECTED" || connected.status === "ALREADY_CONNECTED") {
                             const ownerWorkspace = await resolveOwnerWorkspaceByChat(env, txt(msg.chatId, 64));
@@ -2652,7 +2652,7 @@ export default {
                 }
                     if (!tenantId) {
                         if (ownerConnectBotToken) {
-                            await sendTelegram(ownerConnectBotToken, txt(msg.chatId, 64), "This chat is not linked yet.\n\nIf you own a workspace, send your BharatClaw pairing code.\nIf you are a customer, ask the business for their BharatClaw lead link.").catch(() => { });
+                            await sendTelegram(ownerConnectBotToken, txt(msg.chatId, 64), "This chat is not linked yet.\n\nIf you own a workspace, send your Kaivor pairing code.\nIf you are a customer, ask the business for their Kaivor lead link.").catch(() => { });
                         }
                         await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id,source,processed_at) VALUES (?,'TELEGRAM_OWNER_CONNECT',?)")
                             .bind(msg.eventId, now())
@@ -2760,7 +2760,7 @@ export default {
             return j({ error: "Not found" }, 404);
         }
         catch (error) {
-            console.error("bharatclaw-worker-error", { path, detail: errorDetail(error) });
+            console.error("kaivor-worker-error", { path, detail: errorDetail(error) });
             return errorResponse(path, error);
         }
     },

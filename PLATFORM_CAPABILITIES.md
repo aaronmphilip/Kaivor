@@ -1,4 +1,4 @@
-# BharatClaw — Android vs iOS Platform Capabilities
+# Kaivor — Android vs iOS Platform Capabilities
 
 ---
 
@@ -30,7 +30,7 @@
 
 ### Telegram command channel
 **Status: ✅ Works fully**
-Telegram receives messages on any platform. No special permissions needed. Users can command BharatClaw from iPhone via Telegram exactly the same way.
+Telegram receives messages on any platform. No special permissions needed. Users can command Kaivor from iPhone via Telegram exactly the same way.
 
 ---
 
@@ -47,9 +47,9 @@ Apple officially supports this since iOS 16.1. Any App Store app can request the
 iOS does not allow third-party apps to control other apps via accessibility in the same way Android does. Apple's accessibility APIs are read-only for assistive purposes and cannot programmatically tap or type inside other apps.
 
 **Options:**
-1. **Shortcuts app integration** — iOS Shortcuts can automate some app actions. BharatClaw could trigger pre-built Shortcuts via URL schemes. Limited but works for simple tasks like sending a message or setting an alarm.
-2. **Web-based tasks only** — BharatClaw on iOS handles web search, knowledge queries, calendar (via EventKit), contacts (via CNContactStore), and reminders natively without needing accessibility.
-3. **Android as execution engine** — iOS user sends command via Telegram → BharatClaw Android phone (side device) executes it. iOS is just the remote control, Android does the work.
+1. **Shortcuts app integration** — iOS Shortcuts can automate some app actions. Kaivor could trigger pre-built Shortcuts via URL schemes. Limited but works for simple tasks like sending a message or setting an alarm.
+2. **Web-based tasks only** — Kaivor on iOS handles web search, knowledge queries, calendar (via EventKit), contacts (via CNContactStore), and reminders natively without needing accessibility.
+3. **Android as execution engine** — iOS user sends command via Telegram → Kaivor Android phone (side device) executes it. iOS is just the remote control, Android does the work.
 
 ---
 
@@ -59,8 +59,8 @@ iOS apps cannot read notification content from other apps. Period. No API exists
 
 **Options:**
 1. **Email forwarding** — Set up email rules to forward important emails to Telegram. Works for email-based alerts.
-2. **Focus filters** — iOS Focus modes can suppress notifications; BharatClaw can toggle Focus modes via Shortcuts.
-3. **Accept the gap** — Notification relay is Android-only. iOS users use BharatClaw for commands and knowledge, not relay.
+2. **Focus filters** — iOS Focus modes can suppress notifications; Kaivor can toggle Focus modes via Shortcuts.
+3. **Accept the gap** — Notification relay is Android-only. iOS users use Kaivor for commands and knowledge, not relay.
 
 ---
 
@@ -80,9 +80,9 @@ Same reason as notification relay — iOS cannot read WhatsApp's notification co
 Apple does not allow any third-party app to intercept or inject audio into a cellular call. No entitlement exists for this. Even Truecaller cannot record calls on iOS.
 
 **Options:**
-1. **Voicemail processing** — Call goes to voicemail → BharatClaw downloads recording via carrier voicemail → transcribes → sends summary to Telegram. Passive, not real-time.
-2. **VoIP number** — BharatClaw provides a second VoIP number (via Twilio/Exotel). Caller calls that number → BharatClaw answers via CallKit (Apple's official VoIP API) → full AI conversation works → handoff possible. Different number, but full AI conversation works on iOS.
-3. **Call forwarding to Android** — Forward iPhone calls to BharatClaw's Android number when busy. Android handles everything. iOS doesn't need to do anything — carrier-level forwarding.
+1. **Voicemail processing** — Call goes to voicemail → Kaivor downloads recording via carrier voicemail → transcribes → sends summary to Telegram. Passive, not real-time.
+2. **VoIP number** — Kaivor provides a second VoIP number (via Twilio/Exotel). Caller calls that number → Kaivor answers via CallKit (Apple's official VoIP API) → full AI conversation works → handoff possible. Different number, but full AI conversation works on iOS.
+3. **Call forwarding to Android** — Forward iPhone calls to Kaivor's Android number when busy. Android handles everything. iOS doesn't need to do anything — carrier-level forwarding.
 
 ---
 
@@ -94,7 +94,7 @@ ElevenLabs is a cloud API. Works on iOS, Android, or any platform. If using the 
 
 ### Vision / screenshot analysis
 **Status: ⚠️ Partial**
-iOS does not allow apps to capture other apps' screens (no screenshot of another app's UI). BharatClaw can analyze images the user manually shares, camera photos, or screenshots the user takes and sends.
+iOS does not allow apps to capture other apps' screens (no screenshot of another app's UI). Kaivor can analyze images the user manually shares, camera photos, or screenshots the user takes and sends.
 
 ---
 
@@ -116,7 +116,7 @@ App knowledge base                 ✅         ❌
 User memory                        ✅         ✅
 ```
 
-**BharatClaw is an Android-first product.**
+**Kaivor is an Android-first product.**
 Android's openness is the moat. iOS can run the command layer and show status — Android is where the execution happens.
 iOS users get: Telegram commands, knowledge queries, memory, cloned voice calls (VoIP), and the Dynamic Island status pill.
 Android users get everything.
@@ -126,7 +126,7 @@ Android users get everything.
 ## Works on ALL Android phones — not just Pixel
 
 Google Call Screen is Pixel-exclusive (Google built it into their own hardware).
-BharatClaw is an APK. It uses only standard public Android APIs:
+Kaivor is an APK. It uses only standard public Android APIs:
 
 | API | Minimum Android | Coverage |
 |-----|----------------|---------|
@@ -136,4 +136,4 @@ BharatClaw is an APK. It uses only standard public Android APIs:
 | WindowManager overlay | Android 6 (2015) | 98%+ of active devices |
 
 Works on: Samsung, OnePlus, Realme, Redmi, Xiaomi, Vivo, Oppo, Motorola, Nokia, Nothing, and every other Android brand.
-BharatClaw brings Pixel-level intelligence (and far beyond) to every Android phone ever made.
+Kaivor brings Pixel-level intelligence (and far beyond) to every Android phone ever made.

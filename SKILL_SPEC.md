@@ -1,4 +1,4 @@
-# BharatClaw Skill Specification
+# Kaivor Skill Specification
 
 Build a skill. Add it to your agent. Share it with the community.
 
@@ -6,7 +6,7 @@ Build a skill. Add it to your agent. Share it with the community.
 
 ## What is a Skill?
 
-A skill is a Kotlin class that teaches BharatClaw how to control one specific app.
+A skill is a Kotlin class that teaches Kaivor how to control one specific app.
 The agent gets a sandboxed runner — it can only do what it declared in its manifest.
 No arbitrary code execution. No hidden permissions. No surprises.
 
@@ -23,7 +23,7 @@ class MyAppSkill : Skill {
         version = "1.0.0",
         description = "Does X on MyApp",       // shown to users
         author = "your-github-username",
-        trusted = false,                        // only BharatClaw team sets true
+        trusted = false,                        // only Kaivor team sets true
         permissions = setOf(
             Permission.OPEN_APP,
             Permission.READ_SCREEN,

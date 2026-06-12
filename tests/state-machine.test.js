@@ -26,7 +26,7 @@ describe("computeTransition", () => {
         const result = computeTransition("FOLLOWUP_PENDING", "/start", "hi");
         expect(result.nextState).toBe("AWAITING_NAME");
         expect(result.replyKey).toBe("ASK_NAME");
-        expect(result.preferredLanguage).toBe("hi");
+        expect(result.preferredLanguage).toBeNull();
         expect(result.clearLeadProfile).toBe(true);
     });
     it("re-asks requirement on low-signal messages", () => {
@@ -37,9 +37,9 @@ describe("computeTransition", () => {
     });
     it("infers hindi while awaiting requirement", () => {
         const result = computeTransition("AWAITING_REQUIREMENT", "Mujhe salon booking chahiye", "en");
-        expect(result.nextState).toBe("AWAITING_REQUIREMENT");
+        expect(result.nextState).toBe("FOLLOWUP_PENDING");
         expect(result.preferredLanguage).toBe("hi");
-        expect(result.replyKey).toBe("REASK_REQUIREMENT");
+        expect(result.replyKey).toBe("CONFIRM_CAPTURE");
     });
     it("adds a quote-details step for quote workflows", () => {
         const requirement = computeTransition("AWAITING_REQUIREMENT", "Need office painting quote", "en", "quote_request");

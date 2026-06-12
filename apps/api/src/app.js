@@ -51,7 +51,7 @@ export function createApiApp(services) {
             done(new Error("Invalid JSON body"));
         }
     });
-    app.get("/health", async () => ({ ok: true, service: "bharatclaw-api-telegram" }));
+    app.get("/health", async () => ({ ok: true, service: "kaivor-api-telegram" }));
     app.post("/webhooks/telegram/:tenantId", async (request, reply) => {
         const { tenantId } = request.params;
         const secretHeader = request.headers["x-telegram-bot-api-secret-token"];

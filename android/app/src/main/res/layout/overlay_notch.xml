@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif-medium"
             android:letterSpacing="0"
-            android:text="BHARATCLAW RUNNING"
+            android:text="KAIVOR RUNNING"
             android:textColor="#8FF0B8"
             android:textSize="8.5sp" />
 
@@ -53,6 +53,6 @@
         android:contentDescription="Stop task"
         android:padding="8dp"
         android:src="@android:drawable/ic_menu_close_clear_cancel"
-        android:tint="#CCCCCC" />
+        android:tint="#E8E8E8" />
 
 </LinearLayout>

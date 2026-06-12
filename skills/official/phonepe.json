@@ -3,7 +3,7 @@
   "name": "PhonePe",
   "version": "1.0.0",
   "description": "Check UPI balance, pay bills, mobile recharge via PhonePe",
-  "author": "bharatdroid-team",
+  "author": "kaivor-team",
   "trusted": true,
   "permissions": ["OPEN_APP", "READ_SCREEN", "TAP", "TYPE", "SCROLL", "PAYMENT"],
   "allowedPackages": ["com.phonepe.app"],

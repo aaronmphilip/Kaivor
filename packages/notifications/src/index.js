@@ -21,7 +21,7 @@ export class NotificationService {
         const tenantConfig = await this.deps.repository.getTenantConfig(tenant.id);
         const botToken = String(tenantConfig.metadata.telegramBotToken ?? "");
         const summary = [
-            "New BharatClaw lead captured.",
+            "New Kaivor lead captured.",
             `Name: ${lead.customerName ?? "Not provided"}`,
             `Chat: ${lead.customerPhone}`,
             `Requirement: ${lead.requirement ?? "Not provided"}`,
@@ -69,7 +69,7 @@ export class NotificationService {
                 await this.mailer.sendMail({
                     from: this.deps.smtp?.from,
                     to: owner.email,
-                    subject: "BharatClaw: New Telegram lead",
+                    subject: "Kaivor: New Telegram lead",
                     text: summary
                 });
                 await this.deps.repository.recordNotification({

@@ -35,10 +35,10 @@
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="BharatClaw"
+        android:label="Kaivor"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.BharatClaw">
+        android:theme="@style/Theme.Kaivor">
 
         <!-- Onboarding is the entry point. Routes to Dashboard if already set up. -->
         <activity
@@ -67,7 +67,7 @@
         <service
             android:name=".AgentAccessibilityService"
             android:exported="true"
-            android:label="BharatClaw Agent"
+            android:label="Kaivor Agent"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
@@ -87,7 +87,7 @@
         <service
             android:name=".NotificationRelay"
             android:exported="true"
-            android:label="BharatClaw Notifications"
+            android:label="Kaivor Notifications"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
@@ -108,11 +108,11 @@
             android:name=".ScheduledCommandReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.bharatdroid.agent.RUN_SCHEDULED" />
+                <action android:name="com.kaivor.agent.RUN_SCHEDULED" />
             </intent-filter>
         </receiver>
 
-        <!-- Minimal dialer UI required when BharatClaw is the default Phone app -->
+        <!-- Minimal dialer UI required when Kaivor is the default Phone app -->
         <activity
             android:name=".DialerActivity"
             android:exported="true"

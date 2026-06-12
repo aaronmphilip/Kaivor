@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#07090D"
+    android:background="#000000"
     android:padding="24dp">
 
     <LinearLayout
@@ -14,7 +14,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="3dp"
-            android:background="#CAFF3F"/>
+            android:background="#FFFFFF"/>
 
         <!-- Step indicator -->
         <TextView
@@ -22,7 +22,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Step 1 of 6"
-            android:textColor="#CAFF3F"
+            android:textColor="#FFFFFF"
             android:textSize="12sp"
             android:layout_marginTop="20dp" />
 
@@ -39,14 +39,14 @@
             <ImageView
                 android:layout_width="64dp"
                 android:layout_height="64dp"
-                android:src="@drawable/ic_logo_mark"
-                android:contentDescription="BharatClaw logo"
+                android:src="@drawable/kaivor_logo"
+                android:contentDescription="Kaivor logo"
                 android:layout_marginBottom="18dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="BharatClaw"
+                android:text="Kaivor"
                 android:textColor="#FFFFFF"
                 android:textSize="40sp"
                 android:textStyle="bold"
@@ -55,8 +55,8 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Personal Android agent. Send a Telegram command; BharatClaw opens apps, reads screens, fills forms, and asks when information is missing."
-                android:textColor="#AAAAAA"
+                android:text="Personal Android agent. Send a Telegram command; Kaivor opens apps, reads screens, fills forms, and asks when information is missing."
+                android:textColor="#B8B8B8"
                 android:textSize="16sp"
                 android:gravity="center"
                 android:lineSpacingMultiplier="1.4"
@@ -66,7 +66,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="&quot;Fill this website form with my details&quot;\n&quot;Find the best ride and message me the ETA&quot;\n&quot;Read the PDF in Downloads&quot;\n&quot;Reply to that WhatsApp notification&quot;"
-                android:textColor="#CAFF3F"
+                android:textColor="#FFFFFF"
                 android:textSize="14sp"
                 android:gravity="center"
                 android:lineSpacingMultiplier="1.5"
@@ -77,7 +77,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Setup takes a few minutes. The required parts are Telegram, an AI key, and Accessibility."
-                android:textColor="#666666"
+                android:textColor="#8A8A8A"
                 android:textSize="13sp"
                 android:gravity="center"
                 android:layout_marginTop="32dp" />
@@ -89,8 +89,8 @@
                 android:text="Get Started"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                android:backgroundTint="#CAFF3F"
-                android:textColor="#05070A"
+                android:backgroundTint="#FFFFFF"
+                android:textColor="#000000"
                 android:layout_marginTop="40dp" />
         </LinearLayout>
 
@@ -114,8 +114,8 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="This is the control channel. Create a private bot, paste its token here, then BharatClaw will only listen to your chat."
-                android:textColor="#AAAAAA"
+                android:text="This is the control channel. Create a private bot, paste its token here, then Kaivor will only listen to your chat."
+                android:textColor="#B8B8B8"
                 android:textSize="14sp"
                 android:lineSpacingMultiplier="1.5"
                 android:layout_marginTop="16dp" />
@@ -125,15 +125,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:text="Open @BotFather in Telegram"
-                android:backgroundTint="#1E1E1E"
-                android:textColor="#00AAFF"
+                android:backgroundTint="#111111"
+                android:textColor="#FFFFFF"
                 android:layout_marginTop="20dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Paste the bot token here:"
-                android:textColor="#CCCCCC"
+                android:textColor="#E8E8E8"
                 android:textSize="13sp"
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="6dp" />
@@ -145,7 +145,7 @@
                 android:hint="123456:ABC-DEF1234ghIkl..."
                 android:inputType="text"
                 android:textColor="#FFFFFF"
-                android:textColorHint="#555555"
+                android:textColorHint="#777777"
                 android:background="@drawable/input_bg"
                 android:padding="14dp"
                 android:fontFamily="monospace"
@@ -165,8 +165,8 @@
                 android:layout_height="52dp"
                 android:text="Verify Token"
                 android:textSize="15sp"
-                android:backgroundTint="#CAFF3F"
-                android:textColor="#05070A"
+                android:backgroundTint="#FFFFFF"
+                android:textColor="#000000"
                 android:layout_marginTop="16dp" />
         </LinearLayout>
 
@@ -191,8 +191,8 @@
                 android:id="@+id/tvPairInstructions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Open Telegram and send /start to your bot. BharatClaw will detect your chat automatically."
-                android:textColor="#AAAAAA"
+                android:text="Open Telegram and send /start to your bot. Kaivor will detect your chat automatically."
+                android:textColor="#B8B8B8"
                 android:textSize="15sp"
                 android:lineSpacingMultiplier="1.5"
                 android:layout_marginTop="16dp" />
@@ -203,14 +203,14 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:layout_marginTop="32dp"
-                android:indeterminateTint="#CAFF3F" />
+                android:indeterminateTint="#FFFFFF" />
 
             <TextView
                 android:id="@+id/tvPairResult"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text=""
-                android:textColor="#CAFF3F"
+                android:textColor="#FFFFFF"
                 android:textSize="15sp"
                 android:gravity="center"
                 android:layout_marginTop="16dp" />
@@ -220,8 +220,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:text="Open Your Bot in Telegram"
-                android:backgroundTint="#1E1E1E"
-                android:textColor="#00AAFF"
+                android:backgroundTint="#111111"
+                android:textColor="#FFFFFF"
                 android:layout_marginTop="16dp" />
 
             <Button
@@ -230,8 +230,8 @@
                 android:layout_height="52dp"
                 android:text="Continue"
                 android:textSize="15sp"
-                android:backgroundTint="#CAFF3F"
-                android:textColor="#05070A"
+                android:backgroundTint="#FFFFFF"
+                android:textColor="#000000"
                 android:layout_marginTop="16dp"
                 android:visibility="gone" />
         </LinearLayout>
@@ -257,7 +257,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Gemini is recommended for phone actions, voice notes, screen reading, and documents. Other providers remain available if you already use them."
-                android:textColor="#AAAAAA"
+                android:textColor="#B8B8B8"
                 android:textSize="15sp"
                 android:layout_marginTop="16dp" />
 
@@ -275,8 +275,8 @@
                     android:layout_weight="1"
                     android:text="Gemini"
                     android:textSize="11sp"
-                    android:backgroundTint="#CAFF3F"
-                    android:textColor="#05070A"
+                    android:backgroundTint="#FFFFFF"
+                    android:textColor="#000000"
                     android:layout_marginEnd="4dp" />
 
                 <Button
@@ -286,8 +286,8 @@
                     android:layout_weight="1"
                     android:text="Claude"
                     android:textSize="11sp"
-                    android:backgroundTint="#1E1E1E"
-                    android:textColor="#AAAAAA"
+                    android:backgroundTint="#111111"
+                    android:textColor="#B8B8B8"
                     android:layout_marginStart="4dp"
                     android:layout_marginEnd="4dp" />
 
@@ -298,8 +298,8 @@
                     android:layout_weight="1"
                     android:text="ChatGPT"
                     android:textSize="11sp"
-                    android:backgroundTint="#1E1E1E"
-                    android:textColor="#AAAAAA"
+                    android:backgroundTint="#111111"
+                    android:textColor="#B8B8B8"
                     android:layout_marginStart="4dp" />
             </LinearLayout>
 
@@ -308,7 +308,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="1. Open aistudio.google.com/apikey\n2. Sign in with Google\n3. Create a Gemini API key\n4. Paste it below"
-                android:textColor="#AAAAAA"
+                android:textColor="#B8B8B8"
                 android:textSize="14sp"
                 android:lineSpacingMultiplier="1.5"
                 android:layout_marginTop="16dp" />
@@ -318,8 +318,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:text="Get Gemini API Key"
-                android:backgroundTint="#1E1E1E"
-                android:textColor="#00AAFF"
+                android:backgroundTint="#111111"
+                android:textColor="#FFFFFF"
                 android:layout_marginTop="12dp" />
 
             <!-- Permission Mode -->
@@ -327,7 +327,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Execution Mode"
-                android:textColor="#CCCCCC"
+                android:textColor="#E8E8E8"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_marginTop="20dp" />
@@ -336,7 +336,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Ask Permission confirms before sensitive actions. Just Do It runs faster but needs more trust."
-                android:textColor="#888888"
+                android:textColor="#9F9F9F"
                 android:textSize="12sp"
                 android:layout_marginTop="4dp" />
 
@@ -352,7 +352,7 @@
                     android:layout_height="48dp"
                     android:layout_weight="1"
                     android:text="Ask Permission"
-                    android:backgroundTint="#CAFF3F"
+                    android:backgroundTint="#FFFFFF"
                     android:textColor="#000000"
                     android:textSize="12sp"
                     android:layout_marginEnd="6dp" />
@@ -363,8 +363,8 @@
                     android:layout_height="48dp"
                     android:layout_weight="1"
                     android:text="Just Do It"
-                    android:backgroundTint="#1E1E1E"
-                    android:textColor="#AAAAAA"
+                    android:backgroundTint="#111111"
+                    android:textColor="#B8B8B8"
                     android:textSize="12sp"
                     android:layout_marginStart="6dp" />
             </LinearLayout>
@@ -373,7 +373,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Paste Gemini API key:"
-                android:textColor="#CCCCCC"
+                android:textColor="#E8E8E8"
                 android:textSize="13sp"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="6dp" />
@@ -385,7 +385,7 @@
                 android:hint="AIzaSy..."
                 android:inputType="textPassword"
                 android:textColor="#FFFFFF"
-                android:textColorHint="#555555"
+                android:textColorHint="#777777"
                 android:background="@drawable/input_bg"
                 android:padding="14dp"
                 android:fontFamily="monospace"
@@ -397,8 +397,8 @@
                 android:layout_height="52dp"
                 android:text="Continue"
                 android:textSize="15sp"
-                android:backgroundTint="#CAFF3F"
-                android:textColor="#05070A"
+                android:backgroundTint="#FFFFFF"
+                android:textColor="#000000"
                 android:layout_marginTop="20dp" />
         </LinearLayout>
 
@@ -432,8 +432,8 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Lets BharatClaw control apps on your behalf: tap, type, scroll."
-                android:textColor="#AAAAAA"
+                android:text="Lets Kaivor control apps on your behalf: tap, type, scroll."
+                android:textColor="#B8B8B8"
                 android:textSize="13sp"
                 android:lineSpacingMultiplier="1.4"
                 android:layout_marginTop="6dp" />
@@ -443,7 +443,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Not enabled"
-                android:textColor="#FF775C"
+                android:textColor="#DCDCDC"
                 android:textSize="13sp"
                 android:layout_marginTop="8dp" />
 
@@ -452,7 +452,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:text="Open Accessibility Settings"
-                android:backgroundTint="#1E1E1E"
+                android:backgroundTint="#111111"
                 android:textColor="#FFFFFF"
                 android:layout_marginTop="6dp" />
 
@@ -470,7 +470,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Forwards app notifications to Telegram. Reply in Telegram to reply inside the original app.\n\nOptional. Skip if you do not want this."
-                android:textColor="#AAAAAA"
+                android:textColor="#B8B8B8"
                 android:textSize="13sp"
                 android:lineSpacingMultiplier="1.4"
                 android:layout_marginTop="6dp" />
@@ -480,7 +480,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Not enabled"
-                android:textColor="#FF775C"
+                android:textColor="#DCDCDC"
                 android:textSize="13sp"
                 android:layout_marginTop="8dp" />
 
@@ -489,7 +489,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:text="Open Notification Access Settings"
-                android:backgroundTint="#1E1E1E"
+                android:backgroundTint="#111111"
                 android:textColor="#FFFFFF"
                 android:layout_marginTop="6dp" />
 
@@ -507,7 +507,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Shows a black pill while tasks run. Tap X to cancel instantly. Drag it anywhere."
-                android:textColor="#AAAAAA"
+                android:textColor="#B8B8B8"
                 android:textSize="13sp"
                 android:lineSpacingMultiplier="1.4"
                 android:layout_marginTop="6dp" />
@@ -517,7 +517,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Not granted"
-                android:textColor="#AAAAAA"
+                android:textColor="#B8B8B8"
                 android:textSize="13sp"
                 android:layout_marginTop="8dp" />
 
@@ -526,7 +526,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:text="Grant Display Over Other Apps"
-                android:backgroundTint="#1E1E1E"
+                android:backgroundTint="#111111"
                 android:textColor="#FFFFFF"
                 android:layout_marginTop="6dp" />
 
@@ -536,8 +536,8 @@
                 android:layout_height="52dp"
                 android:text="Continue"
                 android:textSize="15sp"
-                android:backgroundTint="#CAFF3F"
-                android:textColor="#05070A"
+                android:backgroundTint="#FFFFFF"
+                android:textColor="#000000"
                 android:layout_marginTop="32dp" />
         </LinearLayout>
 
@@ -562,8 +562,8 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Choose how BharatClaw should run on this phone. You can change this later."
-                android:textColor="#AAAAAA"
+                android:text="Choose how Kaivor should run on this phone. You can change this later."
+                android:textColor="#B8B8B8"
                 android:textSize="14sp"
                 android:layout_marginTop="8dp" />
 
@@ -581,7 +581,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="This helps us set up call answering and forwarding correctly."
-                android:textColor="#888888"
+                android:textColor="#9F9F9F"
                 android:textSize="12sp"
                 android:layout_marginTop="4dp" />
 
@@ -598,8 +598,8 @@
                     android:layout_weight="1"
                     android:text="Yes, 2nd Phone"
                     android:textSize="13sp"
-                    android:backgroundTint="#1E1E1E"
-                    android:textColor="#AAAAAA"
+                    android:backgroundTint="#111111"
+                    android:textColor="#B8B8B8"
                     android:layout_marginEnd="6dp"
                     android:stateListAnimator="@null" />
 
@@ -610,8 +610,8 @@
                     android:layout_weight="1"
                     android:text="No, My Main Phone"
                     android:textSize="13sp"
-                    android:backgroundTint="#1E1E1E"
-                    android:textColor="#AAAAAA"
+                    android:backgroundTint="#111111"
+                    android:textColor="#B8B8B8"
                     android:stateListAnimator="@null" />
 
             </LinearLayout>
@@ -623,7 +623,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone"
-                android:background="#0D1A0D"
+                android:background="#101010"
                 android:padding="14dp"
                 android:layout_marginTop="12dp">
 
@@ -631,7 +631,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Dedicated AI phone setup"
-                    android:textColor="#CAFF3F"
+                    android:textColor="#FFFFFF"
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
@@ -639,7 +639,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Does this phone have an active SIM that can receive calls?"
-                    android:textColor="#CCCCCC"
+                    android:textColor="#E8E8E8"
                     android:textSize="13sp"
                     android:layout_marginTop="10dp" />
 
@@ -656,8 +656,8 @@
                         android:layout_weight="1"
                         android:text="Yes, it can"
                         android:textSize="12sp"
-                        android:backgroundTint="#1E1E1E"
-                        android:textColor="#AAAAAA"
+                        android:backgroundTint="#111111"
+                        android:textColor="#B8B8B8"
                         android:layout_marginEnd="6dp"
                         android:stateListAnimator="@null" />
 
@@ -668,8 +668,8 @@
                         android:layout_weight="1"
                         android:text="No / WiFi only"
                         android:textSize="12sp"
-                        android:backgroundTint="#1E1E1E"
-                        android:textColor="#AAAAAA"
+                        android:backgroundTint="#111111"
+                        android:textColor="#B8B8B8"
                         android:stateListAnimator="@null" />
                 </LinearLayout>
 
@@ -686,7 +686,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="This phone can AI-answer calls made to its number. To forward calls from your main number, open call forwarding on your main phone and forward calls to this phone. Or share this number as your AI line."
-                        android:textColor="#AAAAAA"
+                        android:textColor="#B8B8B8"
                         android:textSize="12sp"
                         android:lineSpacingMultiplier="1.4" />
 
@@ -694,7 +694,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="After setup: open Settings, then AI Call Answering, to set your name, ElevenLabs voice, and VIP numbers."
-                        android:textColor="#CAFF3F"
+                        android:textColor="#FFFFFF"
                         android:textSize="11sp"
                         android:layout_marginTop="8dp" />
 
@@ -712,8 +712,8 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="No problem. BharatClaw still works for Telegram commands, notification relay, WhatsApp channel commands, research, routines, and macros. AI call answering needs an active SIM."
-                        android:textColor="#AAAAAA"
+                        android:text="No problem. Kaivor still works for Telegram commands, notification relay, WhatsApp channel commands, research, routines, and macros. AI call answering needs an active SIM."
+                        android:textColor="#B8B8B8"
                         android:textSize="12sp"
                         android:lineSpacingMultiplier="1.4" />
                 </LinearLayout>
@@ -727,7 +727,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone"
-                android:background="#0D1A0D"
+                android:background="#101010"
                 android:padding="14dp"
                 android:layout_marginTop="12dp">
 
@@ -735,7 +735,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Main phone setup"
-                    android:textColor="#CAFF3F"
+                    android:textColor="#FFFFFF"
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
@@ -744,7 +744,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Option 1: Notification Relay (Recommended)"
-                    android:textColor="#FFCC00"
+                    android:textColor="#FFFFFF"
                     android:textSize="13sp"
                     android:textStyle="bold"
                     android:layout_marginTop="10dp" />
@@ -752,8 +752,8 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Use Notification Relay if you do not want to change your default Phone app. Calls and app notifications appear in Telegram, and your normal Phone app stays unchanged.\n\nEnable it in Android Settings under Notifications, Device and app notifications, BharatClaw, Allow."
-                    android:textColor="#AAAAAA"
+                    android:text="Use Notification Relay if you do not want to change your default Phone app. Calls and app notifications appear in Telegram, and your normal Phone app stays unchanged.\n\nEnable it in Android Settings under Notifications, Device and app notifications, Kaivor, Allow."
+                    android:textColor="#B8B8B8"
                     android:textSize="12sp"
                     android:lineSpacingMultiplier="1.4"
                     android:layout_marginTop="6dp" />
@@ -762,7 +762,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#2A2A2A"
+                    android:background="#2F2F2F"
                     android:layout_marginTop="12dp"
                     android:layout_marginBottom="12dp" />
 
@@ -771,15 +771,15 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Option 2: AI Call Answering (Power Mode)"
-                    android:textColor="#FF775C"
+                    android:textColor="#DCDCDC"
                     android:textSize="13sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Set BharatClaw as your default Phone app only if you want AI call answering. Incoming calls can be answered by AI, transcribed to Telegram, and handed back to you with Take Over. Your normal Phone app stays installed for contacts and recents."
-                    android:textColor="#AAAAAA"
+                    android:text="Set Kaivor as your default Phone app only if you want AI call answering. Incoming calls can be answered by AI, transcribed to Telegram, and handed back to you with Take Over. Your normal Phone app stays installed for contacts and recents."
+                    android:textColor="#B8B8B8"
                     android:textSize="12sp"
                     android:lineSpacingMultiplier="1.4"
                     android:layout_marginTop="6dp" />
@@ -799,8 +799,8 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="BharatClaw uses one fast path. It reads app screens instantly and adds visual reading only when forms, documents, or stuck screens need it."
-                android:textColor="#888888"
+                android:text="Kaivor uses one fast path. It reads app screens instantly and adds visual reading only when forms, documents, or stuck screens need it."
+                android:textColor="#9F9F9F"
                 android:textSize="12sp"
                 android:lineSpacingMultiplier="1.4"
                 android:layout_marginTop="6dp" />
@@ -819,7 +819,7 @@
                     android:text="Fast"
                     android:textSize="13sp"
                     android:textStyle="bold"
-                    android:backgroundTint="#CAFF3F"
+                    android:backgroundTint="#FFFFFF"
                     android:textColor="#000000"
                     android:layout_marginEnd="6dp"
                     android:stateListAnimator="@null" />
@@ -831,8 +831,8 @@
                     android:layout_weight="1"
                     android:text="Adaptive vision"
                     android:textSize="13sp"
-                    android:backgroundTint="#1E1E1E"
-                    android:textColor="#AAAAAA"
+                    android:backgroundTint="#111111"
+                    android:textColor="#B8B8B8"
                     android:stateListAnimator="@null" />
             </LinearLayout>
 
@@ -850,7 +850,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Install WhatsApp Business on this phone with a second SIM. Enter that number below. Message it from your main WhatsApp to give commands. Leave blank to skip."
-                android:textColor="#888888"
+                android:textColor="#9F9F9F"
                 android:textSize="12sp"
                 android:lineSpacingMultiplier="1.4"
                 android:layout_marginTop="6dp" />
@@ -862,7 +862,7 @@
                 android:hint="+91XXXXXXXXXX (leave blank to skip)"
                 android:inputType="phone"
                 android:textColor="#FFFFFF"
-                android:textColorHint="#444444"
+                android:textColorHint="#777777"
                 android:background="@drawable/input_bg"
                 android:padding="14dp"
                 android:fontFamily="monospace"
@@ -874,18 +874,18 @@
                 android:id="@+id/btnLaunchAgent"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:text="Launch BharatClaw"
+                android:text="Launch Kaivor"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:backgroundTint="#CAFF3F"
-                android:textColor="#05070A"
+                android:backgroundTint="#FFFFFF"
+                android:textColor="#000000"
                 android:layout_marginTop="32dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Your data never leaves your phone.\nNo account. No tracking. All local."
-                android:textColor="#555555"
+                android:textColor="#777777"
                 android:textSize="12sp"
                 android:gravity="center"
                 android:lineSpacingMultiplier="1.4"

@@ -3,7 +3,7 @@
   "name": "Google Maps Navigation",
   "version": "1.0.0",
   "description": "Navigate to a place, search nearby locations, get directions",
-  "author": "bharatdroid-team",
+  "author": "kaivor-team",
   "trusted": true,
   "permissions": ["OPEN_APP", "READ_SCREEN", "TAP", "TYPE"],
   "allowedPackages": ["com.google.android.apps.maps"],

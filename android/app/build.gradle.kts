@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.bharatdroid.agent"
+    namespace = "com.kaivor.agent"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.bharatdroid.agent"
+        applicationId = "com.kaivor.agent"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

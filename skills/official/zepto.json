@@ -3,7 +3,7 @@
   "name": "Zepto Grocery Order",
   "version": "1.0.0",
   "description": "Order groceries from Zepto (10-minute delivery)",
-  "author": "bharatdroid-team",
+  "author": "kaivor-team",
   "trusted": true,
   "permissions": ["OPEN_APP", "READ_SCREEN", "TAP", "TYPE", "SCROLL", "PAYMENT"],
   "allowedPackages": ["com.zepto.app"],

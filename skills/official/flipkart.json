@@ -3,7 +3,7 @@
   "name": "Flipkart Shopping",
   "version": "1.0.0",
   "description": "Search products on Flipkart, check prices, track orders",
-  "author": "bharatdroid-team",
+  "author": "kaivor-team",
   "trusted": true,
   "permissions": ["OPEN_APP", "READ_SCREEN", "TAP", "TYPE", "SCROLL", "PAYMENT"],
   "allowedPackages": ["com.flipkart.android"],

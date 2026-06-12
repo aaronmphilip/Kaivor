@@ -3,7 +3,7 @@
   "name": "Zomato Food Order",
   "version": "1.0.0",
   "description": "Search and order food from Zomato",
-  "author": "bharatdroid-team",
+  "author": "kaivor-team",
   "trusted": true,
   "permissions": ["OPEN_APP", "READ_SCREEN", "TAP", "TYPE", "SCROLL", "PAYMENT"],
   "allowedPackages": ["com.application.zomato"],
