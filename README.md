@@ -62,13 +62,11 @@ Kaivor: Forwards to Telegram. You reply in chat. Message lands in WhatsApp.
 | **Issues & Bugs** | [GitHub Issues](https://github.com/aaronmphilip/Kaivor/issues) |
 | **Vercel Dashboard** | [kaivorapp project](https://vercel.com/aaron-mathew-philips-projects/kaivorapp) |
 
-### Auto-deploy setup (one-time)
+### Auto-deploy
 
-1. **Grant Vercel access to this repo** — [GitHub → Settings → Applications → Vercel](https://github.com/settings/installations) → Configure → add **Kaivor**
-2. **Connect repo in Vercel** — [kaivorapp Git settings](https://vercel.com/aaron-mathew-philips-projects/kaivorapp/settings/git) → Connect **aaronmphilip/Kaivor**
-3. **GitHub Actions fallback** — create a [Vercel token](https://vercel.com/account/tokens), add `VERCEL_TOKEN` secret in [repo settings](https://github.com/aaronmphilip/Kaivor/settings/secrets/actions), then push `.github/workflows/vercel-deploy.yml`
+**Connected:** [aaronmphilip/Kaivor](https://github.com/aaronmphilip/Kaivor) → [kaivorapp](https://vercel.com/aaron-mathew-philips-projects/kaivorapp)
 
-After step 1–2, every push to `main` auto-deploys to [kaivorapp.vercel.app](https://kaivorapp.vercel.app).
+Every push to `main` auto-deploys to [kaivorapp.vercel.app](https://kaivorapp.vercel.app).
 
 ---
 
