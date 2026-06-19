@@ -139,53 +139,8 @@ class AgentOrchestrator(
             },
             screenAgent = screenAgent,
         ).also { runner ->
-            // Official skills
-            runner.register(SwigySkill())
-            runner.register(ZomatoSearchFirstSkill())
-            runner.register(ZeptoSkill())
-            runner.register(BlinkitSkill())
-            runner.register(YouTubeSkill())
-            runner.register(InstagramSkill())
-            runner.register(PhonePeSkill())
-            runner.register(GPaySkill())
-            runner.register(PaytmSkill())
-            runner.register(CREDSkill())
-            runner.register(MapsSkill())
-            runner.register(OlaSkill())
-            runner.register(UberSkill())
-            runner.register(RapidoSkill())
-            runner.register(FlipkartSkill())
-            runner.register(AmazonSkill())
-            runner.register(WhatsAppSkill())
-            runner.register(ChromeSkill())
-            // Business and productivity skills
-            runner.register(ScreenReaderSkill())
-            runner.register(ReadingConciergeSkill())
-            runner.register(GmailSkill())
-            runner.register(FileManagerSkill())
-            runner.register(CalendarSkill())
-            runner.register(NotesSkill())
-            runner.register(SettingsSkill())
-            runner.register(ContactsSkill())
-            // Composite and multi-app skills
-            runner.register(TravelPlannerSkill())
-            runner.register(RideConciergeSkill())
-            runner.register(PriceComparatorSkill())
-            runner.register(FoodDealFinderSkill())
-            runner.register(BillSplitterSkill())
-            runner.register(MorningBriefSkill())
-            runner.register(EmergencySOSSkill())
-            runner.register(PhoneFinderSkill())
-            // General agent catch-all
-            runner.register(GeneralSkill())
-            // API-powered skills with no phone UI needed
-            runner.register(WeatherSkill())
-            runner.register(CurrencySkill())
-            runner.register(QrCodeSkill())
-            runner.register(PdfCreatorSkill())
-            runner.register(PptxCreatorSkill())
-            if (config.imageApiKey.isNotBlank()) {
-                runner.register(ImageGeneratorSkill(config.imageApiKey, config.imageApiProvider))
+            BuiltinSkills.all(config.imageApiKey, config.imageApiProvider).forEach { skill ->
+                runner.register(skill)
             }
 
             // Load community skills

@@ -14,7 +14,7 @@ Personal Android agent — controlled from Telegram, running entirely on your ph
 <img src="https://img.shields.io/badge/Status-Active-000000?style=for-the-badge"/>
 </p>
 
-[Download APK](downloads/Kaivor-v1.0.apk) · [Website](index.html) · [Full Guide](KAIVOR_GUIDE.md) · [Report Bug](https://github.com/aaronmphilip/Kaivor/issues)
+[GitHub Repo](https://github.com/aaronmphilip/Kaivor) · [Live Website](https://kaivorapp.vercel.app) · [Download APK](downloads/Kaivor-v1.0.apk) · [Full Guide](KAIVOR_GUIDE.md) · [Report Bug](https://github.com/aaronmphilip/Kaivor/issues)
 
 </div>
 
@@ -49,6 +49,17 @@ Kaivor: Forwards to Telegram. You reply in chat. Message lands in WhatsApp.
 | | **Hindi + English** | Understands commands in both languages |
 | | **Any AI provider** | Gemini (recommended), Claude, or OpenAI — auto-detected |
 | | **100% on-device** | Phone control runs locally. No Kaivor server. |
+
+---
+
+## Links
+
+| Resource | URL |
+|---|---|
+| **GitHub Repository** | [github.com/aaronmphilip/Kaivor](https://github.com/aaronmphilip/Kaivor) |
+| **Live Website** | [kaivorapp.vercel.app](https://kaivorapp.vercel.app) |
+| **APK Download** | [Kaivor-v1.0.apk](downloads/Kaivor-v1.0.apk) |
+| **Issues & Bugs** | [GitHub Issues](https://github.com/aaronmphilip/Kaivor/issues) |
 
 ---
 
@@ -151,8 +162,8 @@ Kaivor/
 │       ├── AgentOrchestrator.kt
 │       ├── TelegramPoller.kt
 │       ├── NotificationRelay.kt
-│       └── skills/builtin/  # 30+ built-in skills
-├── index.html               # Landing page
+│       └── skills/builtin/  # 40+ built-in skills
+├── index.html               # Landing page (also at kaivorapp.vercel.app)
 ├── styles.css               # SpaceX/xAI black-white theme
 ├── downloads/               # Public APK
 ├── skills/official/         # Skill definitions
@@ -206,7 +217,7 @@ Read **[CONTRIBUTING.md](CONTRIBUTING.md)** for the full guide.
 
 **Shipped**
 - [x] 24/7 notification relay with Telegram reply
-- [x] 30+ built-in skills
+- [x] 40+ built-in skills (stress-tested)
 - [x] Voice note → command (STT)
 - [x] Document reading (PDF, screenshots)
 - [x] Black-white landing page + on-device APK
@@ -233,6 +244,6 @@ MIT — see [LICENSE](LICENSE).
 
 Built for real phone work.
 
-**[Star this repo](https://github.com/aaronmphilip/Kaivor)** · **[Download APK](downloads/Kaivor-v1.0.apk)** · **[Issues](https://github.com/aaronmphilip/Kaivor/issues)**
+**[GitHub](https://github.com/aaronmphilip/Kaivor)** · **[Live Site](https://kaivorapp.vercel.app)** · **[Download APK](downloads/Kaivor-v1.0.apk)** · **[Issues](https://github.com/aaronmphilip/Kaivor/issues)**
 
 </div>
