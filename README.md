@@ -60,6 +60,9 @@ Kaivor: Forwards to Telegram. You reply in chat. Message lands in WhatsApp.
 | **Live Website** | [kaivorapp.vercel.app](https://kaivorapp.vercel.app) |
 | **APK Download** | [Kaivor-v1.0.apk](downloads/Kaivor-v1.0.apk) |
 | **Issues & Bugs** | [GitHub Issues](https://github.com/aaronmphilip/Kaivor/issues) |
+| **Vercel Dashboard** | [kaivorapp project](https://vercel.com/aaron-mathew-philips-projects/kaivorapp) |
+
+Pushes to `main` auto-deploy to [kaivorapp.vercel.app](https://kaivorapp.vercel.app) via GitHub Actions (`.github/workflows/vercel-deploy.yml`).
 
 ---
 
