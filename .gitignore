@@ -1,0 +1,40 @@
+# Android build outputs
+*.iml
+.gradle/
+local.properties
+.idea/
+.DS_Store
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.keystore
+!debug.keystore
+!downloads/*.apk
+
+# Environment / secrets
+.env
+.env.*
+.env*.local
+*.vars
+.dev.vars
+.claude/
+.claire/
+.vercel/
+.write-test
+codex-write-probe.tmp
+git-temp-index .lock
+git-temp-index.lock
+__push_tmp/
+.wrangler/
+.codex/screenshots/
+
+# Logs
+*.log
+
+# Node (if tooling is added later)
+node_modules/
+dist/
+.vercel

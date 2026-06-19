@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kaivor</title>
+    <meta
+      name="description"
+      content="Kaivor is a personal Android agent controlled from Telegram. It reads screens, fills forms, handles documents, and executes real phone work on-device."
+    />
+    <meta name="theme-color" content="#000000" />
+    <meta property="og:title" content="Kaivor | Android Personal Agent" />
+    <meta
+      property="og:description"
+      content="Command your Android phone from Telegram. Kaivor opens apps, fills forms, reads documents, and reports progress."
+    />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="assets/kaivor-logo.png" />
+    <link rel="apple-touch-icon" href="assets/kaivor-logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="starfield" aria-hidden="true"></div>
+    <div class="motion-grid" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="Kaivor home">
+        <span class="brand-mark">
+          <img src="assets/kaivor-logo.png" alt="" />
+        </span>
+        <span>Kaivor</span>
+      </a>
+
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="#work">Mission</a>
+        <a href="#cases">Capabilities</a>
+        <a href="#system">Architecture</a>
+        <a href="#setup">Deploy</a>
+      </nav>
+
+      <div class="header-actions">
+        <a class="header-link" href="https://github.com/aaronmphilip/Kaivor" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a class="header-cta" href="downloads/Kaivor-v1.0.apk" download>Download</a>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">On-device Android agent</p>
+          <h1 id="hero-title">Execute.<br />Not explain.</h1>
+          <p class="hero-text">
+            Kaivor turns Telegram into mission control for your phone. Open apps,
+            read screens, fill forms, relay notifications, and ask before every
+            risky action — all running locally on Android.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button button-primary" href="downloads/Kaivor-v1.0.apk" download>
+              Download APK
+            </a>
+            <a class="button button-secondary" href="https://github.com/aaronmphilip/Kaivor" target="_blank" rel="noopener noreferrer">
+              View on GitHub
+            </a>
+          </div>
+
+          <p class="hero-footnote">Android 11+ · Gemini / Claude / OpenAI · No cloud server</p>
+        </div>
+
+        <div class="hero-visual" aria-label="Kaivor live task preview">
+          <div class="visual-ring" aria-hidden="true"></div>
+          <div class="agent-panel">
+            <div class="panel-top">
+              <img src="assets/kaivor-logo.png" alt="" />
+              <div>
+                <span>Live execution</span>
+                <strong>Chrome form autofill</strong>
+              </div>
+            </div>
+            <div class="notch-pill">
+              <span class="pulse-dot"></span>
+              <div>
+                <small>KAIVOR</small>
+                <strong>Matching required fields</strong>
+              </div>
+            </div>
+            <div class="task-stack">
+              <article>
+                <span>Command</span>
+                <p>Fill the signup form using this company document.</p>
+              </article>
+              <article>
+                <span>Action</span>
+                <p>Opened Chrome, read labels, inserted known values.</p>
+              </article>
+              <article class="blocked">
+                <span>Hold</span>
+                <p>Requested GST number in Telegram before submit.</p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="outcome-strip" aria-label="Kaivor outcomes">
+        <article>
+          <strong>1</strong>
+          <span>Telegram command channel</span>
+        </article>
+        <article>
+          <strong>30+</strong>
+          <span>built-in execution skills</span>
+        </article>
+        <article>
+          <strong>24/7</strong>
+          <span>notification relay + reply</span>
+        </article>
+        <article>
+          <strong>0</strong>
+          <span>cloud servers required</span>
+        </article>
+      </section>
+
+      <section class="section problem-section" id="work">
+        <div class="section-copy">
+          <p class="eyebrow">The problem</p>
+          <h2>Phone work is fragmented. Kaivor makes it executable.</h2>
+        </div>
+        <div class="problem-layout">
+          <p class="lead">
+            Real work lives across Chrome, PDFs, WhatsApp, payments, maps, and
+            notifications. Kaivor operates that surface directly — the way a
+            human assistant would, but faster and always reachable from Telegram.
+          </p>
+          <div class="pain-list">
+            <span>App switching</span>
+            <span>Repeated forms</span>
+            <span>Unread documents</span>
+            <span>Missing details</span>
+            <span>Manual follow-ups</span>
+            <span>Status checking</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section use-cases" id="cases">
+        <div class="section-copy">
+          <p class="eyebrow">Capabilities</p>
+          <h2>Clear tasks. Visible progress. No blind submitting.</h2>
+        </div>
+
+        <div class="case-grid">
+          <article class="case-card">
+            <span class="case-number">01</span>
+            <h3>Website forms</h3>
+            <ol>
+              <li>Send the link and source details.</li>
+              <li>Kaivor opens Chrome and reads required fields.</li>
+              <li>Known values fill automatically.</li>
+              <li>Missing values are requested before submit.</li>
+            </ol>
+          </article>
+
+          <article class="case-card">
+            <span class="case-number">02</span>
+            <h3>Documents</h3>
+            <ol>
+              <li>Send a PDF, receipt, page, or screenshot.</li>
+              <li>Extract names, dates, amounts, and next steps.</li>
+              <li>Draft replies, notes, or related field fills.</li>
+              <li>Receive a Telegram summary with proof.</li>
+            </ol>
+          </article>
+
+          <article class="case-card">
+            <span class="case-number">03</span>
+            <h3>App errands</h3>
+            <ol>
+              <li>Compare rides, food, shopping, or map options.</li>
+              <li>Check live app state instead of guessing.</li>
+              <li>Return the best option and continue the flow.</li>
+              <li>Progress stays visible in the notch overlay.</li>
+            </ol>
+          </article>
+
+          <article class="case-card">
+            <span class="case-number">04</span>
+            <h3>Notification relay</h3>
+            <ol>
+              <li>Phone notifications reach Telegram instantly.</li>
+              <li>Reply from chat without unlocking the device.</li>
+              <li>Responses route through the originating app.</li>
+              <li>Task context stays warm for follow-ups.</li>
+            </ol>
+          </article>
+        </div>
+      </section>
+
+      <section class="section system" id="system">
+        <div class="system-visual" aria-label="Kaivor system flow">
+          <div class="flow-node node-command">
+            <span>Input</span>
+            <strong>Telegram voice or text</strong>
+          </div>
+          <div class="flow-track"></div>
+          <div class="flow-node node-agent">
+            <span>Brain</span>
+            <strong>Plan · observe · act · recover</strong>
+          </div>
+          <div class="flow-track"></div>
+          <div class="flow-node node-phone">
+            <span>Android</span>
+            <strong>Tap · type · scroll · verify</strong>
+          </div>
+          <div class="flow-track"></div>
+          <div class="flow-node node-user">
+            <span>Safety</span>
+            <strong>Ask before risky action</strong>
+          </div>
+        </div>
+
+        <div class="section-copy">
+          <p class="eyebrow">Architecture</p>
+          <h2>Fast path first. Vision when the screen demands it.</h2>
+          <p>
+            Kaivor starts with the Android accessibility tree for speed, then
+            activates visual screen reading for sparse UIs, documents, form
+            recovery, and anything the tree cannot explain.
+          </p>
+          <ul class="check-list">
+            <li>Progress in the notch overlay and persistent notification.</li>
+            <li>Gemini powers reasoning, voice, and document understanding.</li>
+            <li>Voice notes become commands through on-device STT.</li>
+            <li>Blocked tasks surface exact questions in Telegram.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section calm-band" aria-label="Product principle">
+        <div class="band-copy">
+          <p class="eyebrow">Principle</p>
+          <h2>Quiet interface.<br />Relentless execution.</h2>
+          <p>
+            One command. Visible state. Precise questions when details are
+            missing. A final report when the Android task is complete.
+          </p>
+        </div>
+      </section>
+
+      <section class="section setup" id="setup">
+        <div class="section-copy">
+          <p class="eyebrow">Deploy</p>
+          <h2>Install once. Connect Gemini. Grant Android access.</h2>
+        </div>
+
+        <div class="setup-steps">
+          <article>
+            <span>01</span>
+            <h3>Install APK</h3>
+            <p>Download Kaivor on the Android device that will execute work.</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>Add Gemini key</h3>
+            <p>Paste your API key from Google AI Studio during onboarding.</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>Connect Telegram</h3>
+            <p>Create a bot, paste the token, and pair your private chat.</p>
+          </article>
+          <article>
+            <span>04</span>
+            <h3>Enable access</h3>
+            <p>Accessibility controls apps. Overlay powers the progress notch.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="download-band" id="download">
+        <div>
+          <p class="eyebrow">Download</p>
+          <h2>Deploy the agent.</h2>
+          <p>Latest build ready for direct install. Open source on GitHub.</p>
+        </div>
+        <div class="download-actions">
+          <a class="button button-primary" href="downloads/Kaivor-v1.0.apk" download>
+            Download APK
+          </a>
+          <a class="button button-secondary" href="https://github.com/aaronmphilip/Kaivor" target="_blank" rel="noopener noreferrer">
+            Star on GitHub
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <p class="footer-brand">Kaivor</p>
+        <p>Personal Android agent for real phone work.</p>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/aaronmphilip/Kaivor" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://github.com/aaronmphilip/Kaivor/issues" target="_blank" rel="noopener noreferrer">Issues</a>
+        <a href="downloads/Kaivor-v1.0.apk" download>APK</a>
+      </div>
+    </footer>
+  </body>
+</html>

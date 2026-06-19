@@ -1,0 +1,898 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:background="#FFFFFF"/>
+
+        <!-- Step indicator -->
+        <TextView
+            android:id="@+id/tvStepIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Step 1 of 6"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:layout_marginTop="20dp" />
+
+        <!--  STEP 1: Welcome                   -->
+        <LinearLayout
+            android:id="@+id/step1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="60dp"
+            android:visibility="visible">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/kaivor_logo"
+                android:contentDescription="Kaivor logo"
+                android:layout_marginBottom="18dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Kaivor"
+                android:textColor="#FFFFFF"
+                android:textSize="40sp"
+                android:textStyle="bold"
+                />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Personal Android agent. Send a Telegram command; Kaivor opens apps, reads screens, fills forms, and asks when information is missing."
+                android:textColor="#B8B8B8"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="16dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="&quot;Fill this website form with my details&quot;\n&quot;Find the best ride and message me the ETA&quot;\n&quot;Read the PDF in Downloads&quot;\n&quot;Reply to that WhatsApp notification&quot;"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:gravity="center"
+                android:lineSpacingMultiplier="1.5"
+                android:fontFamily="monospace"
+                android:layout_marginTop="32dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Setup takes a few minutes. The required parts are Telegram, an AI key, and Accessibility."
+                android:textColor="#8A8A8A"
+                android:textSize="13sp"
+                android:gravity="center"
+                android:layout_marginTop="32dp" />
+
+            <Button
+                android:id="@+id/btnGetStarted"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Get Started"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:backgroundTint="#FFFFFF"
+                android:textColor="#000000"
+                android:layout_marginTop="40dp" />
+        </LinearLayout>
+
+        <!--  STEP 2: Telegram Bot Token        -->
+        <LinearLayout
+            android:id="@+id/step2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginTop="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Connect Telegram"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="This is the control channel. Create a private bot, paste its token here, then Kaivor will only listen to your chat."
+                android:textColor="#B8B8B8"
+                android:textSize="14sp"
+                android:lineSpacingMultiplier="1.5"
+                android:layout_marginTop="16dp" />
+
+            <Button
+                android:id="@+id/btnOpenBotFather"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Open @BotFather in Telegram"
+                android:backgroundTint="#111111"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="20dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Paste the bot token here:"
+                android:textColor="#E8E8E8"
+                android:textSize="13sp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="6dp" />
+
+            <EditText
+                android:id="@+id/etBotToken"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="123456:ABC-DEF1234ghIkl..."
+                android:inputType="text"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#777777"
+                android:background="@drawable/input_bg"
+                android:padding="14dp"
+                android:fontFamily="monospace"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvTokenStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="13sp"
+                android:layout_marginTop="8dp" />
+
+            <Button
+                android:id="@+id/btnVerifyToken"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Verify Token"
+                android:textSize="15sp"
+                android:backgroundTint="#FFFFFF"
+                android:textColor="#000000"
+                android:layout_marginTop="16dp" />
+        </LinearLayout>
+
+        <!--  STEP 3: Auto-detect Chat ID       -->
+        <LinearLayout
+            android:id="@+id/step3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginTop="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:text="Pair Your Telegram"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvPairInstructions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Open Telegram and send /start to your bot. Kaivor will detect your chat automatically."
+                android:textColor="#B8B8B8"
+                android:textSize="15sp"
+                android:lineSpacingMultiplier="1.5"
+                android:layout_marginTop="16dp" />
+
+            <ProgressBar
+                android:id="@+id/progressPairing"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="32dp"
+                android:indeterminateTint="#FFFFFF" />
+
+            <TextView
+                android:id="@+id/tvPairResult"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:gravity="center"
+                android:layout_marginTop="16dp" />
+
+            <Button
+                android:id="@+id/btnOpenBot"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Open Your Bot in Telegram"
+                android:backgroundTint="#111111"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="16dp" />
+
+            <Button
+                android:id="@+id/btnStep3Next"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Continue"
+                android:textSize="15sp"
+                android:backgroundTint="#FFFFFF"
+                android:textColor="#000000"
+                android:layout_marginTop="16dp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!--  STEP 4: Gemini API Key            -->
+        <LinearLayout
+            android:id="@+id/step4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginTop="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Connect AI"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Gemini is recommended for phone actions, voice notes, screen reading, and documents. Other providers remain available if you already use them."
+                android:textColor="#B8B8B8"
+                android:textSize="15sp"
+                android:layout_marginTop="16dp" />
+
+            <!-- Provider toggle -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="16dp">
+
+                <Button
+                    android:id="@+id/btnPickGemini"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:text="Gemini"
+                    android:textSize="11sp"
+                    android:backgroundTint="#FFFFFF"
+                    android:textColor="#000000"
+                    android:layout_marginEnd="4dp" />
+
+                <Button
+                    android:id="@+id/btnPickClaude"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:text="Claude"
+                    android:textSize="11sp"
+                    android:backgroundTint="#111111"
+                    android:textColor="#B8B8B8"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp" />
+
+                <Button
+                    android:id="@+id/btnPickOpenAI"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:text="ChatGPT"
+                    android:textSize="11sp"
+                    android:backgroundTint="#111111"
+                    android:textColor="#B8B8B8"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvAIInstructions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1. Open aistudio.google.com/apikey\n2. Sign in with Google\n3. Create a Gemini API key\n4. Paste it below"
+                android:textColor="#B8B8B8"
+                android:textSize="14sp"
+                android:lineSpacingMultiplier="1.5"
+                android:layout_marginTop="16dp" />
+
+            <Button
+                android:id="@+id/btnOpenClaude"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Get Gemini API Key"
+                android:backgroundTint="#111111"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="12dp" />
+
+            <!-- Permission Mode -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Execution Mode"
+                android:textColor="#E8E8E8"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ask Permission confirms before sensitive actions. Just Do It runs faster but needs more trust."
+                android:textColor="#9F9F9F"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <Button
+                    android:id="@+id/btnAskPermission"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="Ask Permission"
+                    android:backgroundTint="#FFFFFF"
+                    android:textColor="#000000"
+                    android:textSize="12sp"
+                    android:layout_marginEnd="6dp" />
+
+                <Button
+                    android:id="@+id/btnJustDoIt"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="Just Do It"
+                    android:backgroundTint="#111111"
+                    android:textColor="#B8B8B8"
+                    android:textSize="12sp"
+                    android:layout_marginStart="6dp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Paste Gemini API key:"
+                android:textColor="#E8E8E8"
+                android:textSize="13sp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="6dp" />
+
+            <EditText
+                android:id="@+id/etClaudeKey"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="AIzaSy..."
+                android:inputType="textPassword"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#777777"
+                android:background="@drawable/input_bg"
+                android:padding="14dp"
+                android:fontFamily="monospace"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/btnStep4Next"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Continue"
+                android:textSize="15sp"
+                android:backgroundTint="#FFFFFF"
+                android:textColor="#000000"
+                android:layout_marginTop="20dp" />
+        </LinearLayout>
+
+        <!--  STEP 5: Accessibility + Launch     -->
+        <LinearLayout
+            android:id="@+id/step5"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:visibility="gone"
+            android:layout_marginTop="24dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Phone Permissions"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <!-- Permission 1: Accessibility -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1. Accessibility Access (required)"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Lets Kaivor control apps on your behalf: tap, type, scroll."
+                android:textColor="#B8B8B8"
+                android:textSize="13sp"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="6dp" />
+
+            <TextView
+                android:id="@+id/tvAccessStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Not enabled"
+                android:textColor="#DCDCDC"
+                android:textSize="13sp"
+                android:layout_marginTop="8dp" />
+
+            <Button
+                android:id="@+id/btnEnableAccess"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Open Accessibility Settings"
+                android:backgroundTint="#111111"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="6dp" />
+
+            <!-- Permission 2: Notification Access -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="2. Notification Access (always-on relay)"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Forwards app notifications to Telegram. Reply in Telegram to reply inside the original app.\n\nOptional. Skip if you do not want this."
+                android:textColor="#B8B8B8"
+                android:textSize="13sp"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="6dp" />
+
+            <TextView
+                android:id="@+id/tvNotifStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Not enabled"
+                android:textColor="#DCDCDC"
+                android:textSize="13sp"
+                android:layout_marginTop="8dp" />
+
+            <Button
+                android:id="@+id/btnEnableNotifAccess"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Open Notification Access Settings"
+                android:backgroundTint="#111111"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="6dp" />
+
+            <!-- Permission 3: Overlay (Notch) -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="3. Floating Notch Overlay (recommended)"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Shows a black pill while tasks run. Tap X to cancel instantly. Drag it anywhere."
+                android:textColor="#B8B8B8"
+                android:textSize="13sp"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="6dp" />
+
+            <TextView
+                android:id="@+id/tvOverlayStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Not granted"
+                android:textColor="#B8B8B8"
+                android:textSize="13sp"
+                android:layout_marginTop="8dp" />
+
+            <Button
+                android:id="@+id/btnGrantOverlayOnboard"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Grant Display Over Other Apps"
+                android:backgroundTint="#111111"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="6dp" />
+
+            <Button
+                android:id="@+id/btnStep5Next"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Continue"
+                android:textSize="15sp"
+                android:backgroundTint="#FFFFFF"
+                android:textColor="#000000"
+                android:layout_marginTop="32dp" />
+        </LinearLayout>
+
+        <!--  STEP 6: Power Features + Launch   -->
+        <LinearLayout
+            android:id="@+id/step6"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:visibility="gone"
+            android:layout_marginTop="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Finish Setup"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Choose how Kaivor should run on this phone. You can change this later."
+                android:textColor="#B8B8B8"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp" />
+
+            <!-- Phone setup type -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Is this your second/dedicated AI phone?"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginTop="28dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="This helps us set up call answering and forwarding correctly."
+                android:textColor="#9F9F9F"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp">
+
+                <Button
+                    android:id="@+id/btnPhoneTypeDedicated"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:text="Yes, 2nd Phone"
+                    android:textSize="13sp"
+                    android:backgroundTint="#111111"
+                    android:textColor="#B8B8B8"
+                    android:layout_marginEnd="6dp"
+                    android:stateListAnimator="@null" />
+
+                <Button
+                    android:id="@+id/btnPhoneTypeMain"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:text="No, My Main Phone"
+                    android:textSize="13sp"
+                    android:backgroundTint="#111111"
+                    android:textColor="#B8B8B8"
+                    android:stateListAnimator="@null" />
+
+            </LinearLayout>
+
+            <!-- Dedicated phone guidance (shown when 2nd phone selected) -->
+            <LinearLayout
+                android:id="@+id/layoutDedicatedPhoneGuide"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:background="#101010"
+                android:padding="14dp"
+                android:layout_marginTop="12dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Dedicated AI phone setup"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Does this phone have an active SIM that can receive calls?"
+                    android:textColor="#E8E8E8"
+                    android:textSize="13sp"
+                    android:layout_marginTop="10dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <Button
+                        android:id="@+id/btnSimYes"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:text="Yes, it can"
+                        android:textSize="12sp"
+                        android:backgroundTint="#111111"
+                        android:textColor="#B8B8B8"
+                        android:layout_marginEnd="6dp"
+                        android:stateListAnimator="@null" />
+
+                    <Button
+                        android:id="@+id/btnSimNo"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:text="No / WiFi only"
+                        android:textSize="12sp"
+                        android:backgroundTint="#111111"
+                        android:textColor="#B8B8B8"
+                        android:stateListAnimator="@null" />
+                </LinearLayout>
+
+                <!-- SIM Yes guidance -->
+                <LinearLayout
+                    android:id="@+id/layoutSimYesGuide"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_marginTop="10dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="This phone can AI-answer calls made to its number. To forward calls from your main number, open call forwarding on your main phone and forward calls to this phone. Or share this number as your AI line."
+                        android:textColor="#B8B8B8"
+                        android:textSize="12sp"
+                        android:lineSpacingMultiplier="1.4" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="After setup: open Settings, then AI Call Answering, to set your name, ElevenLabs voice, and VIP numbers."
+                        android:textColor="#FFFFFF"
+                        android:textSize="11sp"
+                        android:layout_marginTop="8dp" />
+
+                </LinearLayout>
+
+                <!-- SIM No guidance -->
+                <LinearLayout
+                    android:id="@+id/layoutSimNoGuide"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_marginTop="10dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="No problem. Kaivor still works for Telegram commands, notification relay, WhatsApp channel commands, research, routines, and macros. AI call answering needs an active SIM."
+                        android:textColor="#B8B8B8"
+                        android:textSize="12sp"
+                        android:lineSpacingMultiplier="1.4" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Main phone guidance (shown when main phone selected) -->
+            <LinearLayout
+                android:id="@+id/layoutMainPhoneGuide"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:background="#101010"
+                android:padding="14dp"
+                android:layout_marginTop="12dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Main phone setup"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <!-- Notification relay recommendation -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Option 1: Notification Relay (Recommended)"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="10dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Use Notification Relay if you do not want to change your default Phone app. Calls and app notifications appear in Telegram, and your normal Phone app stays unchanged.\n\nEnable it in Android Settings under Notifications, Device and app notifications, Kaivor, Allow."
+                    android:textColor="#B8B8B8"
+                    android:textSize="12sp"
+                    android:lineSpacingMultiplier="1.4"
+                    android:layout_marginTop="6dp" />
+
+                <!-- Divider -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#2F2F2F"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- AI call answering option -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Option 2: AI Call Answering (Power Mode)"
+                    android:textColor="#DCDCDC"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Set Kaivor as your default Phone app only if you want AI call answering. Incoming calls can be answered by AI, transcribed to Telegram, and handed back to you with Take Over. Your normal Phone app stays installed for contacts and recents."
+                    android:textColor="#B8B8B8"
+                    android:textSize="12sp"
+                    android:lineSpacingMultiplier="1.4"
+                    android:layout_marginTop="6dp" />
+
+            </LinearLayout>
+
+            <!-- Execution speed -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Execution speed"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="24dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Kaivor uses one fast path. It reads app screens instantly and adds visual reading only when forms, documents, or stuck screens need it."
+                android:textColor="#9F9F9F"
+                android:textSize="12sp"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="6dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="10dp">
+
+                <Button
+                    android:id="@+id/btnOnboardFast"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:text="Fast"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:backgroundTint="#FFFFFF"
+                    android:textColor="#000000"
+                    android:layout_marginEnd="6dp"
+                    android:stateListAnimator="@null" />
+
+                <Button
+                    android:id="@+id/btnOnboardUltra"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:text="Adaptive vision"
+                    android:textSize="13sp"
+                    android:backgroundTint="#111111"
+                    android:textColor="#B8B8B8"
+                    android:stateListAnimator="@null" />
+            </LinearLayout>
+
+            <!-- WhatsApp Channel -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="WhatsApp Channel (optional)"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="24dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Install WhatsApp Business on this phone with a second SIM. Enter that number below. Message it from your main WhatsApp to give commands. Leave blank to skip."
+                android:textColor="#9F9F9F"
+                android:textSize="12sp"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="6dp" />
+
+            <EditText
+                android:id="@+id/etOnboardWaNumber"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="+91XXXXXXXXXX (leave blank to skip)"
+                android:inputType="phone"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#777777"
+                android:background="@drawable/input_bg"
+                android:padding="14dp"
+                android:fontFamily="monospace"
+                android:textSize="13sp"
+                android:layout_marginTop="10dp" />
+
+            <!-- Launch -->
+            <Button
+                android:id="@+id/btnLaunchAgent"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:text="Launch Kaivor"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:backgroundTint="#FFFFFF"
+                android:textColor="#000000"
+                android:layout_marginTop="32dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Your data never leaves your phone.\nNo account. No tracking. All local."
+                android:textColor="#777777"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="40dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
