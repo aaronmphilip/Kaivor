@@ -1,288 +1,238 @@
 <div align="center">
 
-<h1>🤖 Kaivor</h1>
+# Kaivor
 
-<p><strong>Your Android phone, controlled by AI — via Telegram</strong></p>
+**Execute. Not explain.**
+
+Personal Android agent — controlled from Telegram, running entirely on your phone.
 
 <p>
-<img src="https://img.shields.io/badge/Platform-Android%2011+-3DDC84?style=for-the-badge&logo=android&logoColor=white"/>
-<img src="https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white"/>
-<img src="https://img.shields.io/badge/AI-Gemini%20%7C%20Claude%20%7C%20GPT-FF6B35?style=for-the-badge"/>
-<img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge"/>
-<img src="https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge"/>
-<img src="https://img.shields.io/badge/Status-In%20Development-yellow?style=for-the-badge"/>
+<img src="https://img.shields.io/badge/Platform-Android%2011+-000000?style=for-the-badge&logo=android&logoColor=white"/>
+<img src="https://img.shields.io/badge/Kotlin-000000?style=for-the-badge&logo=kotlin&logoColor=white"/>
+<img src="https://img.shields.io/badge/AI-Gemini%20%7C%20Claude%20%7C%20GPT-000000?style=for-the-badge"/>
+<img src="https://img.shields.io/badge/License-MIT-000000?style=for-the-badge"/>
+<img src="https://img.shields.io/badge/Status-Active-000000?style=for-the-badge"/>
 </p>
 
-<p>Order food. Send messages. Play music. Book cabs. Pay bills.<br/>
-Receive every notification. Reply from anywhere in the world.<br/>
-Just tell it what to do — in <strong>English or Hindi</strong>.</p>
-
-> ⚠️ **Active Development** — We are actively building this. Features work but expect rough edges. Star the repo to follow progress.
+[Download APK](downloads/Kaivor-v1.0.apk) · [Website](index.html) · [Full Guide](KAIVOR_GUIDE.md) · [Report Bug](https://github.com/aaronmphilip/Kaivor/issues)
 
 </div>
 
 ---
 
-## 🌟 The Vision
+## What is Kaivor?
 
-Most AI assistants tell you what to do. Kaivor **does it for you**.
+Most AI assistants tell you what to do. **Kaivor does it for you.**
 
-We are building an AI agent that lives on your Android phone and understands your intent the same way a human assistant would — it looks at the screen, figures out what's there, makes a plan, and executes it step by step. No cloud server doing the heavy lifting. No subscription. Your phone, your data, your AI.
-
-**The goal:** You should be able to say *"Book me an AC cab to the airport, message my wife I'm leaving, and put on some driving music"* — and it handles all three, back to back, faster than you could unlock your phone.
-
-We're not there yet — but we're building toward it, one skill at a time. This is open source so anyone can help get there faster.
-
----
-
-## 💬 See It In Action
+Kaivor is an open-source AI agent that lives on your Android phone. You send a command over Telegram — text or voice — and it opens apps, reads screens, fills forms, relays notifications, and reports back with proof. No cloud server. No subscription. Your phone, your data, your AI.
 
 ```
-You:  "Order biryani from Swiggy under ₹200"
-Bot:  📋 Plan: Open Swiggy → Search biryani → Pick best match → Add to cart
-Bot:  ✅ Done! Behrouz Chicken Biryani ₹189 added. Arriving in 35 mins.
-      📸 [screenshot of order confirmation]
-```
+You:   "Order biryani from Swiggy under ₹200"
+Kaivor: Opens Swiggy → searches → adds to cart → sends screenshot proof
 
-```
-You:  "Send ₹500 to Rahul on GPay then WhatsApp him saying sent"
-Bot:  ✅ Step 1: Sent ₹500 to Rahul on Google Pay
-Bot:  ✅ Step 2: WhatsApp message sent to Rahul: "sent"
-      📸 [screenshot proof]
-```
-
-```
-You:  "Play Arijit Singh on YouTube"
-Bot:  ✅ Playing: Tum Hi Ho — Arijit Singh
-      📸 [screenshot of video playing]
-```
-
-```
-[WhatsApp notification arrives on phone]
-Bot:  📩 *WhatsApp*
-      *Mom*
-      Coming home for dinner?
-      _Reply to this message to respond._
-
-You:  [Reply in Telegram] Yes, leaving in 10 minutes!
-Bot:  ✉️ Reply sent.       ← message delivered inside WhatsApp, zero app-switching
+You:   [WhatsApp notification arrives]
+Kaivor: Forwards to Telegram. You reply in chat. Message lands in WhatsApp.
 ```
 
 ---
 
-## ✨ Features
+## Features
 
-| | Feature | Description |
+| | Capability | What it does |
 |---|---|---|
-| 🧠 | **Plan → Execute** | Generates a numbered plan before acting — like a human thinks first |
-| 📱 | **Universal UI** | Works on ANY Android app — no hardcoded per-app logic |
-| 📸 | **Screenshot Proof** | Sends a photo after every task so you see exactly what happened |
-| ⚡ | **Superhuman Speed** | Executes faster than any human can tap |
-| 🔗 | **Multi-step Chaining** | "Do X then Y then Z" — runs all steps automatically |
-| 🔔 | **24×7 Notification Relay** | Every app notification forwarded to Telegram. Reply in Telegram → reply in the app |
-| 🇮🇳 | **Hindi + English** | Understands commands in both languages |
-| 🔌 | **Any AI Provider** | Gemini, Claude, or OpenAI — paste key, it auto-detects |
-| 🏠 | **100% On-Device** | No cloud server. Everything runs on your Android phone |
+| | **Plan → Execute** | Generates a plan, then acts step by step |
+| | **Universal UI** | Works on any Android app via accessibility + vision |
+| | **Screenshot proof** | Sends a photo after every task |
+| | **Multi-step chaining** | "Do X, then Y, then Z" in one command |
+| | **Notification relay** | Every app notification → Telegram, with two-way reply |
+| | **Voice commands** | Send a Telegram voice note, Kaivor transcribes and runs it |
+| | **Hindi + English** | Understands commands in both languages |
+| | **Any AI provider** | Gemini (recommended), Claude, or OpenAI — auto-detected |
+| | **100% on-device** | Phone control runs locally. No Kaivor server. |
 
 ---
 
-## 📱 Supported Apps
+## Quick Start
+
+### Requirements
+
+- Android 11+
+- Telegram account
+- One AI API key ([Gemini](https://aistudio.google.com/apikey) recommended)
+
+### 1. Download the APK
+
+**[downloads/Kaivor-v1.0.apk](downloads/Kaivor-v1.0.apk)**
+
+Install on your Android phone (enable "Install from unknown sources" if prompted).
+
+### 2. Create a Telegram bot
+
+```
+Telegram → @BotFather → /newbot → copy the token (7123456789:AAF...)
+```
+
+### 3. Configure Kaivor
+
+Open the app and complete onboarding:
+
+1. Paste your **Telegram bot token**
+2. Paste your **AI API key** (Gemini / Claude / OpenAI)
+3. Enable **Accessibility Service** (required)
+4. Enable **Notification Access** (optional — powers 24/7 relay)
+5. Grant **Display Overlay** (recommended — shows live progress notch)
+6. Tap **Launch Kaivor**
+
+### 4. Test it
+
+Message your bot:
+
+```
+"Search YouTube for AR Rahman"
+"Navigate to Connaught Place"
+"What's on my calendar today?"
+```
+
+---
+
+## Supported Apps
 
 | Category | Apps |
 |---|---|
-| 🍕 Food & Grocery | Swiggy, Zomato, Blinkit, Zepto |
-| 🛒 Shopping | Amazon, Flipkart |
-| 💬 Messaging | WhatsApp, Instagram |
-| 🎵 Entertainment | YouTube |
-| 💰 Payments | PhonePe, Google Pay, Paytm, CRED |
-| 🚗 Transport | Ola, Uber |
-| 📧 Productivity | Gmail, Google Calendar, Google Keep |
-| 🗺️ Navigation | Google Maps, Chrome |
-| ⚙️ System | Settings, Contacts, Files |
-| 🤖 General | **Any app** — if it's not listed, the AI figures it out |
+| Food & Grocery | Swiggy, Zomato, Blinkit, Zepto |
+| Shopping | Amazon, Flipkart |
+| Messaging | WhatsApp, Instagram |
+| Entertainment | YouTube |
+| Payments | PhonePe, Google Pay, Paytm, CRED |
+| Transport | Ola, Uber, Rapido |
+| Productivity | Gmail, Calendar, Keep, Chrome |
+| Navigation | Google Maps |
+| General | **Any app** — if a human can tap it, Kaivor can tap it |
 
 ---
 
-## 🏗️ How It Works
+## Architecture
 
 ```
-Your Telegram message
+Telegram command (text or voice)
         │
         ▼
 ┌───────────────────┐
-│     AI Brain      │  Understands intent, picks skills, chains steps
-│  (Gemini/Claude)  │
+│     AI Brain      │  Intent → skills → multi-step plan
+│  Gemini / Claude  │
 └────────┬──────────┘
          │
          ▼
 ┌───────────────────┐
-│   Screen Agent    │  Generates plan → reads live screen → decides each action
-│  Plan → Execute   │  Works on ANY app universally
+│   Screen Agent    │  Accessibility tree first, vision when needed
+│  Plan → Execute   │
 └────────┬──────────┘
          │
          ▼
 ┌───────────────────┐
-│  Accessibility    │  Executes taps, swipes, typing, scrolling on screen
-│    Service        │  Takes screenshot as proof
+│  Accessibility    │  Tap, type, scroll, screenshot
+│    Service        │
 └────────┬──────────┘
          │
          ▼
-  Telegram reply + 📸 screenshot
+  Telegram reply + proof
 ```
 
 ---
 
-## 🚀 Quick Start
-
-### 🔑 Getting an API Key
-
-Kaivor works with **any of these AI providers** — pick one:
-
-| Provider | Key starts with | Free tier | Link |
-|---|---|---|---|
-| **Gemini** *(recommended)* | `AIza...` | Yes — generous free quota | [Get key](https://aistudio.google.com/apikey) |
-| **Claude** | `sk-ant-...` | No — pay per use | [Get key](https://console.anthropic.com) |
-| **OpenAI** | `sk-...` | No — pay per use | [Get key](https://platform.openai.com) |
-
-> 💡 **Recommendation: Start with Gemini.** Google gives a free quota that's enough for heavy daily use. After you hit the limit, it starts charging — but the free tier is very generous (1,500 requests/day on Gemini 2.5 Flash). You can see your usage at [aistudio.google.com](https://aistudio.google.com).
-
-### What You Need
-- Android phone (Android 11+)
-- Telegram account
-- One API key from the table above
-
-### Setup (5 minutes)
-
-**1. Create a Telegram bot**
-```
-Open Telegram → message @BotFather → /newbot → give it any name ending in "bot"
-Copy the token it gives you (looks like: 7123456789:AAF...)
-
-You can name your bot anything — "MyPhoneBot", "HomeAssistantBot", etc.
-Kaivor is the app on your phone — your Telegram bot name is up to you.
-```
-
-**2. Install the app**
-
-👉 **[Download latest APK from Releases](https://github.com/aaronmphilip/Kaivor/releases)**
-
-Install it on your Android phone like any APK (enable "Install from unknown sources" if prompted).
-
-**3. Open Kaivor and configure**
-- Paste your **Telegram Bot Token**
-- Paste your **AI API Key** (Gemini/Claude/OpenAI — app auto-detects which)
-- Tap **Enable Accessibility Service** → find Kaivor in the list → toggle ON → go back
-- *(Optional)* Tap **Enable Notification Access** → find Kaivor → toggle ON → go back
-  - This enables the **24×7 notification relay** — every app notification is forwarded to your Telegram, and you can reply directly from Telegram
-  - Use `/muted` in Telegram to see status, `/mute <app>` to silence specific apps
-- Tap **Start Agent**
-
-**4. Test it — message your Telegram bot**
-```
-"Search YouTube for AR Rahman"
-"What's on my calendar today?"
-"Play lofi music"
-```
-
-> 🔧 **For developers** who want to build from source:
-> ```bash
-> git clone https://github.com/aaronmphilip/Kaivor.git
-> cd Kaivor/android && ./gradlew assembleDebug
-> # APK: android/app/build/outputs/apk/debug/app-debug.apk
-> ```
-
----
-
-## 🧩 Project Structure
+## Project Structure
 
 ```
 Kaivor/
-├── android/                          # Android app (Kotlin)
+├── android/                 # Kotlin Android app
 │   └── app/src/main/kotlin/com/kaivor/agent/
-│       ├── AIBrain.kt                # Intent → skill routing
-│       ├── ScreenAgent.kt            # Universal AI screen controller
-│       ├── AgentAccessibilityService.kt  # Gestures + screenshot
-│       ├── AgentOrchestrator.kt      # Skill runner + Telegram replies
-│       ├── TelegramPoller.kt         # Telegram bot API
-│       ├── NotificationRelay.kt      # 24×7 notification forwarding + reply
-│       ├── MuteStore.kt              # Per-app notification mute list
-│       └── skills/
-│           ├── Skill.kt              # Skill interface + permissions
-│           ├── SandboxedRunner.kt    # Safe action executor
-│           └── builtin/              # 24 built-in skills
-├── skills/
-│   ├── official/                     # Official skill definitions
-│   └── community/                    # Community-contributed skills
-├── CONTRIBUTING.md                   # How to add skills / contribute
-└── LICENSE                           # MIT
+│       ├── AIBrain.kt       # Intent → skill routing
+│       ├── ScreenAgent.kt   # Universal screen controller
+│       ├── AgentOrchestrator.kt
+│       ├── TelegramPoller.kt
+│       ├── NotificationRelay.kt
+│       └── skills/builtin/  # 30+ built-in skills
+├── index.html               # Landing page
+├── styles.css               # SpaceX/xAI black-white theme
+├── downloads/               # Public APK
+├── skills/official/         # Skill definitions
+├── packages/                # API, state machine, telegram, etc.
+└── tests/                   # Vitest suite
 ```
 
 ---
 
-## 🔒 Safety & Privacy
+## Build from Source
 
-**Skill sandboxing** — every skill declares what it can access. The runner enforces it at runtime.
-- `PAYMENT` skills always require your explicit confirmation before executing
-- Skills cannot make network calls (no data exfiltration)
-- Skills can only open apps they declared in `allowedPackages`
-- Voice/mic buttons are always blocked — agent uses text input only
+### Android
 
-**Privacy**
-- Your commands go to your chosen AI API (Gemini/Claude/OpenAI)
-- All phone control happens on-device
-- No analytics, no tracking, no server
-- API keys stored locally in Android SharedPreferences only
+```bash
+git clone https://github.com/aaronmphilip/Kaivor.git
+cd Kaivor/android
+./gradlew test assembleDebug
+# APK: android/app/build/outputs/apk/debug/app-debug.apk
+```
 
----
+### Tests
 
-## 🤝 Contributing
-
-**We want your help building this!** Read **[CONTRIBUTING.md](CONTRIBUTING.md)** for the full guide.
-
-Quick ways to contribute:
-- 🐛 **Found a bug?** → [Open an issue](https://github.com/aaronmphilip/Kaivor/issues)
-- ➕ **Add a new skill** → Any Android app can become a skill in ~50 lines
-- 🌐 **Add language support** → Hindi built-in, add Tamil, Telugu, Bengali...
-- 📝 **Improve docs** → Always welcome
-- ⭐ **Star the repo** → Helps others find this project
+```bash
+npm install
+npm test
+```
 
 ---
 
-## 🗺️ Roadmap
+## Safety & Privacy
 
-**Recently shipped:**
-- [x] 24×7 notification relay — forwards every app to Telegram with two-way reply
-- [x] 30+ built-in skills across food, payments, transport, productivity
-- [x] Composite multi-app skills (Travel Planner, Price Compare, Morning Brief, Emergency SOS)
-- [x] AI learns your preferences — "next time always confirm before sending"
-- [x] Per-app layout memory — gets faster every use
-
-**Currently working on:**
-- [ ] Vision-based screen understanding (see icons, not just text)
-- [ ] Better WhatsApp contact finding
-- [ ] Smarter element detection (mic vs search field)
-
-**Coming next:**
-- [ ] In-app skill browser (community skills without rebuild)
-- [ ] Scheduled tasks ("Every morning order milk if I'm low")
-- [ ] Voice commands via phone mic
-- [ ] Multi-device support (control phone from PC)
-- [ ] iOS support (Shortcuts API)
+- **Payment skills** always require explicit confirmation before executing
+- Skills are sandboxed — they can only open declared apps
+- No analytics, no tracking, no Kaivor cloud server
+- API keys stored locally in Android SharedPreferences
+- Commands are sent to your chosen AI provider only
 
 ---
 
-## 📄 License
+## Contributing
 
-MIT — free to use, modify, and distribute. See [LICENSE](LICENSE).
+Read **[CONTRIBUTING.md](CONTRIBUTING.md)** for the full guide.
 
-The MIT license means: do whatever you want with this code. Use it in your own projects, sell products built on it, modify it — just keep the copyright notice. No registration needed anywhere — the license file in this repo is all that's required.
+- Found a bug? [Open an issue](https://github.com/aaronmphilip/Kaivor/issues)
+- Add a skill — any Android app in ~50 lines of Kotlin
+- Improve docs, add languages, star the repo
+
+---
+
+## Roadmap
+
+**Shipped**
+- [x] 24/7 notification relay with Telegram reply
+- [x] 30+ built-in skills
+- [x] Voice note → command (STT)
+- [x] Document reading (PDF, screenshots)
+- [x] Black-white landing page + on-device APK
+
+**In progress**
+- [ ] Vision-based screen understanding
+- [ ] Better WhatsApp contact resolution
+- [ ] Community skill browser (no rebuild)
+
+**Next**
+- [ ] Scheduled tasks
+- [ ] Multi-device control
+- [ ] iOS support
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
 
 ---
 
 <div align="center">
 
-Built with ❤️ for India 🇮🇳 — but works everywhere
+Built for real phone work.
 
-**[⭐ Star this repo](https://github.com/aaronmphilip/Kaivor)** · **[🐛 Report Bug](https://github.com/aaronmphilip/Kaivor/issues)** · **[💡 Request Feature](https://github.com/aaronmphilip/Kaivor/issues)**
+**[Star this repo](https://github.com/aaronmphilip/Kaivor)** · **[Download APK](downloads/Kaivor-v1.0.apk)** · **[Issues](https://github.com/aaronmphilip/Kaivor/issues)**
 
 </div>
