@@ -90,8 +90,22 @@ class AgentOrchestrator(
     private fun publishTaskProgress(message: String, skillId: String? = null) {
         val clean = message.trim().ifBlank { "Working..." }
         taskProgress.update(clean, skillId)
+        val subtitle = skillId?.let { "Skill · ${it.take(40)}" } ?: clean
+        NotchActivityHub.updatePrimary(clean.take(64), subtitle)
         NotchOverlay.updateText(clean, context)
         NotchOverlay.updateMeta(clean, skillId)
+    }
+
+    private fun processNextQueuedCommand() {
+        val next = CommandQueue.poll() ?: return
+        scope.launch {
+            try {
+                val reply = handleMessage(next.msg)
+                if (reply.isNotBlank()) poller.sendMessage(next.msg.chatId, reply)
+            } catch (e: Exception) {
+                poller.sendMessage(next.msg.chatId, "Error: ${e.message}")
+            }
+        }
     }
 
     fun start() {
@@ -182,6 +196,31 @@ class AgentOrchestrator(
 
         poller.start()
 
+        NotchActivityHub.setListening(true)
+        if (NotificationRelay.isPermissionGranted(context)) {
+            NotchActivityHub.setRelay(true)
+        }
+        NotchOverlay.attach(
+            context = context,
+            onStop = {
+                screenAgent.requestStop()
+                CommandQueue.clear()
+                taskProgress.stopped("Stopping task")
+                NotchOverlay.setPaused(false)
+            },
+            onPauseToggle = {
+                if (screenAgent.isPaused()) {
+                    screenAgent.resume()
+                    NotchOverlay.setPaused(false)
+                    val stage = taskProgress.current().stage.ifBlank { "Resuming..." }
+                    NotchOverlay.updateText(stage, context)
+                } else {
+                    screenAgent.requestPause()
+                    NotchOverlay.setPaused(true)
+                }
+            },
+        )
+
         // Wire the 24x7 notification relay. The listener service is declared in
         // the manifest; this just hands it the poller/mute store/chat id. If the
         // user hasn't granted notification-access yet, rebind() is a no-op.
@@ -204,6 +243,9 @@ class AgentOrchestrator(
     fun stop() {
         CallAnsweringService.config = null
         CallAnsweringService.orchestrator = null
+        CommandQueue.clear()
+        NotchActivityHub.clear()
+        NotchOverlay.detach()
         poller.stop()
     }
 
@@ -299,19 +341,6 @@ class AgentOrchestrator(
             return buildDocumentSummaryUsage()
         }
 
-        // AUTO-STOP: every new message kills the currently running task
-        // Exceptions:
-        //   - Confirmation answers (YES/NO) continue a pending task
-        //   - Explicit stop commands are handled below
-        //
-        // Why: TelegramPoller fires scope.launch per message, so multiple messages run in
-        // parallel. Without this, "open Obsidian" while YouTube is running would fight with
-        // the YouTube task on the same accessibility service, causing chaos.
-        //
-        // How: requestStop() cancels the in-flight OkHttp call (~100ms) + sets stop flag.
-        // The running task sees the flag at its next step and exits cleanly.
-        val hasPendingConfirmation = pendingConfirmations.containsKey(msg.chatId)
-        val hasPendingTextRequest = pendingTextRequests.containsKey(msg.chatId)
         val isStopCommand = run {
             val stopExactInner = setOf(
                 "stop", "ruko", "band karo", "cancel", "bas", "rok", "hatao",
@@ -320,13 +349,9 @@ class AgentOrchestrator(
             val stopContainsInner = listOf("stop", "ruko", "cancel", "abort", "band kar", "rok", "bas kar")
             lower in stopExactInner || stopContainsInner.any { lower.contains(it) }
         }
-        if (!hasPendingConfirmation && !hasPendingTextRequest && !isStopCommand) {
-            // Kill whatever is currently running - the new message takes priority
-            screenAgent.requestStop()
-        }
-
         // STOP: explicit stop command
         if (isStopCommand) {
+            CommandQueue.clear()
             // 1. Kill the AI call immediately (cancels OkHttp, unblocks coroutine)
             screenAgent.requestStop()
             // 2. Release wake lock right now - don't hold it open while we wind down
@@ -339,7 +364,8 @@ class AgentOrchestrator(
             } catch (_: Exception) { null }
             // 4. Go home for a clean slate
             taskProgress.stopped("Stopped by Telegram command")
-            NotchOverlay.hide(context)
+            NotchActivityHub.completePrimary()
+            NotchOverlay.transitionToIdle(context)
             AgentAccessibilityService.instance?.goHome()
             // 5. Send screenshot asynchronously (don't block the stop reply)
             if (stoppedAt != null) {
@@ -800,51 +826,19 @@ class AgentOrchestrator(
         }
 
         // Skill execution touches the phone - serialize with mutex.
-        // requestStop() was already called at the top of handleMessage, so the
-        // previous task is stopping. We wait here until the lock is released,
-        // then start the new task with a clean slate.
-        //
-        // Timeout: if the old task doesn't stop within 15s (e.g. skill stuck in
-        // a blocking call that ignores stopRequested), give up waiting and proceed.
-        // This prevents permanent deadlock from misbehaving skills.
+        // When busy, queue the command instead of killing the current task (Clicky-style).
         if (taskMutex.isLocked) {
-            NotchOverlay.addQueued(trimmed.take(60))
+            CommandQueue.enqueue(msg, trimmed)
+            val waiting = CommandQueue.size()
+            return "Queued ($waiting waiting). I'll run this after the current task finishes."
         }
-        val acquired = kotlinx.coroutines.withTimeoutOrNull(15_000L) {
-            taskMutex.lock()
-        }
+
+        taskMutex.lock()
         return try {
-            // At this point the previous task has stopped and released the mutex.
-            // Clear any leftover stop flag so the NEW task doesn't immediately self-stop.
-            // Root cause of the "Stopped." spam: requestStop() is called for every message
-            // to kill old tasks, but with no old task running the flag stays true and the
-            // new task sees it in executeGoal's first check and returns "- Stopped." before
-            // doing anything. Clearing here (after acquiring the mutex = old task is done)
-            // fixes this without losing the ability to stop a genuinely running task.
             screenAgent.clearStop()
 
-            // Show the floating notch pill so the user can see and cancel the task.
             taskProgress.start(trimmed)
-            NotchOverlay.show(
-                context = context,
-                taskText = trimmed.take(48),
-                onStop = {
-                    screenAgent.requestStop()
-                    taskProgress.stopped("Stopping task")
-                    NotchOverlay.setPaused(false)
-                },
-                onPauseToggle = {
-                    if (screenAgent.isPaused()) {
-                        screenAgent.resume()
-                        NotchOverlay.setPaused(false)
-                        val stage = taskProgress.current().stage.ifBlank { "Resuming..." }
-                        NotchOverlay.updateText(stage, context)
-                    } else {
-                        screenAgent.requestPause()
-                        NotchOverlay.setPaused(true)
-                    }
-                },
-            )
+            NotchOverlay.beginPrimaryTask(context, trimmed.take(48))
             publishTaskProgress("Planning task")
 
             // Wake screen so agent can interact with apps even if phone was sleeping.
@@ -878,9 +872,11 @@ class AgentOrchestrator(
                 actionOutcome.reply
             }
         } finally {
-            NotchOverlay.hide(context)
+            NotchActivityHub.completePrimary()
+            NotchOverlay.transitionToIdle(context)
             try { if (wakeLock.isHeld) wakeLock.release() } catch (_: Exception) {}
-            if (acquired != null) taskMutex.unlock()
+            taskMutex.unlock()
+            processNextQueuedCommand()
         }
     }
 
@@ -1088,7 +1084,22 @@ class AgentOrchestrator(
             return "Use `/info <topic>` for a quick web answer.\nUse `/research <topic>` for a deeper web search."
         }
 
+        val bgId = "research_${System.nanoTime()}"
+        val bgTitle = if (depth == ResearchDepth.DEEP) "Deep research" else "Quick lookup"
+        NotchActivityHub.startBackground(bgId, bgTitle, query.take(48))
         poller.sendTyping(chatId)
+        return try {
+            handleInfoCommandInner(chatId, query, depth)
+        } finally {
+            NotchActivityHub.endBackground(bgId)
+        }
+    }
+
+    private suspend fun handleInfoCommandInner(
+        chatId: Long,
+        query: String,
+        depth: ResearchDepth = ResearchDepth.QUICK,
+    ): String {
         val knowledgeReply = knowledgeBrain.answer(
             chatId = chatId,
             userMessage = query,
@@ -1646,10 +1657,13 @@ Tell me what to do - English or Hindi. I'll do it.
      */
     private suspend fun handleVoiceNote(msg: IncomingMessage): String {
         val attachment = msg.attachment ?: return "--- No voice attachment found."
+        NotchActivityHub.startBackground("voice", "Voice note", "Transcribing...")
         poller.sendTyping(msg.chatId)
 
         val downloaded = poller.downloadAttachment(attachment)
-            ?: return "--- Could not download the voice note - please try again."
+            ?: return "--- Could not download the voice note - please try again.".also {
+                NotchActivityHub.endBackground("voice")
+            }
 
         return try {
             val mimeType = attachment.mimeType.ifBlank { "audio/ogg" }
@@ -1674,6 +1688,7 @@ Tell me what to do - English or Hindi. I'll do it.
         } catch (e: Exception) {
             "--- Voice transcription error: ${e.message}"
         } finally {
+            NotchActivityHub.endBackground("voice")
             runCatching { downloaded.file.delete() }
         }
     }

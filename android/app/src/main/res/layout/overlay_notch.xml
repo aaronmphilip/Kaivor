@@ -8,56 +8,58 @@
 
     <View
         android:id="@+id/notchGlow"
-        android:layout_width="280dp"
-        android:layout_height="80dp"
+        android:layout_width="320dp"
+        android:layout_height="100dp"
         android:layout_gravity="center_horizontal|top"
-        android:layout_marginTop="-8dp"
-        android:alpha="0.65"
-        android:background="@drawable/notch_glow" />
+        android:layout_marginTop="-12dp"
+        android:alpha="0.7"
+        android:background="@drawable/notch_siri_glow" />
 
     <LinearLayout
         android:id="@+id/notchPill"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal|top"
-        android:background="@drawable/notch_pill_bg"
-        android:elevation="28dp"
-        android:minWidth="260dp"
+        android:background="@drawable/notch_liquid_glass"
+        android:elevation="32dp"
+        android:minWidth="126dp"
         android:orientation="vertical"
         android:paddingStart="14dp"
-        android:paddingTop="10dp"
-        android:paddingEnd="10dp"
-        android:paddingBottom="10dp">
+        android:paddingTop="9dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="9dp">
 
-        <!-- Collapsed row (always visible) -->
+        <!-- Collapsed Siri bar -->
         <LinearLayout
             android:id="@+id/notchCollapsed"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
+            android:minHeight="34dp"
             android:orientation="horizontal">
 
-            <View
-                android:id="@+id/notchDot"
-                android:layout_width="10dp"
-                android:layout_height="10dp"
-                android:background="@drawable/notch_dot_active" />
+            <com.kaivor.agent.SiriWaveformView
+                android:id="@+id/siriWaveform"
+                android:layout_width="52dp"
+                android:layout_height="22dp" />
 
             <LinearLayout
+                android:id="@+id/notchTextBlock"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
                 android:layout_weight="1"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:visibility="gone">
 
                 <TextView
                     android:id="@+id/tvNotchLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
-                    android:letterSpacing="0.12"
+                    android:letterSpacing="0.1"
                     android:text="KAIVOR"
-                    android:textColor="#80FFFFFF"
+                    android:textColor="#66FFFFFF"
                     android:textSize="8sp" />
 
                 <TextView
@@ -68,62 +70,86 @@
                     android:fontFamily="sans-serif-medium"
                     android:maxLines="1"
                     android:textColor="#FFFFFF"
-                    android:textSize="13sp" />
+                    android:textSize="12.5sp" />
             </LinearLayout>
 
-            <ImageButton
-                android:id="@+id/btnNotchPause"
-                android:layout_width="34dp"
-                android:layout_height="34dp"
-                android:layout_marginStart="4dp"
-                android:background="@drawable/notch_btn_bg"
-                android:contentDescription="Pause task"
-                android:padding="7dp"
-                android:scaleType="centerInside"
-                android:src="@drawable/ic_notch_pause" />
+            <LinearLayout
+                android:id="@+id/notchControls"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
 
-            <ImageButton
-                android:id="@+id/btnNotchStop"
-                android:layout_width="34dp"
-                android:layout_height="34dp"
-                android:layout_marginStart="2dp"
-                android:background="@drawable/notch_btn_bg"
-                android:contentDescription="Stop task"
-                android:padding="8dp"
-                android:scaleType="centerInside"
-                android:src="@drawable/ic_notch_stop" />
+                <ImageButton
+                    android:id="@+id/btnNotchPause"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/notch_btn_bg"
+                    android:contentDescription="Pause task"
+                    android:padding="6dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_notch_pause" />
 
-            <ImageButton
-                android:id="@+id/btnNotchExpand"
-                android:layout_width="28dp"
-                android:layout_height="34dp"
-                android:layout_marginStart="2dp"
-                android:background="@android:color/transparent"
-                android:contentDescription="Show task details"
-                android:padding="4dp"
-                android:scaleType="centerInside"
-                android:src="@drawable/ic_notch_chevron" />
+                <ImageButton
+                    android:id="@+id/btnNotchStop"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="2dp"
+                    android:background="@drawable/notch_btn_bg"
+                    android:contentDescription="Stop task"
+                    android:padding="7dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_notch_stop" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvActivityCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/chip_apple"
+                android:fontFamily="sans-serif-medium"
+                android:minWidth="20dp"
+                android:gravity="center"
+                android:paddingStart="6dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="2dp"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:visibility="gone" />
         </LinearLayout>
 
-        <!-- Expanded panel (Dynamic Island style) -->
+        <!-- Expanded activity stack (Dynamic Island / Clicky) -->
         <LinearLayout
             android:id="@+id/notchExpanded"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="8dp"
+            android:minWidth="280dp"
             android:orientation="vertical"
             android:visibility="gone">
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:layout_marginBottom="10dp"
-                android:background="#22FFFFFF" />
+                android:layout_marginBottom="8dp"
+                android:background="#28FFFFFF" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="Active now"
+                android:textColor="#636366"
+                android:textSize="10sp" />
 
             <TextView
                 android:id="@+id/tvNotchStage"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
                 android:fontFamily="sans-serif-medium"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp" />
@@ -132,26 +158,25 @@
                 android:id="@+id/tvNotchSkill"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="2dp"
                 android:textColor="#98989D"
                 android:textSize="11sp" />
 
             <TextView
-                android:id="@+id/tvNotchQueueTitle"
+                android:id="@+id/tvNotchStackTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:fontFamily="sans-serif-medium"
-                android:text="Up next"
+                android:text="Background"
                 android:textColor="#636366"
-                android:textSize="10sp"
-                android:visibility="gone" />
+                android:textSize="10sp" />
 
             <LinearLayout
-                android:id="@+id/notchQueueList"
+                android:id="@+id/notchActivityList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="4dp"
                 android:orientation="vertical" />
         </LinearLayout>
     </LinearLayout>
