@@ -44,6 +44,9 @@ class ScreenAgent(
     @Volatile var stopRequested = false
         private set
 
+    @Volatile var pauseRequested = false
+        private set
+
     // Reference to in-flight OkHttp call — cancelled immediately when stop is requested
     // This is the key to making stop responsive: OkHttp.Call.cancel() throws IOException
     // mid-request, unblocking the coroutine without waiting for the full API response (5-15s)
@@ -51,9 +54,24 @@ class ScreenAgent(
 
     fun requestStop() {
         stopRequested = true
+        pauseRequested = false
         activeCall?.cancel() // immediately abort any in-progress AI API call
     }
-    fun clearStop() { stopRequested = false }
+
+    fun requestPause() {
+        pauseRequested = true
+    }
+
+    fun resume() {
+        pauseRequested = false
+    }
+
+    fun isPaused(): Boolean = pauseRequested
+
+    fun clearStop() {
+        stopRequested = false
+        pauseRequested = false
+    }
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
@@ -191,6 +209,14 @@ class ScreenAgent(
             // NOTE: do NOT clear stopRequested here — only clearStop() in AgentOrchestrator
             // clears it (when the user sends a new deliberate command). This ensures any
             // tasks that were already queued before the stop also get cancelled.
+            if (stopRequested) {
+                return "⛔ Stopped. Left the app where it was."
+            }
+
+            while (pauseRequested && !stopRequested) {
+                onProgress("Paused — tap play on notch to resume")
+                delay(450)
+            }
             if (stopRequested) {
                 return "⛔ Stopped. Left the app where it was."
             }

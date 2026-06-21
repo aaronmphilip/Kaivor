@@ -91,6 +91,7 @@ class AgentOrchestrator(
         val clean = message.trim().ifBlank { "Working..." }
         taskProgress.update(clean, skillId)
         NotchOverlay.updateText(clean, context)
+        NotchOverlay.updateMeta(clean, skillId)
     }
 
     fun start() {
@@ -806,6 +807,9 @@ class AgentOrchestrator(
         // Timeout: if the old task doesn't stop within 15s (e.g. skill stuck in
         // a blocking call that ignores stopRequested), give up waiting and proceed.
         // This prevents permanent deadlock from misbehaving skills.
+        if (taskMutex.isLocked) {
+            NotchOverlay.addQueued(trimmed.take(60))
+        }
         val acquired = kotlinx.coroutines.withTimeoutOrNull(15_000L) {
             taskMutex.lock()
         }
@@ -821,10 +825,26 @@ class AgentOrchestrator(
 
             // Show the floating notch pill so the user can see and cancel the task.
             taskProgress.start(trimmed)
-            NotchOverlay.show(context, trimmed.take(48)) {
-                screenAgent.requestStop()
-                taskProgress.stopped("Stopping task")
-            }
+            NotchOverlay.show(
+                context = context,
+                taskText = trimmed.take(48),
+                onStop = {
+                    screenAgent.requestStop()
+                    taskProgress.stopped("Stopping task")
+                    NotchOverlay.setPaused(false)
+                },
+                onPauseToggle = {
+                    if (screenAgent.isPaused()) {
+                        screenAgent.resume()
+                        NotchOverlay.setPaused(false)
+                        val stage = taskProgress.current().stage.ifBlank { "Resuming..." }
+                        NotchOverlay.updateText(stage, context)
+                    } else {
+                        screenAgent.requestPause()
+                        NotchOverlay.setPaused(true)
+                    }
+                },
+            )
             publishTaskProgress("Planning task")
 
             // Wake screen so agent can interact with apps even if phone was sleeping.
