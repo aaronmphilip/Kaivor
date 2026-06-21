@@ -15,12 +15,6 @@
         android:paddingTop="16dp"
         android:paddingBottom="32dp">
 
-        <!-- Brand bar -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="3dp"
-            android:background="#FFFFFF" />
-
         <!-- ─── Header ───────────────────────────── -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -35,8 +29,9 @@
                 android:layout_height="44dp"
                 android:text="&#8592;"
                 android:textSize="20sp"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#1A1A1A"
+                android:textColor="@color/apple_label_primary"
+                android:background="@drawable/button_apple_secondary"
+                android:backgroundTint="@null"
                 android:stateListAnimator="@null"
                 android:padding="0dp" />
 
@@ -1013,12 +1008,13 @@
         <Button
             android:id="@+id/btnSave"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="52dp"
             android:text="Save and Restart Agent"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:backgroundTint="#FFFFFF"
-            android:textColor="#000000"
+            android:textSize="17sp"
+            android:fontFamily="sans-serif-medium"
+            android:background="@drawable/button_apple_primary"
+            android:backgroundTint="@null"
+            android:textColor="@color/apple_text_on_active"
             android:layout_marginTop="36dp"
             android:stateListAnimator="@null" />
 

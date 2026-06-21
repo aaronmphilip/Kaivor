@@ -211,17 +211,13 @@ class OnboardingActivity : AppCompatActivity() {
         val keyField = findViewById<EditText>(R.id.etClaudeKey)
 
         fun resetProviderButtons() {
-            listOf(btnGemini, btnClaude, btnOpenAI).forEach { btn ->
-                btn?.setBackgroundColor(0xFF1E1E1E.toInt())
-                btn?.setTextColor(0xFFAAAAAA.toInt())
-            }
+            UiColors.resetButtons(btnGemini, btnClaude, btnOpenAI)
         }
 
         fun selectGemini() {
             selectedProvider = AIProvider.GEMINI
             resetProviderButtons()
-            btnGemini.setBackgroundColor(0xFFCAFF3F.toInt())
-            btnGemini.setTextColor(0xFF05070A.toInt())
+            UiColors.setActive(btnGemini)
             instructions.text = "1. Open aistudio.google.com/apikey\n2. Sign in with Google\n3. Create a Gemini API key\n4. Paste it below"
             openBtn.text = "Get Gemini API Key"
             keyField.hint = "AIzaSy..."
@@ -230,8 +226,7 @@ class OnboardingActivity : AppCompatActivity() {
         fun selectClaude() {
             selectedProvider = AIProvider.CLAUDE
             resetProviderButtons()
-            btnClaude.setBackgroundColor(0xFF2A2118.toInt())
-            btnClaude.setTextColor(0xFFFFFFFF.toInt())
+            UiColors.setActive(btnClaude)
             instructions.text = "1. Open console.anthropic.com\n2. Sign up or log in\n3. Create an API key\n4. Paste it below\n\nA paid account may be required."
             openBtn.text = "Open console.anthropic.com"
             keyField.hint = "sk-ant-api03-..."
@@ -240,8 +235,7 @@ class OnboardingActivity : AppCompatActivity() {
         fun selectOpenAI() {
             selectedProvider = AIProvider.OPENAI
             resetProviderButtons()
-            btnOpenAI?.setBackgroundColor(0xFF16332A.toInt())
-            btnOpenAI?.setTextColor(0xFFFFFFFF.toInt())
+            btnOpenAI?.let { UiColors.setActive(it) }
             instructions.text = "1. Open platform.openai.com/api-keys\n2. Sign up or log in\n3. Create an API key\n4. Paste it below\n\nA paid account may be required."
             openBtn.text = "Get ChatGPT API Key"
             keyField.hint = "sk-proj-..."
@@ -267,18 +261,14 @@ class OnboardingActivity : AppCompatActivity() {
 
         fun selectAskMode() {
             askPermission = true
-            btnAskMode.setBackgroundColor(0xFF4ED7FF.toInt())
-            btnAskMode.setTextColor(0xFF05070A.toInt())
-            btnJustDoIt.setBackgroundColor(0xFF1E1E1E.toInt())
-            btnJustDoIt.setTextColor(0xFFAAAAAA.toInt())
+            UiColors.setActive(btnAskMode)
+            UiColors.setInactive(btnJustDoIt)
         }
 
         fun selectJustDoIt() {
             askPermission = false
-            btnJustDoIt.setBackgroundColor(0xFFCAFF3F.toInt())
-            btnJustDoIt.setTextColor(0xFF05070A.toInt())
-            btnAskMode.setBackgroundColor(0xFF1E1E1E.toInt())
-            btnAskMode.setTextColor(0xFFAAAAAA.toInt())
+            UiColors.setActive(btnJustDoIt)
+            UiColors.setInactive(btnAskMode)
         }
 
         btnAskMode?.setOnClickListener { selectAskMode() }
@@ -356,13 +346,13 @@ class OnboardingActivity : AppCompatActivity() {
             getSharedPreferences("kaivor", MODE_PRIVATE).edit()
                 .putString("phone_setup_type", if (dedicated) "dedicated" else "main").apply()
             if (dedicated) {
-                btnDedicated.setBackgroundColor(0xFFCAFF3F.toInt()); btnDedicated.setTextColor(0xFF05070A.toInt())
-                btnMainPhone.setBackgroundColor(0xFF1E1E1E.toInt()); btnMainPhone.setTextColor(0xFFAAAAAA.toInt())
+                UiColors.setActive(btnDedicated)
+                UiColors.setInactive(btnMainPhone)
                 layoutDedicated.visibility = android.view.View.VISIBLE
                 layoutMain.visibility = android.view.View.GONE
             } else {
-                btnMainPhone.setBackgroundColor(0xFFFFCC00.toInt()); btnMainPhone.setTextColor(0xFF000000.toInt())
-                btnDedicated.setBackgroundColor(0xFF1E1E1E.toInt()); btnDedicated.setTextColor(0xFFAAAAAA.toInt())
+                UiColors.setActive(btnMainPhone)
+                UiColors.setInactive(btnDedicated)
                 layoutMain.visibility = android.view.View.VISIBLE
                 layoutDedicated.visibility = android.view.View.GONE
             }
@@ -370,13 +360,13 @@ class OnboardingActivity : AppCompatActivity() {
 
         fun selectSim(hasActive: Boolean) {
             if (hasActive) {
-                btnSimYes.setBackgroundColor(0xFFCAFF3F.toInt()); btnSimYes.setTextColor(0xFF05070A.toInt())
-                btnSimNo.setBackgroundColor(0xFF1E1E1E.toInt()); btnSimNo.setTextColor(0xFFAAAAAA.toInt())
+                UiColors.setActive(btnSimYes)
+                UiColors.setInactive(btnSimNo)
                 layoutSimYes.visibility = android.view.View.VISIBLE
                 layoutSimNo.visibility = android.view.View.GONE
             } else {
-                btnSimNo.setBackgroundColor(0xFF555555.toInt()); btnSimNo.setTextColor(0xFFFFFFFF.toInt())
-                btnSimYes.setBackgroundColor(0xFF1E1E1E.toInt()); btnSimYes.setTextColor(0xFFAAAAAA.toInt())
+                UiColors.setOff(btnSimNo)
+                UiColors.setInactive(btnSimYes)
                 layoutSimNo.visibility = android.view.View.VISIBLE
                 layoutSimYes.visibility = android.view.View.GONE
             }

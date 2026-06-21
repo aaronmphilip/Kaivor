@@ -134,21 +134,21 @@ class MainActivity : AppCompatActivity() {
         if (isAgentRunning) {
             dot.setBackgroundResource(R.drawable.dot_green)
             statusText.text = "Kaivor Online"
-            statusText.setTextColor(Color.WHITE)
+            statusText.setTextColor(UiColors.LABEL_PRIMARY)
             toggleBtn.text = "Stop Agent"
-            toggleBtn.setBackgroundColor(0xFF25151A.toInt())
-            toggleBtn.setTextColor(0xFFFF775C.toInt())
+            toggleBtn.setBackgroundColor(UiColors.SURFACE_INACTIVE)
+            toggleBtn.setTextColor(UiColors.ACCENT_RED)
         } else {
             dot.setBackgroundResource(R.drawable.dot_red)
             statusText.text = "Kaivor Paused"
-            statusText.setTextColor(0xFFFF775C.toInt())
+            statusText.setTextColor(UiColors.ACCENT_ORANGE)
             toggleBtn.text = "Start Agent"
-            toggleBtn.setBackgroundColor(0xFF182712.toInt())
-            toggleBtn.setTextColor(0xFFCAFF3F.toInt())
+            toggleBtn.setBackgroundColor(UiColors.ACTIVE_FILL)
+            toggleBtn.setTextColor(UiColors.ACTIVE_TEXT)
         }
 
         accessText.text = if (serviceOk) "Accessibility: Connected" else "Accessibility: Not connected (tap to fix)"
-        accessText.setTextColor(if (serviceOk) 0xFF8B96A5.toInt() else 0xFFFF775C.toInt())
+        accessText.setTextColor(if (serviceOk) UiColors.LABEL_SECONDARY else UiColors.ACCENT_ORANGE)
         if (!serviceOk) {
             accessText.setOnClickListener {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
@@ -175,14 +175,14 @@ class MainActivity : AppCompatActivity() {
         val btn = findViewById<Button>(R.id.btnEnableNotifRelay)
         if (notifGranted) {
             badge.text = "LIVE"
-            badge.setTextColor(0xFFCAFF3F.toInt())
-            badge.setBackgroundColor(0xFF182712.toInt())
+            badge.setTextColor(UiColors.ACCENT_GREEN)
+            badge.setBackgroundColor(UiColors.SURFACE_ELEVATED)
             desc.text = "Active. App notifications are forwarded to Telegram. Reply to a forwarded message to answer inside that app when quick reply is available.\n\nSend /muted to manage per-app muting."
             btn.text = "Manage in Settings"
         } else {
             badge.text = "OFF"
-            badge.setTextColor(0xFFFF775C.toInt())
-            badge.setBackgroundColor(0xFF25151A.toInt())
+            badge.setTextColor(UiColors.ACCENT_ORANGE)
+            badge.setBackgroundColor(UiColors.SURFACE_ELEVATED)
             desc.text = "Forward app notifications to Telegram and answer supported notifications without opening the app."
             btn.text = "Enable Notification Access"
         }
@@ -191,11 +191,11 @@ class MainActivity : AppCompatActivity() {
         val agentKey = prefs.getString("agent_ai_key", prefs.getString("ai_key", ""))?.trim().orEmpty()
         val sttText  = findViewById<TextView>(R.id.tvSttStatus)
         sttText.text = if (agentKey.isNotBlank()) "Voice ON" else "Voice OFF"
-        sttText.setTextColor(if (agentKey.isNotBlank()) 0xFFCAFF3F.toInt() else 0xFFFF775C.toInt())
+        sttText.setTextColor(if (agentKey.isNotBlank()) UiColors.ACCENT_GREEN else UiColors.ACCENT_ORANGE)
 
         val notifMini = findViewById<TextView>(R.id.tvNotifBadgeMini)
         notifMini.text = if (notifGranted) "Notifs ON" else "Notifs OFF"
-        notifMini.setTextColor(if (notifGranted) 0xFF4ED7FF.toInt() else 0xFF8B96A5.toInt())
+        notifMini.setTextColor(if (notifGranted) UiColors.ACCENT_BLUE else UiColors.LABEL_SECONDARY)
     }
 
     private fun renderTaskProgress(task: TaskProgressSnapshot) {
@@ -214,12 +214,12 @@ class MainActivity : AppCompatActivity() {
         title.text = label
         progress.text = task.stage.ifBlank { "Idle" }
         progress.setTextColor(when (task.status) {
-            TaskProgressStore.STATUS_RUNNING -> 0xFFCAFF3F.toInt()
-            TaskProgressStore.STATUS_WAITING -> 0xFFFFCC00.toInt()
-            TaskProgressStore.STATUS_DONE -> 0xFF4ED7FF.toInt()
-            TaskProgressStore.STATUS_FAILED -> 0xFFFF775C.toInt()
-            TaskProgressStore.STATUS_STOPPED -> 0xFFAAAAAA.toInt()
-            else -> 0xFF8B96A5.toInt()
+            TaskProgressStore.STATUS_RUNNING -> UiColors.ACCENT_GREEN
+            TaskProgressStore.STATUS_WAITING -> UiColors.ACCENT_ORANGE
+            TaskProgressStore.STATUS_DONE -> UiColors.ACCENT_BLUE
+            TaskProgressStore.STATUS_FAILED -> UiColors.ACCENT_RED
+            TaskProgressStore.STATUS_STOPPED -> UiColors.LABEL_SECONDARY
+            else -> UiColors.LABEL_TERTIARY
         })
 
         val parts = buildList {
@@ -299,7 +299,7 @@ class MainActivity : AppCompatActivity() {
             })
             addView(TextView(this@MainActivity).apply {
                 text = skill.description
-                setTextColor(0xFF8B96A5.toInt())
+                setTextColor(UiColors.LABEL_SECONDARY)
                 textSize = 10.5f
             })
         }
@@ -313,7 +313,7 @@ class MainActivity : AppCompatActivity() {
         if (entries.isEmpty()) {
             container.addView(TextView(this).apply {
                 text = "No activity yet. Send a Telegram command to start."
-                setTextColor(0xFF8B96A5.toInt())
+                setTextColor(UiColors.LABEL_SECONDARY)
                 textSize = 13f
                 setPadding(0, 8.dp, 0, 0)
             })
@@ -347,7 +347,7 @@ class MainActivity : AppCompatActivity() {
                     })
                     addView(TextView(this@MainActivity).apply {
                         text = "${entry.summary.take(60)} \u00b7 ${entry.timeFormatted}"
-                        setTextColor(0xFF8B96A5.toInt())
+                        setTextColor(UiColors.LABEL_SECONDARY)
                         textSize = 11f
                     })
                 })

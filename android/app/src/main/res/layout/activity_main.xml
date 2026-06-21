@@ -8,21 +8,11 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <!-- Top brand accent strip -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="3dp"
-            android:background="#FFFFFF"/>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingStart="20dp"
-            android:paddingEnd="20dp"
-            android:paddingBottom="40dp">
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="40dp">
 
             <!-- Header row -->
             <LinearLayout
@@ -30,7 +20,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginTop="20dp">
+                android:layout_marginTop="8dp">
 
                 <!-- Logo + wordmark -->
                 <LinearLayout
@@ -56,18 +46,19 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Kaivor"
-                            android:textColor="#FFFFFF"
-                            android:textSize="21sp"
-                            android:textStyle="bold"
+                            android:textColor="@color/apple_label_primary"
+                            android:textSize="22sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:letterSpacing="-0.02"
                             />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Personal Android Agent"
-                            android:textColor="#F5F5F5"
-                            android:textSize="11sp"
-                            android:layout_marginTop="1dp"/>
+                            android:textColor="@color/apple_label_secondary"
+                            android:textSize="12sp"
+                            android:layout_marginTop="2dp"/>
                     </LinearLayout>
                 </LinearLayout>
 
@@ -76,11 +67,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
                     android:text="Settings"
-                    android:backgroundTint="#111111"
-                    android:textColor="#F5F5F5"
-                    android:textSize="12sp"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"/>
+                    android:background="@drawable/button_apple_secondary"
+                    android:backgroundTint="@null"
+                    android:textColor="@color/apple_label_primary"
+                    android:textSize="13sp"
+                    android:stateListAnimator="@null"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"/>
             </LinearLayout>
 
             <!-- Stat strip row -->
@@ -604,6 +597,5 @@
                 android:padding="12dp"
                 android:layout_marginTop="10dp"/>
 
-        </LinearLayout>
     </LinearLayout>
 </ScrollView>

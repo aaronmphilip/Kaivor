@@ -193,27 +193,21 @@ class SettingsActivity : AppCompatActivity() {
         fun selectProvider(provider: AIProvider) {
             onSelected(provider)
 
-            listOf(btnGemini, btnClaude, btnOpenAI).forEach { btn ->
-                btn.setBackgroundColor(0xFF1E1E1E.toInt())
-                btn.setTextColor(0xFFAAAAAA.toInt())
-            }
+            UiColors.resetButtons(btnGemini, btnClaude, btnOpenAI)
 
             when (provider) {
                 AIProvider.GEMINI -> {
-                    btnGemini.setBackgroundColor(0xFFCAFF3F.toInt())
-                    btnGemini.setTextColor(0xFF05070A.toInt())
+                    UiColors.setActive(btnGemini)
                     keyHint.text = "Paste a Gemini API key from aistudio.google.com/apikey"
                     keyField.hint = "AIzaSy..."
                 }
                 AIProvider.CLAUDE -> {
-                    btnClaude.setBackgroundColor(0xFF2A2118.toInt())
-                    btnClaude.setTextColor(0xFFFFFFFF.toInt())
+                    UiColors.setActive(btnClaude)
                     keyHint.text = "Use an Anthropic API key from console.anthropic.com"
                     keyField.hint = "sk-ant-api03-..."
                 }
                 AIProvider.OPENAI -> {
-                    btnOpenAI.setBackgroundColor(0xFF16332A.toInt())
-                    btnOpenAI.setTextColor(0xFFFFFFFF.toInt())
+                    UiColors.setActive(btnOpenAI)
                     keyHint.text = "Use an OpenAI API key from platform.openai.com/api-keys"
                     keyField.hint = "sk-proj-..."
                 }
@@ -234,15 +228,11 @@ class SettingsActivity : AppCompatActivity() {
         fun selectMode(ask: Boolean) {
             askPermission = ask
             if (ask) {
-                btnAsk.setBackgroundColor(0xFF4ED7FF.toInt())
-                btnAsk.setTextColor(0xFF05070A.toInt())
-                btnJust.setBackgroundColor(0xFF1E1E1E.toInt())
-                btnJust.setTextColor(0xFFAAAAAA.toInt())
+                UiColors.setActive(btnAsk)
+                UiColors.setInactive(btnJust)
             } else {
-                btnJust.setBackgroundColor(0xFFCAFF3F.toInt())
-                btnJust.setTextColor(0xFF05070A.toInt())
-                btnAsk.setBackgroundColor(0xFF1E1E1E.toInt())
-                btnAsk.setTextColor(0xFFAAAAAA.toInt())
+                UiColors.setActive(btnJust)
+                UiColors.setInactive(btnAsk)
             }
         }
 
@@ -259,15 +249,11 @@ class SettingsActivity : AppCompatActivity() {
         fun selectLearning(enabled: Boolean) {
             learningEnabled = enabled
             if (enabled) {
-                btnOn.setBackgroundColor(0xFFCAFF3F.toInt())
-                btnOn.setTextColor(0xFF05070A.toInt())
-                btnOff.setBackgroundColor(0xFF1E1E1E.toInt())
-                btnOff.setTextColor(0xFFAAAAAA.toInt())
+                UiColors.setActive(btnOn)
+                UiColors.setInactive(btnOff)
             } else {
-                btnOff.setBackgroundColor(0xFF5500AA.toInt())
-                btnOff.setTextColor(0xFFFFFFFF.toInt())
-                btnOn.setBackgroundColor(0xFF1E1E1E.toInt())
-                btnOn.setTextColor(0xFFAAAAAA.toInt())
+                UiColors.setOff(btnOff)
+                UiColors.setInactive(btnOn)
             }
         }
 
@@ -284,15 +270,11 @@ class SettingsActivity : AppCompatActivity() {
         fun render(enabled: Boolean) {
             ttsEnabled = enabled
             if (enabled) {
-                btnOn.setBackgroundColor(0xFFCAFF3F.toInt())
-                btnOn.setTextColor(0xFF05070A.toInt())
-                btnOff.setBackgroundColor(0xFF1A1A1A.toInt())
-                btnOff.setTextColor(0xFFAAAAAA.toInt())
+                UiColors.setActive(btnOn)
+                UiColors.setInactive(btnOff)
             } else {
-                btnOff.setBackgroundColor(0xFF555555.toInt())
-                btnOff.setTextColor(0xFFFFFFFF.toInt())
-                btnOn.setBackgroundColor(0xFF1A1A1A.toInt())
-                btnOn.setTextColor(0xFFAAAAAA.toInt())
+                UiColors.setOff(btnOff)
+                UiColors.setInactive(btnOn)
             }
         }
 
@@ -309,17 +291,13 @@ class SettingsActivity : AppCompatActivity() {
 
         fun render(voice: String) {
             ttsVoice = voice
-            all.forEach {
-                it.setBackgroundColor(0xFF1A1A1A.toInt())
-                it.setTextColor(0xFFAAAAAA.toInt())
-            }
+            UiColors.resetButtons(*all.toTypedArray())
             val active = when (voice) {
                 "nova" -> btnNova
                 "shimmer" -> btnShimmer
                 else -> btnAlloy
             }
-            active.setBackgroundColor(0xFF4ED7FF.toInt())
-            active.setTextColor(0xFF05070A.toInt())
+            UiColors.setActive(active)
         }
 
         btnAlloy.setOnClickListener { render("alloy") }
@@ -336,15 +314,11 @@ class SettingsActivity : AppCompatActivity() {
         fun render(enabled: Boolean) {
             notchEnabled = enabled
             if (enabled) {
-                btnOn.setBackgroundColor(0xFFCAFF3F.toInt())
-                btnOn.setTextColor(0xFF05070A.toInt())
-                btnOff.setBackgroundColor(0xFF1A1A1A.toInt())
-                btnOff.setTextColor(0xFFAAAAAA.toInt())
+                UiColors.setActive(btnOn)
+                UiColors.setInactive(btnOff)
             } else {
-                btnOff.setBackgroundColor(0xFF555555.toInt())
-                btnOff.setTextColor(0xFFFFFFFF.toInt())
-                btnOn.setBackgroundColor(0xFF1A1A1A.toInt())
-                btnOn.setTextColor(0xFFAAAAAA.toInt())
+                UiColors.setOff(btnOff)
+                UiColors.setInactive(btnOn)
             }
         }
 
@@ -384,15 +358,11 @@ class SettingsActivity : AppCompatActivity() {
         fun render(enabled: Boolean) {
             callAnsweringEnabled = enabled
             if (enabled) {
-                btnOn.setBackgroundColor(0xFFCAFF3F.toInt())
-                btnOn.setTextColor(0xFF05070A.toInt())
-                btnOff.setBackgroundColor(0xFF1A1A1A.toInt())
-                btnOff.setTextColor(0xFFAAAAAA.toInt())
+                UiColors.setActive(btnOn)
+                UiColors.setInactive(btnOff)
             } else {
-                btnOff.setBackgroundColor(0xFF555555.toInt())
-                btnOff.setTextColor(0xFFFFFFFF.toInt())
-                btnOn.setBackgroundColor(0xFF1A1A1A.toInt())
-                btnOn.setTextColor(0xFFAAAAAA.toInt())
+                UiColors.setOff(btnOff)
+                UiColors.setInactive(btnOn)
             }
         }
 
