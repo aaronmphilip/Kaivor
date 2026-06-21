@@ -1,5 +1,5 @@
 (function () {
-  const header = document.querySelector(".site-header");
+  const header = document.querySelector(".nav-glass");
   const revealNodes = document.querySelectorAll(
     ".hero-copy, .hero-device, .stat-card, .section-intro, .example-card, .bento-card, .flow-step, .principle-copy, .setup-card, .cta-band, .site-footer"
   );
