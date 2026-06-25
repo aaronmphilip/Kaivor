@@ -83,21 +83,25 @@
 
                 <ImageButton
                     android:id="@+id/btnNotchPause"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:background="@drawable/notch_btn_bg"
+                    android:clickable="true"
                     android:contentDescription="Pause task"
+                    android:focusable="true"
                     android:padding="6dp"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_notch_pause" />
 
                 <ImageButton
                     android:id="@+id/btnNotchStop"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_marginStart="2dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginStart="4dp"
                     android:background="@drawable/notch_btn_bg"
+                    android:clickable="true"
                     android:contentDescription="Stop task"
+                    android:focusable="true"
                     android:padding="7dp"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_notch_stop" />

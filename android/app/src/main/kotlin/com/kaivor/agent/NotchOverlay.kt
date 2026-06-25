@@ -91,18 +91,24 @@ object NotchOverlay {
             val glow = view.findViewById<View>(R.id.notchGlow)
             val waveform = view.findViewById<SiriWaveformView>(R.id.siriWaveform)
 
+            protectButtonTouches(btnPause, btnStop)
+
             btnPause.setOnClickListener {
-                onPauseToggle?.invoke()
+                onPauseToggle()
             }
             btnStop.setOnClickListener {
                 updateText("Stopping...")
-                onStop?.invoke()
+                onStop()
             }
 
-            view.findViewById<LinearLayout>(R.id.notchCollapsed)?.setOnClickListener {
+            val toggleExpand = View.OnClickListener {
                 if (state == PillState.EXPANDED) setState(PillState.ACTIVE)
                 else setState(PillState.EXPANDED)
             }
+            view.findViewById<SiriWaveformView>(R.id.siriWaveform)?.setOnClickListener(toggleExpand)
+            view.findViewById<TextView>(R.id.tvNotchTask)?.setOnClickListener(toggleExpand)
+            view.findViewById<TextView>(R.id.tvNotchLabel)?.setOnClickListener(toggleExpand)
+            view.findViewById<TextView>(R.id.tvActivityCount)?.setOnClickListener(toggleExpand)
 
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -118,7 +124,7 @@ object NotchOverlay {
             }
             lp = params
 
-            setupDrag(view, manager, params)
+            setupDrag(waveform, manager, params)
             applyIdleLayout(view, animate = false)
             waveform.setActive(true)
             runCatching { manager.addView(view, params) }
@@ -444,8 +450,21 @@ object NotchOverlay {
     }
 
     @Suppress("ClickableViewAccessibility")
-    private fun setupDrag(view: View, manager: WindowManager, params: WindowManager.LayoutParams) {
-        view.setOnTouchListener { v, event ->
+    private fun protectButtonTouches(vararg buttons: ImageButton) {
+        buttons.forEach { button ->
+            button.isClickable = true
+            button.isFocusable = true
+            button.setOnTouchListener { v, event ->
+                v.parent?.requestDisallowInterceptTouchEvent(true)
+                false
+            }
+        }
+    }
+
+    @Suppress("ClickableViewAccessibility")
+    private fun setupDrag(handle: View?, manager: WindowManager, params: WindowManager.LayoutParams) {
+        handle ?: return
+        handle.setOnTouchListener { v, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     dragStartRawX = event.rawX
@@ -458,20 +477,27 @@ object NotchOverlay {
                 MotionEvent.ACTION_MOVE -> {
                     val dx = (event.rawX - dragStartRawX).toInt()
                     val dy = (event.rawY - dragStartRawY).toInt()
-                    if (!dragging && (kotlin.math.abs(dx) > 14 || kotlin.math.abs(dy) > 14)) {
+                    if (!dragging && (kotlin.math.abs(dx) > 10 || kotlin.math.abs(dy) > 10)) {
                         dragging = true
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
                     }
                     if (dragging) {
+                        val rootView = root ?: v
                         params.x = dragStartParamX + dx
                         params.y = dragStartParamY + dy
-                        runCatching { manager.updateViewLayout(v, params) }
+                        runCatching { manager.updateViewLayout(rootView, params) }
+                        true
+                    } else {
+                        false
                     }
-                    dragging
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    val was = dragging
+                    val wasDrag = dragging
                     dragging = false
-                    was
+                    if (!wasDrag) {
+                        v.performClick()
+                    }
+                    wasDrag
                 }
                 else -> false
             }
