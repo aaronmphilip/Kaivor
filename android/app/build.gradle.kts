@@ -12,14 +12,14 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.kaivor.agent"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.kaivor.agent"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 3
-        versionName = "1.0.2"
+        targetSdk = 35
+        versionCode = 4
+        versionName = "1.0.3"
     }
 
     signingConfigs {

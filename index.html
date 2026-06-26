@@ -269,44 +269,66 @@
 
       <section class="section security-section" id="security">
         <div class="section-intro centered">
-          <p class="eyebrow">Trust &amp; privacy</p>
-          <h2>Built to be transparent.<br />Not hidden.</h2>
+          <p class="eyebrow">Install blocked?</p>
+          <h2>Google blocks this on purpose.<br />Here is the fix.</h2>
           <p class="lead">
-            Google Play Protect may warn that Kaivor requests sensitive access. That is expected for
-            any on-device automation app. Here is exactly what we ask for — and what we removed on purpose.
+            Per <a href="https://support.google.com/android/answer/2812853?hl=en">Google Play Protect</a>,
+            apps installed from a browser that declare <strong>Accessibility</strong> are automatically
+            blocked to prevent financial fraud. Kaivor needs Accessibility to control your phone — so
+            the block is expected, not a broken APK.
           </p>
         </div>
 
-        <div class="security-grid">
+        <div class="install-methods">
+          <article class="install-method install-method-primary">
+            <span class="install-method-badge">Recommended</span>
+            <h3>Method A — Pause Play Protect (on phone)</h3>
+            <ol class="install-steps">
+              <li>Open <strong>Google Play Store</strong> → profile icon → <strong>Play Protect</strong></li>
+              <li>Tap the gear icon → turn <strong>OFF</strong> “Scan apps with Play Protect”</li>
+              <li>Download and open <a href="downloads/Kaivor-v1.0.apk">Kaivor-v1.0.apk</a> from Files</li>
+              <li>Tap Install → when done, turn Play Protect scanning <strong>back ON</strong></li>
+            </ol>
+          </article>
+          <article class="install-method">
+            <h3>Method B — Install from PC (ADB)</h3>
+            <p>USB debugging on, then run from the repo:</p>
+            <pre class="install-code">adb install -r downloads/Kaivor-v1.0.apk</pre>
+            <p>Or use <code>scripts/install-kaivor.ps1</code> on Windows.</p>
+          </article>
+        </div>
+
+        <div class="security-grid security-grid-secondary">
           <article class="security-card security-safe">
             <span class="security-icon" aria-hidden="true">✓</span>
-            <h3>What Kaivor does</h3>
+            <h3>Why Kaivor is safe</h3>
             <ul>
-              <li>Runs entirely on your Android phone</li>
-              <li>Accepts commands only from your paired Telegram chat</li>
+              <li>Open source on GitHub — audit every line</li>
+              <li>Runs only on your device, no Kaivor cloud</li>
+              <li>Commands only from your paired Telegram chat</li>
               <li>Asks before risky actions (optional mode)</li>
-              <li>Open source — audit the code on GitHub</li>
             </ul>
           </article>
           <article class="security-card">
             <span class="security-icon" aria-hidden="true">🔒</span>
-            <h3>What we removed</h3>
+            <h3>Minimum permissions</h3>
             <ul>
-              <li>No access to all installed apps</li>
-              <li>No contacts or call-log permissions</li>
-              <li>No microphone permission at install</li>
-              <li>No cloud server holding your data</li>
+              <li>No SMS or call-log access</li>
+              <li>No contacts or microphone at install</li>
+              <li>No “see all apps” permission</li>
+              <li>Signed release APK (v2 + v3)</li>
             </ul>
           </article>
-          <article class="security-card security-install">
-            <span class="security-icon" aria-hidden="true">📲</span>
-            <h3>If install is blocked</h3>
-            <ol class="install-steps">
-              <li>Download the APK from this site or GitHub</li>
-              <li>When Play Protect appears, tap <strong>More details</strong></li>
-              <li>Tap <strong>Install anyway</strong> — Kaivor is signed and open source</li>
-              <li>Enable <strong>Install unknown apps</strong> for Chrome if prompted</li>
-            </ol>
+          <article class="security-card">
+            <span class="security-icon" aria-hidden="true">⚖️</span>
+            <h3>Developer appeal</h3>
+            <p>
+              File a
+              <a href="https://support.google.com/googleplay/android-developer/contact/protectappeals">Play Protect appeal</a>
+              so Google allows installs without pausing protection.
+            </p>
+            <p>Package: <code>com.kaivor.agent</code><br />
+            SHA-256: <code>5455e48d4625283887e6c75e06aa76f1ef211cbf4e98ae27bdf181fe42281138</code></p>
           </article>
         </div>
       </section>
@@ -321,7 +343,7 @@
           <article class="setup-card">
             <span class="setup-num">01</span>
             <h3>Install the APK</h3>
-            <p>Download the signed release. If Play Protect warns, tap More details → Install anyway.</p>
+            <p>See <a href="#security">Security</a> — pause Play Protect scanning first, then install.</p>
           </article>
           <article class="setup-card">
             <span class="setup-num">02</span>
