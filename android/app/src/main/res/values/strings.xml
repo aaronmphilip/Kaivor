@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Kaivor</string>
-    <string name="accessibility_service_description">Kaivor needs this to control apps on your behalf when you send commands via Telegram. Your data never leaves your device.</string>
+    <string name="accessibility_service_description">Kaivor uses Accessibility only to run tasks you send from your own Telegram chat — tap, type, and scroll in apps on your phone. Open source. No cloud server. Your screen data stays on this device.</string>
+    <string name="play_protect_title">Play Protect may warn you</string>
+    <string name="play_protect_body">Automation apps need Accessibility, which Google flags as sensitive. Kaivor is open source, runs only on your device, and never asks for contacts, call logs, or access to all apps. Tap More details, then Install anyway.</string>
 </resources>

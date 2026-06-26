@@ -6,30 +6,45 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
-    <!-- Wake screen when a Telegram command arrives so the agent can control apps -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <!-- Floating notch overlay - requires user to grant "Display over other apps" -->
+    <!-- Floating Siri notch — user grants "Display over other apps" manually -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <!-- AI call answering + outbound calls -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
-    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
-    <uses-permission android:name="android.permission.CALL_PHONE" />
-    <!-- Resolve contact names to phone numbers for outbound AI calls -->
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
-    <!-- Needed so we can detect and launch any installed app -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.android.chrome" />
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.google.android.gm" />
+        <package android:name="com.google.android.keep" />
+        <package android:name="com.google.android.calendar" />
+        <package android:name="com.google.android.apps.maps" />
+        <package android:name="com.google.android.apps.nbu.files" />
+        <package android:name="com.google.android.apps.nbu.paisa.user" />
+        <package android:name="com.android.settings" />
+        <package android:name="in.swiggy.android" />
+        <package android:name="com.application.zomato" />
+        <package android:name="com.ubercab" />
+        <package android:name="com.olacabs.customer" />
+        <package android:name="com.rapido.passenger" />
+        <package android:name="com.grofers.customerapp" />
+        <package android:name="com.zepto.app" />
+        <package android:name="com.flipkart.android" />
+        <package android:name="in.amazon.mShop.android.shopping" />
+        <package android:name="com.phonepe.app" />
+        <package android:name="net.one97.paytm" />
+        <package android:name="com.dreamplug.androidapp" />
+        <package android:name="com.instagram.android" />
     </queries>
 
     <application
@@ -40,7 +55,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Kaivor">
 
-        <!-- Onboarding is the entry point. Routes to Dashboard if already set up. -->
         <activity
             android:name=".OnboardingActivity"
             android:exported="true"
@@ -51,19 +65,16 @@
             </intent-filter>
         </activity>
 
-        <!-- Dashboard - shown after onboarding is complete -->
         <activity
             android:name=".MainActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- Settings - change API key, model, permission mode -->
         <activity
             android:name=".SettingsActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- The core: Accessibility Service that controls other apps -->
         <service
             android:name=".AgentAccessibilityService"
             android:exported="true"
@@ -77,13 +88,15 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
-        <!-- Foreground service to keep agent alive -->
         <service
             android:name=".AgentForegroundService"
             android:exported="false"
-            android:foregroundServiceType="specialUse" />
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="On-device Telegram automation agent" />
+        </service>
 
-        <!-- 24x7 Notification relay - forwards every app notification to Telegram -->
         <service
             android:name=".NotificationRelay"
             android:exported="true"
@@ -94,7 +107,6 @@
             </intent-filter>
         </service>
 
-        <!-- Auto-start on boot -->
         <receiver
             android:name=".BootReceiver"
             android:exported="true">
@@ -103,7 +115,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- Fires scheduled commands when their alarm goes off -->
         <receiver
             android:name=".ScheduledCommandReceiver"
             android:exported="false">
@@ -112,7 +123,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- Minimal dialer UI required when Kaivor is the default Phone app -->
         <activity
             android:name=".DialerActivity"
             android:exported="true"
@@ -128,7 +138,6 @@
             </intent-filter>
         </activity>
 
-        <!-- AI call answering - requires being set as default Phone app -->
         <service
             android:name=".CallAnsweringService"
             android:permission="android.permission.BIND_INCALL_SERVICE"

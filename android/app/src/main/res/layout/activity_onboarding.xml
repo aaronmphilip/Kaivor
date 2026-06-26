@@ -78,6 +78,32 @@
                 android:gravity="center"
                 android:layout_marginTop="32dp" />
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/notch_liquid_glass"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/play_protect_title"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:lineSpacingMultiplier="1.35"
+                    android:text="@string/play_protect_body"
+                    android:textColor="#B8B8B8"
+                    android:textSize="12.5sp" />
+            </LinearLayout>
+
             <Button
                 android:id="@+id/btnGetStarted"
                 android:layout_width="match_parent"
@@ -504,7 +530,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Shows a black pill while tasks run. Tap X to cancel instantly. Drag it anywhere."
+                android:text="Siri-style glass pill at the top. Tap to expand tasks, pause, or stop. Drag the waveform to reposition."
                 android:textColor="#B8B8B8"
                 android:textSize="13sp"
                 android:lineSpacingMultiplier="1.4"
