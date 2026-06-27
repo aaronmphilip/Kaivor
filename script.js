@@ -1,5 +1,9 @@
 (function () {
   const header = document.querySelector(".nav-glass");
+  const navToggle = document.querySelector(".nav-toggle");
+  const navPanel = document.querySelector(".nav-panel");
+  const navBackdrop = document.querySelector(".nav-backdrop");
+  const navLinks = document.querySelectorAll(".nav-panel a[href^='#']");
   const revealNodes = document.querySelectorAll(
     ".hero-copy, .hero-device, .stat-card, .section-intro, .example-card, .bento-card, .flow-step, .principle-copy, .setup-card, .cta-band, .site-footer"
   );
@@ -19,6 +23,38 @@
 
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
+
+  const setNavOpen = (open) => {
+    if (!navToggle || !navPanel || !navBackdrop) return;
+
+    navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    navToggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    navPanel.classList.toggle("is-open", open);
+    navBackdrop.hidden = !open;
+    navBackdrop.classList.toggle("is-visible", open);
+    document.body.classList.toggle("nav-open", open);
+  };
+
+  if (navToggle && navPanel && navBackdrop) {
+    navToggle.addEventListener("click", () => {
+      const isOpen = navToggle.getAttribute("aria-expanded") === "true";
+      setNavOpen(!isOpen);
+    });
+
+    navBackdrop.addEventListener("click", () => setNavOpen(false));
+
+    navLinks.forEach((link) => {
+      link.addEventListener("click", () => setNavOpen(false));
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") setNavOpen(false);
+    });
+
+    window.addEventListener("resize", () => {
+      if (window.innerWidth > 1040) setNavOpen(false);
+    });
+  }
 
   if ("IntersectionObserver" in window) {
     const observer = new IntersectionObserver(

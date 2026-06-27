@@ -31,32 +31,50 @@
 
     <header class="nav-shell">
       <nav class="nav-glass" aria-label="Primary navigation">
-        <a class="nav-brand" href="#top" aria-label="Kaivor home">
-          <span class="nav-brand-mark">
-            <img src="/favicon.ico" alt="" width="28" height="28" />
-          </span>
-          <span class="nav-brand-name">Kaivor</span>
-        </a>
+        <div class="nav-bar">
+          <a class="nav-brand" href="#top" aria-label="Kaivor home">
+            <span class="nav-brand-mark">
+              <img src="/favicon.ico" alt="" width="28" height="28" />
+            </span>
+            <span class="nav-brand-name">Kaivor</span>
+          </a>
 
-        <span class="nav-divider" aria-hidden="true"></span>
+          <button
+            type="button"
+            class="nav-toggle"
+            aria-expanded="false"
+            aria-controls="nav-panel"
+            aria-label="Open menu"
+          >
+            <span class="nav-toggle-lines" aria-hidden="true">
+              <span></span>
+              <span></span>
+            </span>
+          </button>
 
-        <div class="nav-links">
-          <a href="#examples">Examples</a>
-          <a href="#features">Features</a>
-          <a href="#how">How it works</a>
-          <a href="#setup">Setup</a>
-          <a href="#security">Security</a>
-        </div>
-
-        <span class="nav-divider" aria-hidden="true"></span>
-
-        <div class="nav-actions">
-          <a class="nav-link" href="https://github.com/aaronmphilip/Kaivor" target="_blank" rel="noopener noreferrer">GitHub</a>
-          <a class="nav-cta btn-magnetic" href="downloads/Kaivor-v1.0.apk" download>
+          <a class="nav-cta nav-cta-compact btn-magnetic" href="downloads/Kaivor-v1.0.apk" download>
             <span>Download</span>
           </a>
         </div>
+
+        <div class="nav-panel" id="nav-panel">
+          <div class="nav-links">
+            <a href="#examples">Examples</a>
+            <a href="#features">Features</a>
+            <a href="#how">How it works</a>
+            <a href="#setup">Setup</a>
+            <a href="#security">Install help</a>
+          </div>
+
+          <div class="nav-actions">
+            <a class="nav-link" href="https://github.com/aaronmphilip/Kaivor" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a class="nav-cta btn-magnetic" href="downloads/Kaivor-v1.0.apk" download>
+              <span>Download APK</span>
+            </a>
+          </div>
+        </div>
       </nav>
+      <div class="nav-backdrop" hidden></div>
     </header>
 
     <main id="top">
@@ -79,7 +97,20 @@
             </a>
           </div>
 
-          <p class="hero-footnote">Android 11+ · Signed release APK · Open source · No cloud server</p>
+          <p class="hero-footnote">Android 11+ · Open source · No cloud server</p>
+
+          <aside class="install-banner" aria-label="Install help">
+            <p class="install-banner-title">Install blocked by Play Protect?</p>
+            <p class="install-banner-text">
+              Google blocks browser downloads that use Accessibility. Pause scanning first, then install.
+            </p>
+            <ol class="install-banner-steps">
+              <li>Play Store → profile → <strong>Play Protect</strong> → gear → turn scanning <strong>OFF</strong></li>
+              <li>Download APK → open from <strong>Files</strong> → Install</li>
+              <li>Turn Play Protect scanning back <strong>ON</strong></li>
+            </ol>
+            <a class="install-banner-link" href="#security">Full install guide →</a>
+          </aside>
         </div>
 
         <div class="hero-device" aria-label="Telegram command preview">
@@ -284,9 +315,10 @@
             <span class="install-method-badge">Recommended</span>
             <h3>Method A — Pause Play Protect (on phone)</h3>
             <ol class="install-steps">
+              <li>If you installed Kaivor before, <strong>uninstall the old version</strong> first (Settings → Apps → Kaivor → Uninstall)</li>
               <li>Open <strong>Google Play Store</strong> → profile icon → <strong>Play Protect</strong></li>
               <li>Tap the gear icon → turn <strong>OFF</strong> “Scan apps with Play Protect”</li>
-              <li>Download and open <a href="downloads/Kaivor-v1.0.apk">Kaivor-v1.0.apk</a> from Files</li>
+              <li>Download and open <a href="downloads/Kaivor-v1.0.apk">Kaivor-v1.0.apk</a> from Files — not Chrome’s download notification</li>
               <li>Tap Install → when done, turn Play Protect scanning <strong>back ON</strong></li>
             </ol>
           </article>
@@ -316,7 +348,7 @@
               <li>No SMS or call-log access</li>
               <li>No contacts or microphone at install</li>
               <li>No “see all apps” permission</li>
-              <li>Debug-signed APK (same build style as BharatDroid)</li>
+              <li>Sideload build v1.0.5 — no notification listener at install</li>
             </ul>
           </article>
           <article class="security-card">
@@ -328,7 +360,7 @@
               so Google allows installs without pausing protection.
             </p>
             <p>Package: <code>com.kaivor.agent</code><br />
-            SHA-256: <code>e93ba37cad2db333c87b77315f49fadb24d5f455cfb9c8cb4d916810f3c033c1</code></p>
+            SHA-256: <code>ca0f50c41f222da9207913e460f566120d7bd5541ffcdc0c95fde9197e7ed06c</code></p>
           </article>
         </div>
       </section>
