@@ -1,47 +1,24 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
 }
 
-val keystoreProperties = Properties().apply {
-    val file = rootProject.file("keystore.properties")
-    if (file.exists()) load(file.inputStream())
-}
-
 android {
     namespace = "com.kaivor.agent"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.kaivor.agent"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 4
-        versionName = "1.0.3"
-    }
-
-    signingConfigs {
-        create("release") {
-            storeFile = rootProject.file(keystoreProperties.getProperty("storeFile", "kaivor-release.jks"))
-            storePassword = keystoreProperties.getProperty("storePassword")
-            keyAlias = keystoreProperties.getProperty("keyAlias")
-            keyPassword = keystoreProperties.getProperty("keyPassword")
-            enableV1Signing = true
-            enableV2Signing = true
-            enableV3Signing = true
-        }
+        targetSdk = 34
+        versionCode = 5
+        versionName = "1.0.4"
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-        }
-        debug {
-            signingConfig = signingConfigs.getByName("release")
         }
     }
 
