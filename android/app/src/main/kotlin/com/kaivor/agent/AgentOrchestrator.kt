@@ -747,10 +747,10 @@ class AgentOrchestrator(
         val andParts = splitCompoundCommand(expandedCommand)
         if (andParts != null) {
             lastRawCommand = trimmed
-            poller.sendMessage(msg.chatId, "-- Running compound command in two steps...")
+            poller.sendMessage(msg.chatId, "On it — running both steps on your phone...")
             val result1 = handleMessage(msg.copy(text = andParts.first))
             val result2 = handleMessage(msg.copy(text = andParts.second))
-            return "1\u20e3 *" + andParts.first.take(55) + "*\n" + result1 + "\n\n2\u20e3 *" + andParts.second.take(55) + "*\n" + result2
+            return formatCompoundResults(andParts.first, result1, andParts.second, result2)
         }
 
         // Save raw command for "again" feature (never save meta-commands)
@@ -822,7 +822,12 @@ class AgentOrchestrator(
         }
         if (plan.type == PlanType.UNKNOWN) {
             activityLog.log(trimmed, null, "failure", "Unknown command")
-            return plan.directReply ?: "I didn't understand that. Try again."
+            val raw = plan.directReply.orEmpty().trim()
+            return when {
+                raw.startsWith("{") -> "I couldn't run that command. Try: \"Search Joe Rogan on YouTube\" or \"Play Faded on YouTube\"."
+                raw.isNotBlank() -> raw
+                else -> "I didn't understand that. Try again."
+            }
         }
 
         // Skill execution touches the phone - serialize with mutex.
@@ -1521,13 +1526,18 @@ You can also open a document on the phone and say:
      * Returns a Pair of the two sub-commands if both look actionable, null otherwise.
      */
     private fun splitCompoundCommand(input: String): Pair<String, String>? {
+        val lower = input.lowercase()
+        // "go to YouTube and play/search X" is one task — let the brain route a single youtube skill.
+        if (Regex("^(go to|open|launch|start)\\s+\\S+(\\s+\\S+)?\\s+and\\s+").containsMatchIn(lower)) {
+            return null
+        }
         val actionVerbs = setOf(
             "order", "book", "search", "find", "send", "pay", "open", "play",
             "navigate", "go to", "call", "message", "dm", "share", "post",
             "buy", "add", "create", "set", "read", "check", "show", "recharge",
             "transfer", "download", "install", "remind", "track", "compare",
         )
-        val andIndex = input.lowercase().indexOf(" and ")
+        val andIndex = lower.indexOf(" and ")
         if (andIndex < 3) return null
         val part1 = input.substring(0, andIndex).trim()
         val part2 = input.substring(andIndex + 5).trim()
@@ -1538,6 +1548,24 @@ You can also open a document on the phone and say:
         }
         if (!isActionable(part1) || !isActionable(part2)) return null
         return Pair(part1, part2)
+    }
+
+    private fun formatCompoundResults(cmd1: String, result1: String, cmd2: String, result2: String): String {
+        fun clean(result: String): String {
+            val trimmed = result.trim()
+            return when {
+                trimmed.isBlank() -> "Done."
+                trimmed.startsWith("{") -> "Done on your phone."
+                else -> trimmed
+            }
+        }
+        return buildString {
+            appendLine("✓ *${cmd1.take(60)}*")
+            appendLine(clean(result1))
+            appendLine()
+            appendLine("✓ *${cmd2.take(60)}*")
+            append(clean(result2))
+        }
     }
 
     private fun normalizeIncomingTelegramText(input: String): String =

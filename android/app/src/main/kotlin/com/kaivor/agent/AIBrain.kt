@@ -63,7 +63,9 @@ $skillsList
 
 Rules:
 1. SINGLE task -> return: {"skill": "<skill_id>", "params": {<key-value pairs>}}
+   Example: {"skill": "youtube", "params": {"action": "search", "query": "Joe Rogan podcast"}}
 2. MULTI-STEP task -> return: {"steps": [{"skill":"<id>","params":{...}}, {"skill":"<id>","params":{...}}]}
+   For "go to YouTube and play X" use ONE youtube step with action play/search — do NOT split into open + play.
 3. Just chatting / question -> return: {"reply": "<your answer>"}
 4. Always reply in the same language the user used.
 5. Be concise. Do not explain if a phone action is requested.
@@ -173,6 +175,54 @@ Do NOT return anything outside JSON.
         } ?: emptyMap()
     }
 
+    private val skillIds: Set<String> by lazy { availableSkills.map { it.id }.toSet() }
+
+    private fun parseStepObject(stepObj: com.google.gson.JsonObject): SkillStep? {
+        if (stepObj.has("skill")) {
+            return SkillStep(
+                skillId = stepObj.get("skill").asString,
+                params = parseParams(stepObj.getAsJsonObject("params")),
+            )
+        }
+        val skillEntry = stepObj.entrySet().firstOrNull { skillIds.contains(it.key) } ?: return null
+        val params = if (skillEntry.value.isJsonObject) {
+            parseParams(skillEntry.value.asJsonObject)
+        } else {
+            emptyMap()
+        }
+        return SkillStep(skillId = skillEntry.key, params = params)
+    }
+
+    /** Handles {"youtube": {"action": "play", "query": "Faded"}} when the model skips "skill"/"params". */
+    private fun parseSkillKeyedRoot(json: com.google.gson.JsonObject): AgentPlan? {
+        val matches = json.entrySet().filter { skillIds.contains(it.key) }
+        if (matches.isEmpty()) return null
+        val steps = matches.map { entry ->
+            val params = if (entry.value.isJsonObject) parseParams(entry.value.asJsonObject) else emptyMap()
+            SkillStep(skillId = entry.key, params = params)
+        }
+        return when (steps.size) {
+            1 -> AgentPlan(
+                type = PlanType.RUN_SKILL,
+                skillId = steps.first().skillId,
+                params = steps.first().params,
+            )
+            else -> AgentPlan(type = PlanType.MULTI_STEP, steps = steps)
+        }
+    }
+
+    private fun planFromSteps(steps: List<SkillStep>, fallbackText: String): AgentPlan {
+        if (steps.isEmpty()) return AgentPlan(PlanType.UNKNOWN, directReply = fallbackText)
+        if (steps.size == 1) {
+            return AgentPlan(
+                type = PlanType.RUN_SKILL,
+                skillId = steps.first().skillId,
+                params = steps.first().params,
+            )
+        }
+        return AgentPlan(type = PlanType.MULTI_STEP, steps = steps)
+    }
+
     private fun parseResponse(text: String): AgentPlan {
         val cleaned = text.trimIndent()
             .removePrefix("```json")
@@ -185,22 +235,10 @@ Do NOT return anything outside JSON.
             when {
                 json.has("steps") -> {
                     val stepsArray = json.getAsJsonArray("steps")
-                    val steps = (0 until stepsArray.size()).map { index ->
-                        val stepObj = stepsArray.get(index).asJsonObject
-                        SkillStep(
-                            skillId = stepObj.get("skill").asString,
-                            params = parseParams(stepObj.getAsJsonObject("params")),
-                        )
+                    val steps = (0 until stepsArray.size()).mapNotNull { index ->
+                        parseStepObject(stepsArray.get(index).asJsonObject)
                     }
-                    if (steps.size == 1) {
-                        AgentPlan(
-                            type = PlanType.RUN_SKILL,
-                            skillId = steps.first().skillId,
-                            params = steps.first().params,
-                        )
-                    } else {
-                        AgentPlan(type = PlanType.MULTI_STEP, steps = steps)
-                    }
+                    planFromSteps(steps, text)
                 }
 
                 json.has("skill") -> {
@@ -216,7 +254,8 @@ Do NOT return anything outside JSON.
                     directReply = json.get("reply").asString,
                 )
 
-                else -> AgentPlan(PlanType.UNKNOWN, directReply = text)
+                else -> parseSkillKeyedRoot(json)
+                    ?: AgentPlan(PlanType.UNKNOWN, directReply = text)
             }
         } catch (_: Exception) {
             AgentPlan(PlanType.DIRECT_REPLY, directReply = text)
