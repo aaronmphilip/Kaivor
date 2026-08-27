@@ -1,256 +1,50 @@
-<div align="center">
+# Kaivor Android
 
-# Kaivor
+Kaivor is an Android application plus the supporting web/assets folders in this checkout. The Android Studio project is in `android/`.
 
-**Execute. Not explain.**
+## Resume from a clean laptop
 
-Personal Android agent — controlled from Telegram, running entirely on your phone.
+1. Install **Android Studio** (stable channel) from the official Android developer website.
+2. In Android Studio's SDK Manager, install **Android SDK Platform 34**, **Android SDK Build-Tools**, and **Android SDK Platform-Tools**.
+3. Install a **JDK 17** and configure Android Studio's Gradle JDK to that JDK. This project uses Java/Kotlin 17.
+4. Install **Git** and clone this repository.
+5. Open the repository's `android/` directory in Android Studio. Do not open the repository root as the Android project.
+6. Allow Gradle to sync and download dependencies. The included Gradle wrapper is authoritative; use `gradlew.bat` on Windows.
+7. Create or start an Android emulator with API 34, or connect a physical Android device with Developer options and USB debugging enabled.
+8. Run the `app` configuration. For a command-line debug build from `android/`, run:
 
-<p>
-<img src="https://img.shields.io/badge/Platform-Android%2011+-000000?style=for-the-badge&logo=android&logoColor=white"/>
-<img src="https://img.shields.io/badge/Kotlin-000000?style=for-the-badge&logo=kotlin&logoColor=white"/>
-<img src="https://img.shields.io/badge/AI-Gemini%20%7C%20Claude%20%7C%20GPT-000000?style=for-the-badge"/>
-<img src="https://img.shields.io/badge/License-MIT-000000?style=for-the-badge"/>
-<img src="https://img.shields.io/badge/Status-Active-000000?style=for-the-badge"/>
-</p>
+   ```powershell
+   .\gradlew.bat assembleDebug
+   ```
 
-[GitHub Repo](https://github.com/aaronmphilip/Kaivor) · [Live Website](https://kaivorapp.vercel.app) · [Download APK](downloads/Kaivor-v1.0.apk) · [Full Guide](KAIVOR_GUIDE.md) · [Report Bug](https://github.com/aaronmphilip/Kaivor/issues)
+## Toolchain and dependencies
 
-</div>
+- Android SDK compile/target: API 34
+- Minimum Android version: API 26
+- JDK: 17
+- Kotlin: 1.9.23
+- Android Gradle Plugin: 8.4.0
+- Gradle wrapper: 8.6
+- AndroidX Core KTX, AppCompat, Material, ConstraintLayout
+- Kotlin Coroutines, OkHttp, Gson, Jsoup, PDFBox Android, DataStore Preferences, Lifecycle Service
 
----
+Gradle dependency versions are kept in `android/gradle/libs.versions.toml`.
 
-## What is Kaivor?
+## Release signing
 
-Most AI assistants tell you what to do. **Kaivor does it for you.**
+The original release keystore and `keystore.properties` were intentionally **not uploaded**. They contain signing credentials and machine-specific paths. A debug build works without them. To create a release build later, create a new local `android/keystore.properties` with the keys expected by `android/app/build.gradle.kts` and point `storeFile` at a local keystore. Do not commit either file.
 
-Kaivor is an open-source AI agent that lives on your Android phone. You send a command over Telegram — text or voice — and it opens apps, reads screens, fills forms, relays notifications, and reports back with proof. No cloud server. No subscription. Your phone, your data, your AI.
+If the old signing identity is required for an existing Play Store application, recover the keystore from a separately secured backup; it is not recoverable from this repository's clean checkout.
 
-```
-You:   "Order biryani from Swiggy under ₹200"
-Kaivor: Opens Swiggy → searches → adds to cart → sends screenshot proof
+## Important files
 
-You:   [WhatsApp notification arrives]
-Kaivor: Forwards to Telegram. You reply in chat. Message lands in WhatsApp.
-```
+- `android/`: Android Studio project
+- `scripts/`: Windows build/install helpers
+- `assets/`: brand assets
+- `downloads/`: locally produced APK artifacts, when present
+- `apps/`, `packages/`, `skills/`: supporting web/product material retained from the original workspace
 
----
+## Working safely
 
-## Features
+Do not commit `local.properties`, `.env*`, signing files, `node_modules`, Gradle caches, or build outputs. Android Studio regenerates its local state after cloning.
 
-| | Capability | What it does |
-|---|---|---|
-| | **Plan → Execute** | Generates a plan, then acts step by step |
-| | **Universal UI** | Works on any Android app via accessibility + vision |
-| | **Screenshot proof** | Sends a photo after every task |
-| | **Multi-step chaining** | "Do X, then Y, then Z" in one command |
-| | **Notification relay** | Every app notification → Telegram, with two-way reply |
-| | **Voice commands** | Send a Telegram voice note, Kaivor transcribes and runs it |
-| | **Hindi + English** | Understands commands in both languages |
-| | **Any AI provider** | Gemini (recommended), Claude, or OpenAI — auto-detected |
-| | **100% on-device** | Phone control runs locally. No Kaivor server. |
-
----
-
-## Links
-
-| Resource | URL |
-|---|---|
-| **GitHub Repository** | [github.com/aaronmphilip/Kaivor](https://github.com/aaronmphilip/Kaivor) |
-| **Live Website** | [kaivorapp.vercel.app](https://kaivorapp.vercel.app) |
-| **APK Download** | [Kaivor-v1.0.apk](downloads/Kaivor-v1.0.apk) |
-| **Issues & Bugs** | [GitHub Issues](https://github.com/aaronmphilip/Kaivor/issues) |
-| **Vercel Dashboard** | [kaivorapp project](https://vercel.com/aaron-mathew-philips-projects/kaivorapp) |
-
-### Auto-deploy
-
-**Connected:** [aaronmphilip/Kaivor](https://github.com/aaronmphilip/Kaivor) → [kaivorapp](https://vercel.com/aaron-mathew-philips-projects/kaivorapp)
-
-Every push to `main` auto-deploys to [kaivorapp.vercel.app](https://kaivorapp.vercel.app).
-
----
-
-## Quick Start
-
-### Requirements
-
-- Android 11+
-- Telegram account
-- One AI API key ([Gemini](https://aistudio.google.com/apikey) recommended)
-
-### 1. Download the APK
-
-**[downloads/Kaivor-v1.0.apk](downloads/Kaivor-v1.0.apk)**
-
-Install on your Android phone (enable "Install from unknown sources" if prompted).
-
-### 2. Create a Telegram bot
-
-```
-Telegram → @BotFather → /newbot → copy the token (7123456789:AAF...)
-```
-
-### 3. Configure Kaivor
-
-Open the app and complete onboarding:
-
-1. Paste your **Telegram bot token**
-2. Paste your **AI API key** (Gemini / Claude / OpenAI)
-3. Enable **Accessibility Service** (required)
-4. Enable **Notification Access** (optional — powers 24/7 relay)
-5. Grant **Display Overlay** (recommended — shows live progress notch)
-6. Tap **Launch Kaivor**
-
-### 4. Test it
-
-Message your bot:
-
-```
-"Search YouTube for AR Rahman"
-"Navigate to Connaught Place"
-"What's on my calendar today?"
-```
-
----
-
-## Supported Apps
-
-| Category | Apps |
-|---|---|
-| Food & Grocery | Swiggy, Zomato, Blinkit, Zepto |
-| Shopping | Amazon, Flipkart |
-| Messaging | WhatsApp, Instagram |
-| Entertainment | YouTube |
-| Payments | PhonePe, Google Pay, Paytm, CRED |
-| Transport | Ola, Uber, Rapido |
-| Productivity | Gmail, Calendar, Keep, Chrome |
-| Navigation | Google Maps |
-| General | **Any app** — if a human can tap it, Kaivor can tap it |
-
----
-
-## Architecture
-
-```
-Telegram command (text or voice)
-        │
-        ▼
-┌───────────────────┐
-│     AI Brain      │  Intent → skills → multi-step plan
-│  Gemini / Claude  │
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│   Screen Agent    │  Accessibility tree first, vision when needed
-│  Plan → Execute   │
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│  Accessibility    │  Tap, type, scroll, screenshot
-│    Service        │
-└────────┬──────────┘
-         │
-         ▼
-  Telegram reply + proof
-```
-
----
-
-## Project Structure
-
-```
-Kaivor/
-├── android/                 # Kotlin Android app
-│   └── app/src/main/kotlin/com/kaivor/agent/
-│       ├── AIBrain.kt       # Intent → skill routing
-│       ├── ScreenAgent.kt   # Universal screen controller
-│       ├── AgentOrchestrator.kt
-│       ├── TelegramPoller.kt
-│       ├── NotificationRelay.kt
-│       └── skills/builtin/  # 40+ built-in skills
-├── index.html               # Landing page (also at kaivorapp.vercel.app)
-├── styles.css               # SpaceX/xAI black-white theme
-├── downloads/               # Public APK
-├── skills/official/         # Skill definitions
-├── packages/                # API, state machine, telegram, etc.
-└── tests/                   # Vitest suite
-```
-
----
-
-## Build from Source
-
-### Android
-
-```bash
-git clone https://github.com/aaronmphilip/Kaivor.git
-cd Kaivor/android
-./gradlew test assembleDebug
-# APK: android/app/build/outputs/apk/debug/app-debug.apk
-```
-
-### Tests
-
-```bash
-npm install
-npm test
-```
-
----
-
-## Safety & Privacy
-
-- **Payment skills** always require explicit confirmation before executing
-- Skills are sandboxed — they can only open declared apps
-- No analytics, no tracking, no Kaivor cloud server
-- API keys stored locally in Android SharedPreferences
-- Commands are sent to your chosen AI provider only
-
----
-
-## Contributing
-
-Read **[CONTRIBUTING.md](CONTRIBUTING.md)** for the full guide.
-
-- Found a bug? [Open an issue](https://github.com/aaronmphilip/Kaivor/issues)
-- Add a skill — any Android app in ~50 lines of Kotlin
-- Improve docs, add languages, star the repo
-
----
-
-## Roadmap
-
-**Shipped**
-- [x] 24/7 notification relay with Telegram reply
-- [x] 40+ built-in skills (stress-tested)
-- [x] Voice note → command (STT)
-- [x] Document reading (PDF, screenshots)
-- [x] Black-white landing page + on-device APK
-
-**In progress**
-- [ ] Vision-based screen understanding
-- [ ] Better WhatsApp contact resolution
-- [ ] Community skill browser (no rebuild)
-
-**Next**
-- [ ] Scheduled tasks
-- [ ] Multi-device control
-- [ ] iOS support
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).
-
----
-
-<div align="center">
-
-Built for real phone work.
-
-**[GitHub](https://github.com/aaronmphilip/Kaivor)** · **[Live Site](https://kaivorapp.vercel.app)** · **[Download APK](downloads/Kaivor-v1.0.apk)** · **[Issues](https://github.com/aaronmphilip/Kaivor/issues)**
-
-</div>

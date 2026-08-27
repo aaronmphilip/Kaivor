@@ -100,16 +100,16 @@
           <p class="hero-footnote">Android 11+ · Open source · No cloud server</p>
 
           <aside class="install-banner" aria-label="Install help">
-            <p class="install-banner-title">Install blocked by Play Protect?</p>
+            <p class="install-banner-title">“App blocked” from Telegram?</p>
             <p class="install-banner-text">
-              Google blocks browser downloads that use Accessibility. Pause scanning first, then install.
+              Google blocks sideloaded Accessibility apps from messaging apps. Play Protect must stay on — register Kaivor as a verified developer app first.
             </p>
             <ol class="install-banner-steps">
-              <li>Play Store → profile → <strong>Play Protect</strong> → gear → turn scanning <strong>OFF</strong></li>
-              <li>Download APK → open from <strong>Files</strong> → Install</li>
-              <li>Turn Play Protect scanning back <strong>ON</strong></li>
+              <li>Developer verifies at <strong>Android Developer Console</strong></li>
+              <li>Register package <strong>com.kaivor.agent</strong> with the release APK</li>
+              <li>Then install from <strong>Files</strong> or <strong>Play Store testing</strong></li>
             </ol>
-            <a class="install-banner-link" href="#security">Full install guide →</a>
+            <a class="install-banner-link" href="#security">How to install with Play Protect on →</a>
           </aside>
         </div>
 
@@ -300,33 +300,53 @@
 
       <section class="section security-section" id="security">
         <div class="section-intro centered">
-          <p class="eyebrow">Install blocked?</p>
-          <h2>Google blocks this on purpose.<br />Here is the fix.</h2>
+          <p class="eyebrow">Install with Play Protect ON</p>
+          <h2>Your screenshot is expected.<br />Here is the real fix.</h2>
           <p class="lead">
-            Per <a href="https://support.google.com/android/answer/2812853?hl=en">Google Play Protect</a>,
-            apps installed from a browser that declare <strong>Accessibility</strong> are automatically
-            blocked to prevent financial fraud. Kaivor needs Accessibility to control your phone — so
-            the block is expected, not a broken APK.
+            Per <a href="https://developers.google.com/android/play-protect/warning-dev-guidance">Google Play Protect</a>,
+            apps opened from <strong>Telegram, browsers, or messaging apps</strong> that declare
+            <strong>Accessibility</strong> are <strong>automatically blocked</strong> — only an OK button, no install.
+            Rebuilding the APK cannot remove this. Kaivor must be installed as a <strong>verified developer app</strong>
+            or from the <strong>Play Store</strong>.
           </p>
         </div>
 
         <div class="install-methods">
           <article class="install-method install-method-primary">
-            <span class="install-method-badge">Recommended</span>
-            <h3>Method A — Pause Play Protect (on phone)</h3>
+            <span class="install-method-badge">Play Protect stays ON</span>
+            <h3>Method A — Register verified developer (sideload)</h3>
             <ol class="install-steps">
-              <li>If you installed Kaivor before, <strong>uninstall the old version</strong> first (Settings → Apps → Kaivor → Uninstall)</li>
-              <li>Open <strong>Google Play Store</strong> → profile icon → <strong>Play Protect</strong></li>
-              <li>Tap the gear icon → turn <strong>OFF</strong> “Scan apps with Play Protect”</li>
-              <li>Download and open <a href="downloads/Kaivor-v1.0.apk">Kaivor-v1.0.apk</a> from Files — not Chrome’s download notification</li>
-              <li>Tap Install → when done, turn Play Protect scanning <strong>back ON</strong></li>
+              <li>Go to <a href="https://developer.android.com/developer-verification">Android Developer Verification</a></li>
+              <li>Open <a href="https://android.google.com/developerconsole/developers">Android Developer Console</a> and verify your identity</li>
+              <li>Register package name <code>com.kaivor.agent</code></li>
+              <li>Upload <a href="downloads/Kaivor-v1.0.apk">Kaivor-v1.0.apk</a> to prove you own the signing key</li>
+              <li>Hobbyist? Use free <strong>Limited Distribution</strong> (up to 20 devices)</li>
+              <li>Install from <strong>Files</strong> — not Telegram Saved Messages</li>
+            </ol>
+          </article>
+          <article class="install-method install-method-primary">
+            <span class="install-method-badge">Play Protect stays ON</span>
+            <h3>Method B — Google Play internal testing</h3>
+            <ol class="install-steps">
+              <li>Upload the release bundle to <a href="https://play.google.com/console">Play Console</a></li>
+              <li>Testing → Internal testing → add your Gmail as a tester</li>
+              <li>Install from the Play Store tester link on your phone</li>
+              <li>Play Protect remains enabled — no bypass needed</li>
             </ol>
           </article>
           <article class="install-method">
-            <h3>Method B — Install from PC (ADB)</h3>
-            <p>USB debugging on, then run from the repo:</p>
+            <h3>Method C — Play Protect appeal</h3>
+            <p>After developer verification, if installs are still blocked:</p>
+            <p>
+              <a href="https://support.google.com/googleplay/android-developer/contact/protectappeals">File a Play Protect appeal</a>
+              — explain Kaivor is an open-source personal agent with explicit user consent for Accessibility.
+            </p>
+          </article>
+          <article class="install-method">
+            <h3>Method D — PC install (ADB)</h3>
+            <p>USB debugging on:</p>
             <pre class="install-code">adb install -r downloads/Kaivor-v1.0.apk</pre>
-            <p>Or use <code>scripts/install-kaivor.ps1</code> on Windows.</p>
+            <p>Or <code>scripts/install-kaivor.ps1</code> on Windows. Play Protect may still warn.</p>
           </article>
         </div>
 
@@ -348,7 +368,7 @@
               <li>No SMS or call-log access</li>
               <li>No contacts or microphone at install</li>
               <li>No “see all apps” permission</li>
-              <li>Fresh debug build v1.0.6 (clean rebuild)</li>
+              <li>Release-signed build v1.0.7 for developer verification</li>
             </ul>
           </article>
           <article class="security-card">
@@ -360,7 +380,8 @@
               so Google allows installs without pausing protection.
             </p>
             <p>Package: <code>com.kaivor.agent</code><br />
-            SHA-256: <code>bd1d6167954798c7d0a2ad6869bc86a173bf415930742c959817b8bf1ee49123</code></p>
+            Privacy: <a href="privacy.html">kaivorapp.vercel.app/privacy</a><br />
+            Cert SHA-256: see APK build output after release signing</p>
           </article>
         </div>
       </section>
@@ -375,7 +396,7 @@
           <article class="setup-card">
             <span class="setup-num">01</span>
             <h3>Install the APK</h3>
-            <p>See <a href="#security">Security</a> — pause Play Protect scanning first, then install.</p>
+            <p>See <a href="#security">Install help</a> — register verified developer or use Play Store testing.</p>
           </article>
           <article class="setup-card">
             <span class="setup-num">02</span>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Widget.Kaivor.Button" parent="Widget.MaterialComponents.Button">
+        <item name="android:minHeight">@dimen/button_height</item>
+        <item name="android:paddingStart">@dimen/button_padding_h</item>
+        <item name="android:paddingEnd">@dimen/button_padding_h</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+
+    <style name="Widget.Kaivor.Button.Primary">
+        <item name="android:background">@drawable/button_apple_primary</item>
+        <item name="android:textColor">@color/apple_text_on_active</item>
+    </style>
+
+    <style name="Widget.Kaivor.Button.Secondary">
+        <item name="android:minHeight">@dimen/button_height_sm</item>
+        <item name="android:background">@drawable/button_apple_secondary</item>
+        <item name="android:textColor">@color/apple_label_primary</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+    </style>
+
+    <style name="Widget.Kaivor.Button.Destructive">
+        <item name="android:background">@drawable/button_apple_destructive</item>
+        <item name="android:textColor">@color/apple_red</item>
+    </style>
+
+    <style name="Widget.Kaivor.Button.Toggle">
+        <item name="android:minHeight">@dimen/button_height_sm</item>
+        <item name="android:background">@drawable/button_apple_secondary</item>
+        <item name="android:textColor">@color/apple_label_secondary</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:paddingStart">14dp</item>
+        <item name="android:paddingEnd">14dp</item>
+    </style>
+</resources>

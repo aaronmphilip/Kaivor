@@ -4,8 +4,8 @@
     android:layout_height="wrap_content"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingTop="7dp"
-    android:paddingBottom="7dp">
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
 
     <View
         android:id="@+id/activityDot"
@@ -27,8 +27,8 @@
             android:ellipsize="end"
             android:fontFamily="sans-serif-medium"
             android:maxLines="1"
-            android:textColor="#FFFFFF"
-            android:textSize="12.5sp" />
+            android:textColor="@color/apple_label_primary"
+            android:textSize="13sp" />
 
         <TextView
             android:id="@+id/activitySubtitle"
@@ -36,20 +36,23 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
-            android:textColor="#98989D"
-            android:textSize="10sp" />
+            android:textColor="@color/apple_label_secondary"
+            android:textSize="11sp" />
     </LinearLayout>
 
     <TextView
         android:id="@+id/activityBadge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/chip_apple"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/chip_notch_count"
         android:fontFamily="sans-serif-medium"
-        android:paddingStart="8dp"
-        android:paddingTop="3dp"
-        android:paddingEnd="8dp"
-        android:paddingBottom="3dp"
-        android:textColor="#98989D"
-        android:textSize="9sp" />
+        android:gravity="center"
+        android:minHeight="22dp"
+        android:paddingStart="9dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="9dp"
+        android:paddingBottom="4dp"
+        android:textColor="@color/apple_label_secondary"
+        android:textSize="10sp" />
 </LinearLayout>

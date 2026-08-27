@@ -93,12 +93,22 @@ object NotchOverlay {
 
             protectButtonTouches(btnPause, btnStop)
 
-            btnPause.setOnClickListener {
-                onPauseToggle()
+            btnPause.setOnClickListener { v ->
+                UiColors.hapticLight(v)
+                UiColors.pulsePress(v) { onPauseToggle() }
             }
-            btnStop.setOnClickListener {
-                updateText("Stopping...")
-                onStop()
+            btnStop.setOnClickListener { v ->
+                UiColors.hapticConfirm(v)
+                UiColors.pulsePress(v) {
+                    v.isEnabled = false
+                    v.alpha = 0.6f
+                    updateText("Stopping...")
+                    onStop()
+                    main.postDelayed({
+                        v.isEnabled = true
+                        v.alpha = 1f
+                    }, 1200)
+                }
             }
 
             val toggleExpand = View.OnClickListener {
@@ -376,15 +386,15 @@ object NotchOverlay {
             when (activity.kind) {
                 NotchActivityKind.PRIMARY -> {
                     badge.text = "Now"
-                    badge.setTextColor(0xFF0A84FF.toInt())
+                    badge.setTextColor(UiColors.ACCENT_BLUE)
                 }
                 NotchActivityKind.QUEUED -> {
                     badge.text = "Queued"
-                    badge.setTextColor(0xFF98989D.toInt())
+                    badge.setTextColor(UiColors.LABEL_SECONDARY)
                 }
                 NotchActivityKind.BACKGROUND -> {
                     badge.text = "Live"
-                    badge.setTextColor(0xFF30D158.toInt())
+                    badge.setTextColor(UiColors.ACCENT_GREEN)
                 }
             }
             dot.setBackgroundResource(

@@ -3,5 +3,5 @@
     <string name="app_name">Kaivor</string>
     <string name="accessibility_service_description">Kaivor uses Accessibility only to run tasks you send from your own Telegram chat — tap, type, and scroll in apps on your phone. Open source. No cloud server. Your screen data stays on this device.</string>
     <string name="play_protect_title">Google may block the install</string>
-    <string name="play_protect_body">Play Protect blocks sideloaded apps that use Accessibility (Google\'s financial-fraud rule). This is expected — not a Kaivor bug. To install: Play Store → Profile → Play Protect → Settings → turn OFF \"Scan apps with Play Protect\" → install Kaivor → turn scanning back ON. Or install from a PC with: adb install Kaivor-v1.0.apk</string>
+    <string name="play_protect_body">Google blocks APKs opened from Telegram or browsers when they use Accessibility. This is not a Kaivor bug. To install with Play Protect ON: register com.kaivor.agent at Android Developer Console (developer.android.com/developer-verification), upload the release APK, then install from Files — or use Google Play internal testing. See kaivorapp.vercel.app#security</string>
 </resources>

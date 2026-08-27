@@ -135,16 +135,12 @@ class MainActivity : AppCompatActivity() {
             dot.setBackgroundResource(R.drawable.dot_green)
             statusText.text = "Kaivor Online"
             statusText.setTextColor(UiColors.LABEL_PRIMARY)
-            toggleBtn.text = "Stop Agent"
-            toggleBtn.setBackgroundColor(UiColors.SURFACE_INACTIVE)
-            toggleBtn.setTextColor(UiColors.ACCENT_RED)
+            UiColors.setAgentRunning(toggleBtn)
         } else {
             dot.setBackgroundResource(R.drawable.dot_red)
             statusText.text = "Kaivor Paused"
             statusText.setTextColor(UiColors.ACCENT_ORANGE)
-            toggleBtn.text = "Start Agent"
-            toggleBtn.setBackgroundColor(UiColors.ACTIVE_FILL)
-            toggleBtn.setTextColor(UiColors.ACTIVE_TEXT)
+            UiColors.setAgentStopped(toggleBtn)
         }
 
         accessText.text = if (serviceOk) "Accessibility: Connected" else "Accessibility: Not connected (tap to fix)"
@@ -322,7 +318,7 @@ class MainActivity : AppCompatActivity() {
 
         entries.forEach { entry ->
             val icon = if (entry.result == "success") "\u2713" else "\u2717"
-            val iconColor = if (entry.result == "success") 0xFFCAFF3F.toInt() else 0xFFFF775C.toInt()
+            val iconColor = if (entry.result == "success") UiColors.ACCENT_GREEN else UiColors.ACCENT_RED
 
             container.addView(LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL

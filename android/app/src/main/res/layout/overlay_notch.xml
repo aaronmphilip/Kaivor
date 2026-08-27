@@ -24,18 +24,17 @@
         android:elevation="32dp"
         android:minWidth="126dp"
         android:orientation="vertical"
-        android:paddingStart="14dp"
-        android:paddingTop="9dp"
+        android:paddingStart="12dp"
+        android:paddingTop="10dp"
         android:paddingEnd="12dp"
-        android:paddingBottom="9dp">
+        android:paddingBottom="10dp">
 
-        <!-- Collapsed Siri bar -->
         <LinearLayout
             android:id="@+id/notchCollapsed"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:minHeight="34dp"
+            android:minHeight="36dp"
             android:orientation="horizontal">
 
             <com.kaivor.agent.SiriWaveformView
@@ -57,9 +56,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
-                    android:letterSpacing="0.1"
+                    android:letterSpacing="0.12"
                     android:text="KAIVOR"
-                    android:textColor="#66FFFFFF"
+                    android:textColor="@color/apple_label_tertiary"
                     android:textSize="8sp" />
 
                 <TextView
@@ -69,8 +68,8 @@
                     android:ellipsize="end"
                     android:fontFamily="sans-serif-medium"
                     android:maxLines="1"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12.5sp" />
+                    android:textColor="@color/apple_label_primary"
+                    android:textSize="13sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -83,26 +82,26 @@
 
                 <ImageButton
                     android:id="@+id/btnNotchPause"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:background="@drawable/notch_btn_bg"
+                    android:layout_width="@dimen/notch_control_size"
+                    android:layout_height="@dimen/notch_control_size"
+                    android:background="@drawable/notch_btn_pause_bg"
                     android:clickable="true"
-                    android:contentDescription="Pause task"
+                    android:contentDescription="Pause or resume task"
                     android:focusable="true"
-                    android:padding="6dp"
+                    android:padding="10dp"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_notch_pause" />
 
                 <ImageButton
                     android:id="@+id/btnNotchStop"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_marginStart="4dp"
-                    android:background="@drawable/notch_btn_bg"
+                    android:layout_width="@dimen/notch_control_size"
+                    android:layout_height="@dimen/notch_control_size"
+                    android:layout_marginStart="@dimen/notch_control_gap"
+                    android:background="@drawable/notch_btn_stop_bg"
                     android:clickable="true"
                     android:contentDescription="Stop task"
                     android:focusable="true"
-                    android:padding="7dp"
+                    android:padding="11dp"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_notch_stop" />
             </LinearLayout>
@@ -112,25 +111,25 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
-                android:background="@drawable/chip_apple"
+                android:background="@drawable/chip_notch_count"
                 android:fontFamily="sans-serif-medium"
-                android:minWidth="20dp"
                 android:gravity="center"
-                android:paddingStart="6dp"
-                android:paddingTop="2dp"
-                android:paddingEnd="6dp"
-                android:paddingBottom="2dp"
-                android:textColor="#FFFFFF"
+                android:minWidth="22dp"
+                android:minHeight="22dp"
+                android:paddingStart="7dp"
+                android:paddingTop="3dp"
+                android:paddingEnd="7dp"
+                android:paddingBottom="3dp"
+                android:textColor="@color/apple_label_primary"
                 android:textSize="10sp"
                 android:visibility="gone" />
         </LinearLayout>
 
-        <!-- Expanded activity stack (Dynamic Island / Clicky) -->
         <LinearLayout
             android:id="@+id/notchExpanded"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="10dp"
             android:minWidth="280dp"
             android:orientation="vertical"
             android:visibility="gone">
@@ -138,15 +137,16 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:layout_marginBottom="8dp"
+                android:layout_marginBottom="10dp"
                 android:background="#28FFFFFF" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium"
-                android:text="Active now"
-                android:textColor="#636366"
+                android:letterSpacing="0.06"
+                android:text="ACTIVE NOW"
+                android:textColor="@color/apple_label_tertiary"
                 android:textSize="10sp" />
 
             <TextView
@@ -155,32 +155,33 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:fontFamily="sans-serif-medium"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp" />
+                android:textColor="@color/apple_label_primary"
+                android:textSize="15sp" />
 
             <TextView
                 android:id="@+id/tvNotchSkill"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:textColor="#98989D"
-                android:textSize="11sp" />
+                android:layout_marginTop="3dp"
+                android:textColor="@color/apple_label_secondary"
+                android:textSize="12sp" />
 
             <TextView
                 android:id="@+id/tvNotchStackTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="14dp"
                 android:fontFamily="sans-serif-medium"
-                android:text="Background"
-                android:textColor="#636366"
+                android:letterSpacing="0.06"
+                android:text="BACKGROUND"
+                android:textColor="@color/apple_label_tertiary"
                 android:textSize="10sp" />
 
             <LinearLayout
                 android:id="@+id/notchActivityList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="6dp"
                 android:orientation="vertical" />
         </LinearLayout>
     </LinearLayout>

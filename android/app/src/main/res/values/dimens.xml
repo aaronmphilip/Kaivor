@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="screen_padding_h">24dp</dimen>
+    <dimen name="screen_padding_v">20dp</dimen>
+    <dimen name="screen_padding_bottom">40dp</dimen>
+    <dimen name="card_padding">16dp</dimen>
+    <dimen name="card_padding_lg">20dp</dimen>
+    <dimen name="button_height">48dp</dimen>
+    <dimen name="button_height_sm">40dp</dimen>
+    <dimen name="button_padding_h">20dp</dimen>
+    <dimen name="button_radius">14dp</dimen>
+    <dimen name="notch_control_size">40dp</dimen>
+    <dimen name="notch_control_gap">6dp</dimen>
+</resources>
