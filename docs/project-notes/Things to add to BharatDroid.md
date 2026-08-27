@@ -1,0 +1,8 @@
+- Voice Mode TTS
+- Have certain limit of apps but works perfectly > More apps and each of them works like shit
+- Not clicking on the first link o YouTube but rather thinking of the request asked then clicking
+- It can call and talk to someone and stuff based on what is said to ask and all that using Eleven Labs and stuff 
+- The tasks are not getting done
+- App is crashing 
+- They arent working as expected 
+- The efficient and utlra might be the problem

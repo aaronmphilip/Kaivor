@@ -10,9 +10,15 @@ captures/
 .cxx/
 *.apk
 *.aab
+android/gradle-wrapper.jar
 *.keystore
 !debug.keystore
 !downloads/*.apk
+
+# Never commit release signing material or machine-local signing configuration.
+*.jks
+*.keystore
+keystore.properties
 
 # Environment / secrets
 .env

@@ -1,0 +1,6 @@
+- There is still the pickup location problem that we are facing where it is not adding it for the Rapido app it is adding stops 
+- Sometimes when adding location it writes location half way 
+- The Google Maps issue still persists searching the drop off location and then again and again searching it instead of going to the directions and clicking on the directions and adding the pickup point 
+- For Google Maps as well it is not like adding the pickup location also it should tell me ETA across different Maps and all that it needs to be fixed
+- Be able to do tasks for you all things are added but do it for you using API and stuff with different skills and all. Like this is doing https://aarees.com/
+-
